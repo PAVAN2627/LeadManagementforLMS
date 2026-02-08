@@ -698,15 +698,6 @@ const AddLeadPage = () => {
               >
                 Clear Form
               </Button>
-              <Button
-                type="button"
-                variant="ghost"
-                onClick={handleBack}
-                disabled={isSubmitting}
-                className="w-full sm:flex-1"
-              >
-                Cancel
-              </Button>
             </motion.div>
           </form>
 
