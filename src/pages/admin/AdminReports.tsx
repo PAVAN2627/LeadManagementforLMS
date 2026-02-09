@@ -744,19 +744,19 @@ const AdminReports = () => {
                           className="group"
                         >
                           <Card className="relative overflow-hidden border-gray-200 hover:shadow-2xl transition-all duration-500 cursor-pointer rounded-2xl bg-white">
-                            {/* Background Gradient */}
-                            <motion.div
-                              className="absolute inset-0 opacity-0 group-hover:opacity-10 transition-opacity duration-500"
-                              style={{
-                                background: "linear-gradient(135deg, #0f766e, #047857, #065f46)"
-                              }}
-                              animate={{
-                                background: [
-                                  "linear-gradient(135deg, #0f766e, #047857, #065f46)",
-                                  "linear-gradient(225deg, #0f766e, #047857, #065f46)",
-                            <div className="absolute inset-0 bg-white opacity-95"         duration: 3, 
+                            <div className="absolute inset-0 bg-white opacity-95" />
+
+                            <CardHeader className="relative z-10 pb-3 bg-gradient-to-r from-gray-50 to-teal-25">
+                              <div className="flex items-center gap-4">
+                                <motion.div
+                                  animate={{
+                                    y: [0, -2, 0],
+                                    rotate: [0, 5, 0]
+                                  }}
+                                  transition={{
+                                    duration: 3,
                                     repeat: Infinity,
-                                    delay: index * 0.2 
+                                    delay: index * 0.2
                                   }}
                                   className="p-3 bg-gradient-to-br from-teal-500 to-teal-600 rounded-xl shadow-lg group-hover:shadow-2xl transition-shadow duration-500"
                                 >
