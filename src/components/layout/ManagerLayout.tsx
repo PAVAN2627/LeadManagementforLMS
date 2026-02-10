@@ -71,13 +71,13 @@ export function ManagerLayout({ children, title }: ManagerLayoutProps) {
         isMobile ? "ml-0" : "ml-64"
       )}>
         {/* Header */}
-        <header className="sticky top-0 z-20 h-16 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <header className="sticky top-0 z-20 h-16 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 shadow-sm">
           <div className="flex h-full items-center justify-between px-4 md:px-6">
             <div className="flex items-center gap-2 md:gap-4 min-w-0">
               <Button
                 variant="ghost"
                 size="icon"
-                className={cn("shrink-0", !isMobile && "hidden")}
+                className={cn("shrink-0 hover:bg-accent transition-all duration-200 hover:scale-105", !isMobile && "hidden")}
                 onClick={() => setSidebarOpen(!sidebarOpen)}
               >
                 <Menu className="h-5 w-5" />
@@ -85,7 +85,8 @@ export function ManagerLayout({ children, title }: ManagerLayoutProps) {
               <motion.h1
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="text-lg md:text-xl font-semibold text-foreground truncate"
+                transition={{ duration: 0.3 }}
+                className="text-lg md:text-xl font-semibold text-foreground truncate bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent"
               >
                 {title}
               </motion.h1>

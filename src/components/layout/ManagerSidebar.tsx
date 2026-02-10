@@ -128,37 +128,56 @@ export function ManagerSidebar({ isOpen, setIsOpen }: ManagerSidebarProps) {
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 px-3 py-4 space-y-1">
-        {managerItems.map((item) => {
+      <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+        {managerItems.map((item, index) => {
           const isActive = location.pathname === item.path;
           const showLabel = !collapsed || isMobile;
           
           return (
-            <NavLink
+            <motion.div
               key={item.path}
-              to={item.path}
-              onClick={handleNavClick}
-              className={cn(
-                "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200",
-                isActive
-                  ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-md"
-                  : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-foreground"
-              )}
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: index * 0.05, duration: 0.3 }}
             >
-              <item.icon className={cn("h-5 w-5 shrink-0", !showLabel && "mx-auto")} />
-              <AnimatePresence mode="wait">
-                {showLabel && (
-                  <motion.span
-                    initial={{ opacity: 0, width: 0 }}
-                    animate={{ opacity: 1, width: "auto" }}
-                    exit={{ opacity: 0, width: 0 }}
-                    className="whitespace-nowrap"
-                  >
-                    {item.label}
-                  </motion.span>
+              <NavLink
+                to={item.path}
+                onClick={handleNavClick}
+                className={cn(
+                  "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200 relative overflow-hidden group",
+                  isActive
+                    ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-lg shadow-primary/20"
+                    : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-foreground hover:shadow-md"
                 )}
-              </AnimatePresence>
-            </NavLink>
+              >
+                {isActive && (
+                  <motion.div
+                    layoutId="activeTab"
+                    className="absolute inset-0 bg-sidebar-primary"
+                    transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                  />
+                )}
+                <item.icon className={cn("h-5 w-5 shrink-0 relative z-10 transition-transform duration-200 group-hover:scale-110", !showLabel && "mx-auto")} />
+                <AnimatePresence mode="wait">
+                  {showLabel && (
+                    <motion.span
+                      initial={{ opacity: 0, width: 0 }}
+                      animate={{ opacity: 1, width: "auto" }}
+                      exit={{ opacity: 0, width: 0 }}
+                      className="whitespace-nowrap relative z-10"
+                    >
+                      {item.label}
+                    </motion.span>
+                  )}
+                </AnimatePresence>
+                {!isActive && (
+                  <motion.div
+                    className="absolute inset-0 bg-sidebar-accent opacity-0 group-hover:opacity-100"
+                    transition={{ duration: 0.2 }}
+                  />
+                )}
+              </NavLink>
+            </motion.div>
           );
         })}
       </nav>

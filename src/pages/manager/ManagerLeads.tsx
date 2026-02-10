@@ -1,20 +1,12 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import {
-  ClipboardList,
-  Clock,
-  TrendingUp,
-  Users,
-  Filter,
   Search,
-  Calendar,
   Download,
   RefreshCw,
   UserPlus,
 } from "lucide-react";
 import { ManagerLayout } from "@/components/layout/ManagerLayout";
-import { SummaryCard } from "@/components/ui/summary-card";
-import { AgentPerformanceChart } from "@/components/charts/AgentPerformanceChart";
 import { mockLeads, mockAgents } from "@/data/mockData";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -35,14 +27,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-  DropdownMenuSeparator,
-  DropdownMenuLabel,
-} from "@/components/ui/dropdown-menu";
-import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -51,7 +35,6 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 
 const statusColors: Record<string, string> = {
   new: "bg-primary text-primary-foreground",
@@ -70,13 +53,6 @@ const ManagerLeads = () => {
   const [dateFilter, setDateFilter] = useState<string>("all");
   const [bulkAssignOpen, setBulkAssignOpen] = useState(false);
   const [selectedLeads, setSelectedLeads] = useState<string[]>([]);
-
-  const totalAssigned = mockLeads.length;
-  const pendingFollowUp = mockLeads.filter(
-    (l) => l.nextFollowUp && new Date(l.nextFollowUp) <= new Date()
-  ).length;
-  const convertedThisMonth = mockLeads.filter((l) => l.status === "converted").length;
-  const agentsUnder = mockAgents.length;
 
   const filteredLeads = mockLeads.filter((lead) => {
     if (selectedAgent !== "all" && lead.assignedAgent !== selectedAgent) return false;
@@ -118,28 +94,46 @@ const ManagerLeads = () => {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="rounded-xl border border-border bg-card shadow-sm overflow-hidden"
+          transition={{ delay: 0.2, type: "spring", stiffness: 100 }}
+          className="rounded-xl border border-border bg-card shadow-sm overflow-hidden card-hover-effect animated-border"
         >
-          <div className="p-4 md:p-6 border-b border-border">
+          <div className="animated-border-content">
+          <div className="p-4 md:p-6 border-b border-border bg-gradient-to-r from-primary/5 to-transparent">
             <div className="flex flex-col gap-4">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
-                  <h2 className="text-lg font-semibold text-foreground">Lead Assignment</h2>
+                  <motion.div
+                    animate={{ rotate: [0, 5, -5, 0] }}
+                    transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
+                  >
+                    <UserPlus className="h-6 w-6 text-primary" />
+                  </motion.div>
+                  <h2 className="text-lg font-semibold text-foreground gradient-text-animated">Lead Assignment</h2>
                   {selectedLeads.length > 0 && (
-                    <Badge variant="secondary" className="bg-primary/10 text-primary">
-                      {selectedLeads.length} selected
-                    </Badge>
+                    <motion.div
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      transition={{ type: "spring", stiffness: 500, damping: 15 }}
+                    >
+                      <Badge variant="secondary" className="bg-primary/10 text-primary animate-pulse-glow">
+                        {selectedLeads.length} selected
+                      </Badge>
+                    </motion.div>
                   )}
                 </div>
                 <div className="flex items-center gap-2 flex-wrap">
                   {selectedLeads.length > 0 && (
                     <Dialog open={bulkAssignOpen} onOpenChange={setBulkAssignOpen}>
                       <DialogTrigger asChild>
-                        <Button size="sm" className="gradient-teal text-primary-foreground">
-                          <UserPlus className="h-4 w-4 mr-2" />
-                          Bulk Assign
-                        </Button>
+                        <motion.div
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.95 }}
+                        >
+                          <Button size="sm" className="gradient-bg-animated text-primary-foreground button-ripple shadow-lg">
+                            <UserPlus className="h-4 w-4 mr-2" />
+                            Bulk Assign
+                          </Button>
+                        </motion.div>
                       </DialogTrigger>
                       <DialogContent>
                         <DialogHeader>
@@ -168,11 +162,11 @@ const ManagerLeads = () => {
                       </DialogContent>
                     </Dialog>
                   )}
-                  <Button variant="outline" size="sm">
+                  <Button variant="outline" size="sm" className="hover:scale-105 transition-transform hover:border-primary icon-bounce">
                     <Download className="h-4 w-4 mr-2" />
                     Export
                   </Button>
-                  <Button variant="outline" size="sm">
+                  <Button variant="outline" size="sm" className="hover:scale-105 transition-transform hover:border-primary icon-spin">
                     <RefreshCw className="h-4 w-4" />
                   </Button>
                 </div>
@@ -180,52 +174,58 @@ const ManagerLeads = () => {
               
               {/* Enhanced Filters */}
               <div className="flex flex-col sm:flex-row gap-3">
-                <div className="relative flex-1">
+                <motion.div whileHover={{ scale: 1.02 }} className="relative flex-1">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input 
                     placeholder="Search by name or email..." 
-                    className="pl-9" 
+                    className="pl-9 hover:border-primary transition-colors" 
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                   />
-                </div>
-                <Select value={selectedAgent} onValueChange={setSelectedAgent}>
-                  <SelectTrigger className="w-full sm:w-40">
-                    <SelectValue placeholder="All Agents" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Agents</SelectItem>
-                    {mockAgents.map((agent) => (
-                      <SelectItem key={agent.id} value={agent.name}>
-                        {agent.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-                  <SelectTrigger className="w-full sm:w-40">
-                    <SelectValue placeholder="All Status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Status</SelectItem>
-                    <SelectItem value="new">New</SelectItem>
-                    <SelectItem value="contacted">Contacted</SelectItem>
-                    <SelectItem value="qualified">Qualified</SelectItem>
-                    <SelectItem value="proposal">Proposal</SelectItem>
-                    <SelectItem value="negotiation">Negotiation</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Select value={dateFilter} onValueChange={setDateFilter}>
-                  <SelectTrigger className="w-full sm:w-40">
-                    <SelectValue placeholder="All Time" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Time</SelectItem>
-                    <SelectItem value="today">Today</SelectItem>
-                    <SelectItem value="week">This Week</SelectItem>
-                    <SelectItem value="month">This Month</SelectItem>
-                  </SelectContent>
-                </Select>
+                </motion.div>
+                <motion.div whileHover={{ scale: 1.02 }}>
+                  <Select value={selectedAgent} onValueChange={setSelectedAgent}>
+                    <SelectTrigger className="w-full sm:w-40 hover:border-primary transition-colors">
+                      <SelectValue placeholder="All Agents" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Agents</SelectItem>
+                      {mockAgents.map((agent) => (
+                        <SelectItem key={agent.id} value={agent.name}>
+                          {agent.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </motion.div>
+                <motion.div whileHover={{ scale: 1.02 }}>
+                  <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+                    <SelectTrigger className="w-full sm:w-40 hover:border-primary transition-colors">
+                      <SelectValue placeholder="All Status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Status</SelectItem>
+                      <SelectItem value="new">New</SelectItem>
+                      <SelectItem value="contacted">Contacted</SelectItem>
+                      <SelectItem value="qualified">Qualified</SelectItem>
+                      <SelectItem value="proposal">Proposal</SelectItem>
+                      <SelectItem value="negotiation">Negotiation</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </motion.div>
+                <motion.div whileHover={{ scale: 1.02 }}>
+                  <Select value={dateFilter} onValueChange={setDateFilter}>
+                    <SelectTrigger className="w-full sm:w-40 hover:border-primary transition-colors">
+                      <SelectValue placeholder="All Time" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Time</SelectItem>
+                      <SelectItem value="today">Today</SelectItem>
+                      <SelectItem value="week">This Week</SelectItem>
+                      <SelectItem value="month">This Month</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </motion.div>
               </div>
             </div>
           </div>
@@ -242,8 +242,9 @@ const ManagerLeads = () => {
                   key={lead.id}
                   initial={{ opacity: 0, x: -10 }}
                   animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: index * 0.05 }}
-                  className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow"
+                  whileHover={{ scale: 1.02, x: 5 }}
+                  transition={{ delay: index * 0.05, type: "spring", stiffness: 300 }}
+                  className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm card-hover-effect glass-card"
                 >
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex items-center gap-3">
@@ -296,7 +297,7 @@ const ManagerLeads = () => {
                     </div>
                     
                     <div className="pt-2">
-                      <Button size="sm" className="w-full gradient-teal text-primary-foreground hover:opacity-90 transition-opacity">
+                      <Button size="sm" className="w-full gradient-bg-animated text-primary-foreground button-ripple shadow-md hover:scale-105 transition-all">
                         Assign Lead
                       </Button>
                     </div>
@@ -345,8 +346,9 @@ const ManagerLeads = () => {
                       key={lead.id}
                       initial={{ opacity: 0, x: -10 }}
                       animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: index * 0.05 }}
-                      className="hover:bg-card-hover"
+                      whileHover={{ backgroundColor: "rgba(23, 162, 184, 0.05)", x: 5 }}
+                      transition={{ delay: index * 0.05, type: "spring", stiffness: 300 }}
+                      className="transition-all duration-200 cursor-pointer"
                     >
                       <TableCell>
                         <input 
@@ -389,7 +391,7 @@ const ManagerLeads = () => {
                         </Select>
                       </TableCell>
                       <TableCell className="text-right">
-                        <Button size="sm" className="gradient-teal text-primary-foreground hover:opacity-90 transition-opacity">
+                        <Button size="sm" className="gradient-bg-animated text-primary-foreground button-ripple hover:scale-105 transition-all shadow-md">
                           Assign
                         </Button>
                       </TableCell>
@@ -398,6 +400,7 @@ const ManagerLeads = () => {
                 )}
               </TableBody>
             </Table>
+          </div>
           </div>
         </motion.div>
       </div>

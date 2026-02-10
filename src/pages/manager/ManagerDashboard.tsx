@@ -5,9 +5,7 @@ import {
   Clock,
   TrendingUp,
   Users,
-  Filter,
   Search,
-  Calendar,
   Download,
   RefreshCw,
   UserPlus,
@@ -35,14 +33,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-  DropdownMenuSeparator,
-  DropdownMenuLabel,
-} from "@/components/ui/dropdown-menu";
-import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -51,7 +41,6 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 
 const statusColors: Record<string, string> = {
   new: "bg-primary text-primary-foreground",
@@ -113,37 +102,65 @@ const ManagerDashboard = () => {
 
   return (
     <ManagerLayout title="Manager Dashboard">
-      {/* Summary Cards */}
+      {/* Summary Cards with Enhanced Animations */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-6 md:mb-8">
-        <SummaryCard
-          title="Total Assigned Leads"
-          value={totalAssigned}
-          icon={ClipboardList}
-          trend={{ value: 12, isPositive: true }}
-          delay={0}
-        />
-        <SummaryCard
-          title="Pending Follow-ups"
-          value={pendingFollowUp}
-          icon={Clock}
-          variant="warning"
-          delay={0.1}
-        />
-        <SummaryCard
-          title="Converted This Month"
-          value={convertedThisMonth}
-          icon={TrendingUp}
-          variant="success"
-          trend={{ value: 8, isPositive: true }}
-          delay={0.2}
-        />
-        <SummaryCard
-          title="Agents Under You"
-          value={agentsUnder}
-          icon={Users}
-          variant="primary"
-          delay={0.3}
-        />
+        <motion.div
+          initial={{ opacity: 0, scale: 0.8, y: 20 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          transition={{ delay: 0, duration: 0.6, type: "spring", bounce: 0.4 }}
+          className="card-hover-effect hover-glow"
+        >
+          <SummaryCard
+            title="Total Assigned Leads"
+            value={totalAssigned}
+            icon={ClipboardList}
+            trend={{ value: 12, isPositive: true }}
+            delay={0}
+          />
+        </motion.div>
+        <motion.div
+          initial={{ opacity: 0, scale: 0.8, y: 20 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          transition={{ delay: 0.1, duration: 0.6, type: "spring", bounce: 0.4 }}
+          className="card-hover-effect hover-glow"
+        >
+          <SummaryCard
+            title="Pending Follow-ups"
+            value={pendingFollowUp}
+            icon={Clock}
+            variant="warning"
+            delay={0.1}
+          />
+        </motion.div>
+        <motion.div
+          initial={{ opacity: 0, scale: 0.8, y: 20 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          transition={{ delay: 0.2, duration: 0.6, type: "spring", bounce: 0.4 }}
+          className="card-hover-effect hover-glow"
+        >
+          <SummaryCard
+            title="Converted This Month"
+            value={convertedThisMonth}
+            icon={TrendingUp}
+            variant="success"
+            trend={{ value: 8, isPositive: true }}
+            delay={0.2}
+          />
+        </motion.div>
+        <motion.div
+          initial={{ opacity: 0, scale: 0.8, y: 20 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          transition={{ delay: 0.3, duration: 0.6, type: "spring", bounce: 0.4 }}
+          className="card-hover-effect hover-glow"
+        >
+          <SummaryCard
+            title="Agents Under You"
+            value={agentsUnder}
+            icon={Users}
+            variant="primary"
+            delay={0.3}
+          />
+        </motion.div>
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 md:gap-6 mb-6 md:mb-8">
@@ -151,28 +168,46 @@ const ManagerDashboard = () => {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="xl:col-span-2 rounded-xl border border-border bg-card shadow-sm overflow-hidden"
+          transition={{ delay: 0.2, type: "spring", stiffness: 100 }}
+          className="xl:col-span-2 rounded-xl border border-border bg-card shadow-sm overflow-hidden card-hover-effect animated-border"
         >
-          <div className="p-4 md:p-6 border-b border-border">
+          <div className="animated-border-content">
+          <div className="p-4 md:p-6 border-b border-border bg-gradient-to-r from-primary/5 to-transparent">
             <div className="flex flex-col gap-4">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
-                  <h2 className="text-lg font-semibold text-foreground">Lead Assignment</h2>
+                  <motion.div
+                    animate={{ rotate: [0, 5, -5, 0] }}
+                    transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
+                  >
+                    <ClipboardList className="h-6 w-6 text-primary" />
+                  </motion.div>
+                  <h2 className="text-lg font-semibold text-foreground gradient-text-animated">Lead Assignment</h2>
                   {selectedLeads.length > 0 && (
-                    <Badge variant="secondary" className="bg-primary/10 text-primary">
-                      {selectedLeads.length} selected
-                    </Badge>
+                    <motion.div
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      transition={{ type: "spring", stiffness: 500, damping: 15 }}
+                    >
+                      <Badge variant="secondary" className="bg-primary/10 text-primary animate-pulse-glow">
+                        {selectedLeads.length} selected
+                      </Badge>
+                    </motion.div>
                   )}
                 </div>
                 <div className="flex items-center gap-2 flex-wrap">
                   {selectedLeads.length > 0 && (
                     <Dialog open={bulkAssignOpen} onOpenChange={setBulkAssignOpen}>
                       <DialogTrigger asChild>
-                        <Button size="sm" className="gradient-teal text-primary-foreground">
-                          <UserPlus className="h-4 w-4 mr-2" />
-                          Bulk Assign
-                        </Button>
+                        <motion.div
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.95 }}
+                        >
+                          <Button size="sm" className="gradient-bg-animated text-primary-foreground button-ripple shadow-lg">
+                            <UserPlus className="h-4 w-4 mr-2" />
+                            Bulk Assign
+                          </Button>
+                        </motion.div>
                       </DialogTrigger>
                       <DialogContent>
                         <DialogHeader>
@@ -201,11 +236,11 @@ const ManagerDashboard = () => {
                       </DialogContent>
                     </Dialog>
                   )}
-                  <Button variant="outline" size="sm">
+                  <Button variant="outline" size="sm" className="hover:scale-105 transition-transform hover:border-primary icon-bounce">
                     <Download className="h-4 w-4 mr-2" />
                     Export
                   </Button>
-                  <Button variant="outline" size="sm">
+                  <Button variant="outline" size="sm" className="hover:scale-105 transition-transform hover:border-primary icon-spin">
                     <RefreshCw className="h-4 w-4" />
                   </Button>
                 </div>
@@ -275,8 +310,9 @@ const ManagerDashboard = () => {
                     key={lead.id}
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
-                    transition={{ duration: 0.3, delay: index * 0.1 }}
-                    className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow"
+                    whileHover={{ scale: 1.02, x: 5 }}
+                    transition={{ duration: 0.3, delay: index * 0.05 }}
+                    className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm card-hover-effect glass-card"
                   >
                     <div className="flex justify-between items-start mb-3">
                       <div className="flex items-center gap-2">
@@ -288,7 +324,7 @@ const ManagerDashboard = () => {
                         />
                         <h3 className="font-semibold text-gray-900 text-lg">{lead.name}</h3>
                       </div>
-                      <Button size="sm" className="gradient-teal text-primary-foreground hover:opacity-90 transition-opacity text-xs px-3 py-1 h-7">
+                      <Button size="sm" className="gradient-bg-animated text-primary-foreground button-ripple hover:scale-105 transition-all text-xs px-3 py-1 h-7 shadow-md">
                         Assign
                       </Button>
                     </div>
@@ -375,8 +411,9 @@ const ManagerDashboard = () => {
                       key={lead.id}
                       initial={{ opacity: 0, x: -10 }}
                       animate={{ opacity: 1, x: 0 }}
+                      whileHover={{ backgroundColor: "rgba(23, 162, 184, 0.05)", x: 5 }}
                       transition={{ delay: index * 0.05 }}
-                      className="hover:bg-card-hover"
+                      className="transition-all duration-200 cursor-pointer"
                     >
                       <TableCell>
                         <input 
@@ -419,7 +456,7 @@ const ManagerDashboard = () => {
                         </Select>
                       </TableCell>
                       <TableCell className="text-right">
-                        <Button size="sm" className="gradient-teal text-primary-foreground hover:opacity-90 transition-opacity">
+                        <Button size="sm" className="gradient-bg-animated text-primary-foreground button-ripple hover:scale-105 transition-all shadow-md">
                           Assign
                         </Button>
                       </TableCell>
@@ -429,6 +466,7 @@ const ManagerDashboard = () => {
               </TableBody>
             </Table>
             </div>
+          </div>
           </div>
         </motion.div>
 
@@ -440,11 +478,20 @@ const ManagerDashboard = () => {
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.4 }}
-        className="rounded-xl border border-border bg-card shadow-sm overflow-hidden"
+        transition={{ delay: 0.4, type: "spring", stiffness: 100 }}
+        className="rounded-xl border border-border bg-card shadow-sm overflow-hidden card-hover-effect animated-border"
       >
-        <div className="p-4 md:p-6 border-b border-border">
-          <h2 className="text-lg font-semibold text-foreground">Agent Performance</h2>
+        <div className="animated-border-content">
+        <div className="p-4 md:p-6 border-b border-border bg-gradient-to-r from-primary/5 to-transparent">
+          <div className="flex items-center gap-3">
+            <motion.div
+              animate={{ scale: [1, 1.2, 1] }}
+              transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
+            >
+              <Users className="h-6 w-6 text-primary" />
+            </motion.div>
+            <h2 className="text-lg font-semibold text-foreground gradient-text-animated">Agent Performance</h2>
+          </div>
         </div>
         <div>
           {/* Mobile View - Cards */}
@@ -458,8 +505,9 @@ const ManagerDashboard = () => {
                   key={agent.id}
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.3, delay: index * 0.1 }}
-                  className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow"
+                  whileHover={{ scale: 1.02, x: 5 }}
+                  transition={{ duration: 0.3, delay: index * 0.05 }}
+                  className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm card-hover-effect glass-card"
                 >
                   <div className="flex justify-between items-start mb-3">
                     <h3 className="font-semibold text-gray-900 text-lg">{agent.name}</h3>
@@ -540,8 +588,9 @@ const ManagerDashboard = () => {
                     key={agent.id}
                     initial={{ opacity: 0, x: -10 }}
                     animate={{ opacity: 1, x: 0 }}
+                    whileHover={{ backgroundColor: "rgba(23, 162, 184, 0.05)", x: 5 }}
                     transition={{ delay: index * 0.05 }}
-                    className="hover:bg-card-hover"
+                    className="transition-all duration-200 cursor-pointer"
                   >
                     <TableCell className="font-medium">{agent.name}</TableCell>
                     <TableCell className="text-center">{agent.leadsAssigned}</TableCell>
@@ -550,9 +599,11 @@ const ManagerDashboard = () => {
                     <TableCell className="text-center">
                       <div className="flex items-center justify-center gap-2">
                         <div className="w-16 h-2 bg-muted rounded-full overflow-hidden">
-                          <div
+                          <motion.div
+                            initial={{ width: 0 }}
+                            animate={{ width: `${conversionRate}%` }}
+                            transition={{ duration: 1, delay: index * 0.1 + 0.5 }}
                             className="h-full bg-primary rounded-full"
-                            style={{ width: `${conversionRate}%` }}
                           />
                         </div>
                         <span className="text-sm font-medium whitespace-nowrap">{conversionRate}%</span>
@@ -564,6 +615,7 @@ const ManagerDashboard = () => {
             </TableBody>
           </Table>
           </div>
+        </div>
         </div>
       </motion.div>
     </ManagerLayout>

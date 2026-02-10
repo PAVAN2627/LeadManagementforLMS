@@ -41,194 +41,326 @@ const ManagerProfile = () => {
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
+          transition={{ type: "spring", stiffness: 100 }}
           className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
         >
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Manager Profile</h1>
-            <p className="text-gray-600">Manage your account settings and team preferences</p>
+            <motion.h1
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.1 }}
+              className="text-2xl font-bold gradient-text-animated"
+            >
+              Manager Profile
+            </motion.h1>
+            <motion.p
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.2 }}
+              className="text-muted-foreground"
+            >
+              Manage your account settings and team preferences
+            </motion.p>
           </div>
-          <Button
-            onClick={() => isEditing ? handleSave() : setIsEditing(true)}
-            className="bg-teal-600 hover:bg-teal-700 text-white"
+          <motion.div
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
           >
-            {isEditing ? (
-              <>
-                <Save className="h-4 w-4 mr-2" />
-                Save Changes
-              </>
-            ) : (
-              <>
-                <Edit2 className="h-4 w-4 mr-2" />
-                Edit Profile
-              </>
-            )}
-          </Button>
+            <Button
+              onClick={() => isEditing ? handleSave() : setIsEditing(true)}
+              className="gradient-bg-animated text-primary-foreground button-ripple shadow-lg"
+            >
+              {isEditing ? (
+                <>
+                  <Save className="h-4 w-4 mr-2" />
+                  Save Changes
+                </>
+              ) : (
+                <>
+                  <Edit2 className="h-4 w-4 mr-2" />
+                  Edit Profile
+                </>
+              )}
+            </Button>
+          </motion.div>
         </motion.div>
 
         {/* Profile Card */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
+          initial={{ opacity: 0, scale: 0.95, y: 20 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          transition={{ delay: 0.1, type: "spring", stiffness: 100, damping: 15 }}
         >
-          <Card className="border-gray-200">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <User className="h-5 w-5 text-teal-600" />
-                Personal Information
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              {/* Avatar Section */}
-              <div className="flex items-center gap-4">
-                <div className="h-20 w-20 rounded-full bg-blue-600 flex items-center justify-center">
-                  <span className="text-2xl font-bold text-white">M</span>
-                </div>
-                <div className="space-y-1">
-                  <h3 className="text-lg font-semibold text-gray-900">{formData.name}</h3>
-                  <p className="text-gray-600">{formData.department}</p>
-                  <p className="text-sm text-blue-600 font-medium">Manager</p>
-                </div>
-              </div>
+          <Card className="card-hover-effect glass-card hover-glow animated-border">
+            <div className="animated-border-content">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <motion.div
+                    animate={{ rotate: [0, 10, -10, 0] }}
+                    transition={{ duration: 3, repeat: Infinity, repeatDelay: 2 }}
+                  >
+                    <User className="h-5 w-5 text-primary" />
+                  </motion.div>
+                  <span className="gradient-text-animated">Personal Information</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* Avatar Section */}
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
+                  className="flex items-center gap-4"
+                >
+                  <motion.div
+                    whileHover={{ scale: 1.1, rotate: 5 }}
+                    transition={{ type: "spring", stiffness: 400 }}
+                    className="h-20 w-20 rounded-full gradient-bg-animated flex items-center justify-center ring-4 ring-primary/20 shadow-lg"
+                  >
+                    <span className="text-2xl font-bold text-white">M</span>
+                  </motion.div>
+                  <div className="space-y-1">
+                    <h3 className="text-lg font-semibold text-foreground">{formData.name}</h3>
+                    <p className="text-muted-foreground">{formData.department}</p>
+                    <motion.div
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.3 }}
+                    >
+                      <span className="text-sm text-primary font-medium px-2 py-1 bg-primary/10 rounded-md">
+                        Manager
+                      </span>
+                    </motion.div>
+                  </div>
+                </motion.div>
 
-              {/* Form Fields */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <Label htmlFor="name">Full Name</Label>
-                  <Input
-                    id="name"
-                    value={formData.name}
-                    onChange={(e) => handleInputChange("name", e.target.value)}
+                {/* Form Fields */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <motion.div
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.3 }}
+                    className="space-y-2"
+                  >
+                    <Label htmlFor="name">Full Name</Label>
+                    <Input
+                      id="name"
+                      value={formData.name}
+                      onChange={(e) => handleInputChange("name", e.target.value)}
+                      disabled={!isEditing}
+                      className="hover:border-primary transition-colors"
+                    />
+                  </motion.div>
+
+                  <motion.div
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.35 }}
+                    className="space-y-2"
+                  >
+                    <Label htmlFor="email">Email Address</Label>
+                    <div className="relative">
+                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        id="email"
+                        type="email"
+                        value={formData.email}
+                        onChange={(e) => handleInputChange("email", e.target.value)}
+                        disabled={!isEditing}
+                        className="pl-10 hover:border-primary transition-colors"
+                      />
+                    </div>
+                  </motion.div>
+
+                  <motion.div
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.4 }}
+                    className="space-y-2"
+                  >
+                    <Label htmlFor="phone">Phone Number</Label>
+                    <div className="relative">
+                      <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        id="phone"
+                        value={formData.phone}
+                        onChange={(e) => handleInputChange("phone", e.target.value)}
+                        disabled={!isEditing}
+                        className="pl-10 hover:border-primary transition-colors"
+                      />
+                    </div>
+                  </motion.div>
+
+                  <motion.div
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.45 }}
+                    className="space-y-2"
+                  >
+                    <Label htmlFor="company">Company</Label>
+                    <div className="relative">
+                      <Building className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        id="company"
+                        value={formData.company}
+                        onChange={(e) => handleInputChange("company", e.target.value)}
+                        disabled={!isEditing}
+                        className="pl-10 hover:border-primary transition-colors"
+                      />
+                    </div>
+                  </motion.div>
+
+                  <motion.div
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.5 }}
+                    className="space-y-2"
+                  >
+                    <Label htmlFor="department">Department</Label>
+                    <Input
+                      id="department"
+                      value={formData.department}
+                      onChange={(e) => handleInputChange("department", e.target.value)}
+                      disabled={!isEditing}
+                      className="hover:border-primary transition-colors"
+                    />
+                  </motion.div>
+                </div>
+
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.55 }}
+                  className="space-y-2"
+                >
+                  <Label htmlFor="bio">Bio</Label>
+                  <Textarea
+                    id="bio"
+                    value={formData.bio}
+                    onChange={(e) => handleInputChange("bio", e.target.value)}
                     disabled={!isEditing}
-                    className="border-gray-300"
+                    className="hover:border-primary transition-colors min-h-[100px]"
                   />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email Address</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) => handleInputChange("email", e.target.value)}
-                    disabled={!isEditing}
-                    className="border-gray-300"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="phone">Phone Number</Label>
-                  <Input
-                    id="phone"
-                    value={formData.phone}
-                    onChange={(e) => handleInputChange("phone", e.target.value)}
-                    disabled={!isEditing}
-                    className="border-gray-300"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="company">Company</Label>
-                  <Input
-                    id="company"
-                    value={formData.company}
-                    onChange={(e) => handleInputChange("company", e.target.value)}
-                    disabled={!isEditing}
-                    className="border-gray-300"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="department">Department</Label>
-                  <Input
-                    id="department"
-                    value={formData.department}
-                    onChange={(e) => handleInputChange("department", e.target.value)}
-                    disabled={!isEditing}
-                    className="border-gray-300"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="bio">Bio</Label>
-                <Textarea
-                  id="bio"
-                  value={formData.bio}
-                  onChange={(e) => handleInputChange("bio", e.target.value)}
-                  disabled={!isEditing}
-                  className="border-gray-300 min-h-[100px]"
-                />
-              </div>
-            </CardContent>
+                </motion.div>
+              </CardContent>
+            </div>
           </Card>
         </motion.div>
 
         {/* Team Management Settings */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
+          initial={{ opacity: 0, scale: 0.95, y: 20 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          transition={{ delay: 0.2, type: "spring", stiffness: 100, damping: 15 }}
         >
-          <Card className="border-gray-200">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Users className="h-5 w-5 text-blue-600" />
-                Team Management Preferences
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h4 className="font-medium">Lead Assignment Rules</h4>
-                  <p className="text-sm text-gray-600">Configure how leads are automatically assigned to your team</p>
-                </div>
-                <Button variant="outline">Configure</Button>
-              </div>
-              <div className="flex items-center justify-between">
-                <div>
-                  <h4 className="font-medium">Team Notifications</h4>
-                  <p className="text-sm text-gray-600">Manage notification settings for team activities</p>
-                </div>
-                <Button variant="outline">Manage</Button>
-              </div>
-              <div className="flex items-center justify-between">
-                <div>
-                  <h4 className="font-medium">Performance Targets</h4>
-                  <p className="text-sm text-gray-600">Set and track team performance goals</p>
-                </div>
-                <Button variant="outline">Set Targets</Button>
-              </div>
-            </CardContent>
+          <Card className="card-hover-effect glass-card hover-glow animated-border">
+            <div className="animated-border-content">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <motion.div
+                    animate={{ scale: [1, 1.2, 1] }}
+                    transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
+                  >
+                    <Users className="h-5 w-5 text-primary" />
+                  </motion.div>
+                  <span className="gradient-text-animated">Team Management Preferences</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <motion.div
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  whileHover={{ x: 5 }}
+                  transition={{ delay: 0.3, type: "spring", stiffness: 300 }}
+                  className="flex items-center justify-between p-3 rounded-lg hover:bg-primary/5 transition-colors"
+                >
+                  <div>
+                    <h4 className="font-medium">Lead Assignment Rules</h4>
+                    <p className="text-sm text-muted-foreground">Configure how leads are automatically assigned to your team</p>
+                  </div>
+                  <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                    <Button variant="outline" className="hover:border-primary">Configure</Button>
+                  </motion.div>
+                </motion.div>
+                <motion.div
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  whileHover={{ x: 5 }}
+                  transition={{ delay: 0.35, type: "spring", stiffness: 300 }}
+                  className="flex items-center justify-between p-3 rounded-lg hover:bg-primary/5 transition-colors"
+                >
+                  <div>
+                    <h4 className="font-medium">Team Notifications</h4>
+                    <p className="text-sm text-muted-foreground">Manage notification settings for team activities</p>
+                  </div>
+                  <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                    <Button variant="outline" className="hover:border-primary">Manage</Button>
+                  </motion.div>
+                </motion.div>
+                <motion.div
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  whileHover={{ x: 5 }}
+                  transition={{ delay: 0.4, type: "spring", stiffness: 300 }}
+                  className="flex items-center justify-between p-3 rounded-lg hover:bg-primary/5 transition-colors"
+                >
+                  <div>
+                    <h4 className="font-medium">Performance Targets</h4>
+                    <p className="text-sm text-muted-foreground">Set and track team performance goals</p>
+                  </div>
+                  <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                    <Button variant="outline" className="hover:border-primary">Set Targets</Button>
+                  </motion.div>
+                </motion.div>
+              </CardContent>
+            </div>
           </Card>
         </motion.div>
 
         {/* Account Settings */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
+          initial={{ opacity: 0, scale: 0.95, y: 20 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          transition={{ delay: 0.3, type: "spring", stiffness: 100, damping: 15 }}
         >
-          <Card className="border-gray-200">
-            <CardHeader>
-              <CardTitle>Account Settings</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h4 className="font-medium">Two-Factor Authentication</h4>
-                  <p className="text-sm text-gray-600">Add an extra layer of security to your account</p>
-                </div>
-                <Button variant="outline">Configure</Button>
-              </div>
-              <div className="flex items-center justify-between">
-                <div>
-                  <h4 className="font-medium">Change Password</h4>
-                  <p className="text-sm text-gray-600">Update your account password</p>
-                </div>
-                <Button variant="outline">Update</Button>
-              </div>
-            </CardContent>
+          <Card className="card-hover-effect glass-card hover-glow animated-border">
+            <div className="animated-border-content">
+              <CardHeader>
+                <CardTitle className="gradient-text-animated">Account Settings</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <motion.div
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  whileHover={{ x: 5 }}
+                  transition={{ delay: 0.4, type: "spring", stiffness: 300 }}
+                  className="flex items-center justify-between p-3 rounded-lg hover:bg-primary/5 transition-colors"
+                >
+                  <div>
+                    <h4 className="font-medium">Two-Factor Authentication</h4>
+                    <p className="text-sm text-muted-foreground">Add an extra layer of security to your account</p>
+                  </div>
+                  <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                    <Button variant="outline" className="hover:border-primary">Configure</Button>
+                  </motion.div>
+                </motion.div>
+                <motion.div
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  whileHover={{ x: 5 }}
+                  transition={{ delay: 0.45, type: "spring", stiffness: 300 }}
+                  className="flex items-center justify-between p-3 rounded-lg hover:bg-primary/5 transition-colors"
+                >
+                  <div>
+                    <h4 className="font-medium">Change Password</h4>
+                    <p className="text-sm text-muted-foreground">Update your account password</p>
+                  </div>
+                  <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                    <Button variant="outline" className="hover:border-primary">Update</Button>
+                  </motion.div>
+                </motion.div>
+              </CardContent>
+            </div>
           </Card>
         </motion.div>
       </div>

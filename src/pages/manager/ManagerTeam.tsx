@@ -33,8 +33,6 @@ import {
 import { mockAgents } from "@/data/mockData";
 
 const ManagerTeam = () => {
-  const [selectedAgent, setSelectedAgent] = useState<string | null>(null);
-
   const totalAgents = mockAgents.length;
   const activeAgents = mockAgents.filter((a) => a.pending > 0).length;
   const avgConversionRate = Math.round(
@@ -46,35 +44,64 @@ const ManagerTeam = () => {
 
   return (
     <ManagerLayout title="Team Performance">
+      {/* Summary Cards with Enhanced Animations */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-6 md:mb-8">
-        <SummaryCard
-          title="Total Agents"
-          value={totalAgents}
-          icon={Users}
-          variant="primary"
-          delay={0}
-        />
-        <SummaryCard
-          title="Active Agents"
-          value={activeAgents}
-          icon={TrendingUp}
-          variant="success"
-          delay={0.1}
-        />
-        <SummaryCard
-          title="Avg Conversion Rate"
-          value={`${avgConversionRate}%`}
-          icon={Award}
-          trend={{ value: 8, isPositive: true }}
-          delay={0.2}
-        />
-        <SummaryCard
-          title="Top Performer"
-          value={topPerformer.name.split(" ")[0]}
-          icon={Award}
-          variant="primary"
-          delay={0.3}
-        />
+        <motion.div
+          initial={{ opacity: 0, scale: 0.8, y: 20 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          transition={{ delay: 0, duration: 0.6, type: "spring", bounce: 0.4 }}
+          className="card-hover-effect hover-glow"
+        >
+          <SummaryCard
+            title="Total Agents"
+            value={totalAgents}
+            icon={Users}
+            variant="primary"
+            delay={0}
+          />
+        </motion.div>
+        <motion.div
+          initial={{ opacity: 0, scale: 0.8, y: 20 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          transition={{ delay: 0.1, duration: 0.6, type: "spring", bounce: 0.4 }}
+          className="card-hover-effect hover-glow"
+        >
+          <SummaryCard
+            title="Active Agents"
+            value={activeAgents}
+            icon={TrendingUp}
+            variant="success"
+            delay={0.1}
+          />
+        </motion.div>
+        <motion.div
+          initial={{ opacity: 0, scale: 0.8, y: 20 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          transition={{ delay: 0.2, duration: 0.6, type: "spring", bounce: 0.4 }}
+          className="card-hover-effect hover-glow"
+        >
+          <SummaryCard
+            title="Avg Conversion Rate"
+            value={`${avgConversionRate}%`}
+            icon={Award}
+            trend={{ value: 8, isPositive: true }}
+            delay={0.2}
+          />
+        </motion.div>
+        <motion.div
+          initial={{ opacity: 0, scale: 0.8, y: 20 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          transition={{ delay: 0.3, duration: 0.6, type: "spring", bounce: 0.4 }}
+          className="card-hover-effect hover-glow"
+        >
+          <SummaryCard
+            title="Top Performer"
+            value={topPerformer.name.split(" ")[0]}
+            icon={Award}
+            variant="primary"
+            delay={0.3}
+          />
+        </motion.div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 mb-6 md:mb-8">
@@ -87,16 +114,22 @@ const ManagerTeam = () => {
               key={agent.id}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.1 }}
+              whileHover={{ y: -8, scale: 1.02 }}
+              transition={{ delay: index * 0.1, type: "spring", stiffness: 300 }}
             >
-              <Card className="p-6 hover:shadow-lg transition-shadow">
+              <Card className="p-6 card-hover-effect glass-card hover-glow">
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex items-center gap-3">
-                    <Avatar className="h-12 w-12 gradient-teal">
-                      <AvatarFallback className="text-primary-foreground font-semibold">
-                        {initials}
-                      </AvatarFallback>
-                    </Avatar>
+                    <motion.div
+                      whileHover={{ scale: 1.1, rotate: 5 }}
+                      transition={{ type: "spring", stiffness: 400 }}
+                    >
+                      <Avatar className="h-12 w-12 gradient-bg-animated ring-2 ring-primary/20">
+                        <AvatarFallback className="text-primary-foreground font-semibold">
+                          {initials}
+                        </AvatarFallback>
+                      </Avatar>
+                    </motion.div>
                     <div>
                       <h3 className="font-semibold text-foreground">{agent.name}</h3>
                       <p className="text-sm text-muted-foreground">Sales Agent</p>
@@ -104,12 +137,12 @@ const ManagerTeam = () => {
                   </div>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon">
+                      <Button variant="ghost" size="icon" className="hover:scale-110 transition-transform icon-spin">
                         <MoreVertical className="h-4 w-4" />
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => setSelectedAgent(agent.id)}>
+                      <DropdownMenuItem>
                         View Details
                       </DropdownMenuItem>
                       <DropdownMenuItem>Send Message</DropdownMenuItem>
@@ -149,12 +182,21 @@ const ManagerTeam = () => {
                 <div className="mt-4">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-sm text-muted-foreground">Conversion Rate</span>
-                    <span className="text-sm font-semibold">{conversionRate}%</span>
+                    <motion.span
+                      initial={{ opacity: 0, scale: 0 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ delay: index * 0.1 + 0.5 }}
+                      className="text-sm font-semibold"
+                    >
+                      {conversionRate}%
+                    </motion.span>
                   </div>
                   <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-primary rounded-full transition-all duration-500"
-                      style={{ width: `${conversionRate}%` }}
+                    <motion.div
+                      initial={{ width: 0 }}
+                      animate={{ width: `${conversionRate}%` }}
+                      transition={{ duration: 1, delay: index * 0.1 + 0.6, ease: "easeOut" }}
+                      className="h-full bg-gradient-bg-animated rounded-full"
                     />
                   </div>
                 </div>
@@ -167,15 +209,29 @@ const ManagerTeam = () => {
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.4 }}
-        className="rounded-xl border border-border bg-card shadow-sm overflow-hidden"
+        transition={{ delay: 0.4, type: "spring", stiffness: 100 }}
+        className="rounded-xl border border-border bg-card shadow-sm overflow-hidden card-hover-effect animated-border"
       >
-        <div className="p-4 md:p-6 border-b border-border flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <h2 className="text-lg font-semibold text-foreground">Detailed Performance</h2>
-          <Button className="gradient-teal text-primary-foreground w-full sm:w-auto">
-            <UserPlus className="h-4 w-4 mr-2" />
-            Add Agent
-          </Button>
+        <div className="animated-border-content">
+        <div className="p-4 md:p-6 border-b border-border bg-gradient-to-r from-primary/5 to-transparent flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <motion.div
+              animate={{ rotate: [0, 10, -10, 0] }}
+              transition={{ duration: 3, repeat: Infinity, repeatDelay: 2 }}
+            >
+              <Users className="h-6 w-6 text-primary" />
+            </motion.div>
+            <h2 className="text-lg font-semibold text-foreground gradient-text-animated">Detailed Performance</h2>
+          </div>
+          <motion.div
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+          >
+            <Button className="gradient-bg-animated text-primary-foreground button-ripple shadow-lg w-full sm:w-auto">
+              <UserPlus className="h-4 w-4 mr-2" />
+              Add Agent
+            </Button>
+          </motion.div>
         </div>
 
         {/* Desktop Table View */}
@@ -203,16 +259,22 @@ const ManagerTeam = () => {
                     key={agent.id}
                     initial={{ opacity: 0, x: -10 }}
                     animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: index * 0.05 }}
-                    className="hover:bg-card-hover"
+                    whileHover={{ backgroundColor: "rgba(23, 162, 184, 0.05)", x: 5 }}
+                    transition={{ delay: index * 0.05, type: "spring", stiffness: 300 }}
+                    className="transition-all duration-200 cursor-pointer"
                   >
                     <TableCell>
                       <div className="flex items-center gap-3">
-                        <Avatar className="h-8 w-8 gradient-teal">
-                          <AvatarFallback className="text-primary-foreground text-xs font-semibold">
-                            {agent.name.split(" ").map(n => n[0]).join("")}
-                          </AvatarFallback>
-                        </Avatar>
+                        <motion.div
+                          whileHover={{ scale: 1.1 }}
+                          transition={{ type: "spring", stiffness: 400 }}
+                        >
+                          <Avatar className="h-8 w-8 gradient-bg-animated ring-2 ring-primary/20">
+                            <AvatarFallback className="text-primary-foreground text-xs font-semibold">
+                              {agent.name.split(" ").map(n => n[0]).join("")}
+                            </AvatarFallback>
+                          </Avatar>
+                        </motion.div>
                         <span className="font-medium">{agent.name}</span>
                       </div>
                     </TableCell>
@@ -222,7 +284,12 @@ const ManagerTeam = () => {
                     <TableCell className="text-center">
                       <div className="flex items-center justify-center gap-2">
                         <div className="w-16 h-2 bg-muted rounded-full overflow-hidden">
-                          <div className="h-full bg-primary rounded-full" style={{ width: `${conversionRate}%` }} />
+                          <motion.div
+                            initial={{ width: 0 }}
+                            animate={{ width: `${conversionRate}%` }}
+                            transition={{ duration: 1, delay: index * 0.1 + 0.5 }}
+                            className="h-full bg-gradient-bg-animated rounded-full"
+                          />
                         </div>
                         <span className="text-sm font-medium">{conversionRate}%</span>
                       </div>
@@ -257,16 +324,22 @@ const ManagerTeam = () => {
                 key={agent.id}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.05 }}
-                className="p-4 space-y-3"
+                whileHover={{ x: 5 }}
+                transition={{ delay: index * 0.05, type: "spring", stiffness: 300 }}
+                className="p-4 space-y-3 hover:bg-primary/5 transition-colors"
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <Avatar className="h-10 w-10 gradient-teal">
-                      <AvatarFallback className="text-primary-foreground text-sm font-semibold">
-                        {agent.name.split(" ").map(n => n[0]).join("")}
-                      </AvatarFallback>
-                    </Avatar>
+                    <motion.div
+                      whileHover={{ scale: 1.1, rotate: 5 }}
+                      transition={{ type: "spring", stiffness: 400 }}
+                    >
+                      <Avatar className="h-10 w-10 gradient-bg-animated ring-2 ring-primary/20">
+                        <AvatarFallback className="text-primary-foreground text-sm font-semibold">
+                          {agent.name.split(" ").map(n => n[0]).join("")}
+                        </AvatarFallback>
+                      </Avatar>
+                    </motion.div>
                     <div>
                       <p className="font-medium text-foreground">{agent.name}</p>
                       <Badge variant={isActive ? "default" : "secondary"} className="mt-1">
@@ -294,10 +367,22 @@ const ManagerTeam = () => {
                 <div className="space-y-2">
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-muted-foreground">Conversion Rate</span>
-                    <span className="font-semibold">{conversionRate}%</span>
+                    <motion.span
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: index * 0.05 + 0.3 }}
+                      className="font-semibold"
+                    >
+                      {conversionRate}%
+                    </motion.span>
                   </div>
                   <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
-                    <div className="h-full bg-primary rounded-full" style={{ width: `${conversionRate}%` }} />
+                    <motion.div
+                      initial={{ width: 0 }}
+                      animate={{ width: `${conversionRate}%` }}
+                      transition={{ duration: 1, delay: index * 0.05 + 0.4 }}
+                      className="h-full bg-gradient-bg-animated rounded-full"
+                    />
                   </div>
                 </div>
 
@@ -311,6 +396,7 @@ const ManagerTeam = () => {
               </motion.div>
             );
           })}
+        </div>
         </div>
       </motion.div>
     </ManagerLayout>
