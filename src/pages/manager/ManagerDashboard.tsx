@@ -630,87 +630,62 @@ const ManagerDashboard = () => {
           </div>
 
           {/* Desktop View - Table */}
-          <div className="hidden md:block">
-              <Table>
-              <TableHeader>
-                <TableRow className="table-header-glow border-b-2 border-primary/20">
-                  <TableHead className="font-bold text-foreground bg-muted/50">Agent Name</TableHead>
-                  <TableHead className="text-center font-bold text-foreground bg-muted/50">Leads Assigned</TableHead>
-                  <TableHead className="text-center font-bold text-foreground bg-muted/50">Converted</TableHead>
-                  <TableHead className="text-center font-bold text-foreground bg-muted/50">Pending</TableHead>
-                  <TableHead className="text-center font-bold text-foreground bg-muted/50">Conversion Rate</TableHead>
-                </TableRow>
-              </TableHeader>
-            <TableBody>
+          <div className="hidden md:block w-full overflow-x-auto">
+              <table className="w-full text-sm" style={{tableLayout: 'fixed', borderCollapse: 'collapse'}}>
+              <colgroup>
+                <col style={{width: '25%'}} />
+                <col style={{width: '18%'}} />
+                <col style={{width: '18%'}} />
+                <col style={{width: '18%'}} />
+                <col style={{width: '21%'}} />
+              </colgroup>
+              <thead>
+                <tr className="border-b-2 border-primary/20 bg-muted/50">
+                  <th className="h-12 px-4 text-left font-bold text-foreground">Agent Name</th>
+                  <th className="h-12 px-4 text-center font-bold text-foreground">Leads Assigned</th>
+                  <th className="h-12 px-4 text-center font-bold text-foreground">Converted</th>
+                  <th className="h-12 px-4 text-center font-bold text-foreground">Pending</th>
+                  <th className="h-12 px-4 text-center font-bold text-foreground">Conversion Rate</th>
+                </tr>
+              </thead>
+            <tbody>
               {mockAgents.map((agent, index) => {
                 const conversionRate = Math.round(
                   (agent.converted / agent.leadsAssigned) * 100
                 );
                 return (
-                  <motion.tr
+                  <tr
                     key={agent.id}
-                    initial={{ opacity: 0, x: -10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: index * 0.05, type: "spring", stiffness: 300 }}
-                    className="table-row-hover border-b border-border/50"
+                    className="border-b border-border/50 hover:bg-primary/5 transition-colors"
                   >
-                    <TableCell className="font-medium">
-                      <motion.span
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        transition={{ delay: index * 0.05 + 0.1 }}
-                      >
-                        {agent.name}
-                      </motion.span>
-                    </TableCell>
-                    <TableCell className="text-center">
-                      <motion.span
-                        initial={{ scale: 0 }}
-                        animate={{ scale: 1 }}
-                        transition={{ delay: index * 0.05 + 0.15, type: "spring" }}
-                        className="inline-block"
-                      >
-                        {agent.leadsAssigned}
-                      </motion.span>
-                    </TableCell>
-                    <TableCell className="text-center">
-                      <motion.span
-                        initial={{ scale: 0 }}
-                        animate={{ scale: 1 }}
-                        transition={{ delay: index * 0.05 + 0.2, type: "spring" }}
-                        className="text-success font-medium inline-block"
-                      >
-                        {agent.converted}
-                      </motion.span>
-                    </TableCell>
-                    <TableCell className="text-center">
-                      <motion.span
-                        initial={{ scale: 0 }}
-                        animate={{ scale: 1 }}
-                        transition={{ delay: index * 0.05 + 0.25, type: "spring" }}
-                        className="text-warning font-medium inline-block"
-                      >
-                        {agent.pending}
-                      </motion.span>
-                    </TableCell>
-                    <TableCell className="text-center">
+                    <td className="h-16 px-4 font-medium text-left align-middle">
+                      {agent.name}
+                    </td>
+                    <td className="h-16 px-4 text-center align-middle">
+                      {agent.leadsAssigned}
+                    </td>
+                    <td className="h-16 px-4 text-center align-middle text-success font-medium">
+                      {agent.converted}
+                    </td>
+                    <td className="h-16 px-4 text-center align-middle text-warning font-medium">
+                      {agent.pending}
+                    </td>
+                    <td className="h-16 px-4 text-center align-middle">
                       <div className="flex items-center justify-center gap-2">
-                        <div className="w-16 h-2 bg-muted rounded-full overflow-hidden">
-                          <motion.div
-                            initial={{ width: 0 }}
-                            animate={{ width: `${conversionRate}%` }}
-                            transition={{ duration: 1, delay: index * 0.1 + 0.5 }}
-                            className="h-full bg-primary rounded-full"
+                        <div className="w-20 h-2 bg-muted rounded-full overflow-hidden">
+                          <div
+                            style={{width: `${conversionRate}%`}}
+                            className="h-full bg-primary rounded-full transition-all duration-1000"
                           />
                         </div>
-                        <span className="text-sm font-medium whitespace-nowrap">{conversionRate}%</span>
+                        <span className="text-sm font-medium min-w-[40px]">{conversionRate}%</span>
                       </div>
-                    </TableCell>
-                  </motion.tr>
+                    </td>
+                  </tr>
                 );
               })}
-            </TableBody>
-          </Table>
+            </tbody>
+          </table>
           </div>
         </div>
         </div>

@@ -9,6 +9,10 @@ import {
   Award,
   TrendingUp,
   Clock,
+  Target,
+  CheckCircle2,
+  AlertCircle,
+  BarChart3,
 } from "lucide-react";
 import { ManagerLayout } from "@/components/layout/ManagerLayout";
 import { SummaryCard } from "@/components/ui/summary-card";
@@ -163,25 +167,43 @@ const ManagerTeam = () => {
                 </div>
 
                 <div className="mt-4 pt-4 border-t border-border">
-                  <div className="grid grid-cols-3 gap-4 text-center">
-                    <div>
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="flex flex-col items-center p-3 bg-primary/5 rounded-lg">
+                      <div className="flex items-center gap-2 mb-2">
+                        <div className="p-2 bg-primary/10 rounded-full">
+                          <Target className="h-6 w-6 text-primary" />
+                        </div>
+                      </div>
                       <p className="text-2xl font-bold text-foreground">{agent.leadsAssigned}</p>
-                      <p className="text-xs text-muted-foreground">Assigned</p>
+                      <p className="text-xs text-muted-foreground font-medium">Assigned</p>
                     </div>
-                    <div>
+                    <div className="flex flex-col items-center p-3 bg-success/5 rounded-lg">
+                      <div className="flex items-center gap-2 mb-2">
+                        <div className="p-2 bg-success/10 rounded-full">
+                          <CheckCircle2 className="h-6 w-6 text-success" />
+                        </div>
+                      </div>
                       <p className="text-2xl font-bold text-success">{agent.converted}</p>
-                      <p className="text-xs text-muted-foreground">Converted</p>
+                      <p className="text-xs text-muted-foreground font-medium">Converted</p>
                     </div>
-                    <div>
+                    <div className="flex flex-col items-center p-3 bg-warning/5 rounded-lg">
+                      <div className="flex items-center gap-2 mb-2">
+                        <div className="p-2 bg-warning/10 rounded-full">
+                          <AlertCircle className="h-6 w-6 text-warning" />
+                        </div>
+                      </div>
                       <p className="text-2xl font-bold text-warning">{agent.pending}</p>
-                      <p className="text-xs text-muted-foreground">Pending</p>
+                      <p className="text-xs text-muted-foreground font-medium">Pending</p>
                     </div>
                   </div>
                 </div>
 
                 <div className="mt-4">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm text-muted-foreground">Conversion Rate</span>
+                    <div className="flex items-center gap-1">
+                      <BarChart3 className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm text-muted-foreground">Conversion Rate</span>
+                    </div>
                     <motion.span
                       initial={{ opacity: 0, scale: 0 }}
                       animate={{ opacity: 1, scale: 1 }}
@@ -279,8 +301,22 @@ const ManagerTeam = () => {
                       </div>
                     </TableCell>
                     <TableCell className="text-center">{agent.leadsAssigned}</TableCell>
-                    <TableCell className="text-center text-success font-medium">{agent.converted}</TableCell>
-                    <TableCell className="text-center text-warning font-medium">{agent.pending}</TableCell>
+                    <TableCell className="text-center">
+                      <div className="flex items-center justify-center gap-2">
+                        <div className="p-1.5 bg-success/10 rounded-full">
+                          <CheckCircle2 className="h-5 w-5 text-success" />
+                        </div>
+                        <span className="text-success font-bold text-base">{agent.converted}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <div className="flex items-center justify-center gap-2">
+                        <div className="p-1.5 bg-warning/10 rounded-full">
+                          <AlertCircle className="h-5 w-5 text-warning" />
+                        </div>
+                        <span className="text-warning font-bold text-base">{agent.pending}</span>
+                      </div>
+                    </TableCell>
                     <TableCell className="text-center">
                       <div className="flex items-center justify-center gap-2">
                         <div className="w-16 h-2 bg-muted rounded-full overflow-hidden">
@@ -349,18 +385,27 @@ const ManagerTeam = () => {
                   </div>
                 </div>
                 
-                <div className="grid grid-cols-3 gap-3 text-center">
-                  <div>
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="flex flex-col items-center p-3 bg-primary/5 rounded-lg border border-primary/20">
+                    <div className="p-2 bg-primary/10 rounded-full mb-2">
+                      <Target className="h-5 w-5 text-primary" />
+                    </div>
                     <p className="text-lg font-bold text-foreground">{agent.leadsAssigned}</p>
-                    <p className="text-xs text-muted-foreground">Assigned</p>
+                    <p className="text-xs text-muted-foreground font-medium">Assigned</p>
                   </div>
-                  <div>
+                  <div className="flex flex-col items-center p-3 bg-success/5 rounded-lg border border-success/20">
+                    <div className="p-2 bg-success/10 rounded-full mb-2">
+                      <CheckCircle2 className="h-5 w-5 text-success" />
+                    </div>
                     <p className="text-lg font-bold text-success">{agent.converted}</p>
-                    <p className="text-xs text-muted-foreground">Converted</p>
+                    <p className="text-xs text-muted-foreground font-medium">Converted</p>
                   </div>
-                  <div>
+                  <div className="flex flex-col items-center p-3 bg-warning/5 rounded-lg border border-warning/20">
+                    <div className="p-2 bg-warning/10 rounded-full mb-2">
+                      <AlertCircle className="h-5 w-5 text-warning" />
+                    </div>
                     <p className="text-lg font-bold text-warning">{agent.pending}</p>
-                    <p className="text-xs text-muted-foreground">Pending</p>
+                    <p className="text-xs text-muted-foreground font-medium">Pending</p>
                   </div>
                 </div>
 
