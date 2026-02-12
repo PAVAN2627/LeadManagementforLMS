@@ -487,7 +487,7 @@ const AdminReports = () => {
             <div className="relative z-10">
               <Tabs defaultValue="overview" className="space-y-0">
                 {/* Enhanced Tab Header */}
-                <div className="p-6 border-b border-gray-100 gradient-teal">
+                <div className="p-6 border-b border-gray-100 bg-gradient-to-r from-teal-50 via-white to-emerald-50">
                   <motion.div
                     initial={{ opacity: 0, y: -10 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -495,14 +495,14 @@ const AdminReports = () => {
                     className="flex items-center justify-between mb-4"
                   >
                     <div>
-                      <h3 className="text-xl font-bold text-white mb-1">Analytics Dashboard</h3>
-                      <p className="text-sm text-white/90">Real-time insights and performance metrics</p>
+                      <h3 className="text-xl font-bold text-gray-900 mb-1">Analytics Dashboard</h3>
+                      <p className="text-sm text-gray-600">Real-time insights and performance metrics</p>
                     </div>
                     
                     <motion.div
                       animate={{ rotate: [0, 360] }}
                       transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-                      className="p-2 bg-white/20 backdrop-blur-sm rounded-lg shadow-md"
+                      className="p-2 bg-gradient-to-br from-teal-500 to-teal-600 rounded-lg shadow-md"
                     >
                       <Activity className="h-5 w-5 text-white" />
                     </motion.div>
@@ -550,7 +550,7 @@ const AdminReports = () => {
                 </div>
 
                 {/* Tab Content Areas */}
-                <div className="p-6 bg-white" style={{ backgroundColor: '#FFFFFF' }}>
+                <div className="p-6">
                   <TabsContent value="overview" className="space-y-6 mt-0">
                     <motion.div
                       initial={{ opacity: 0, y: 20 }}
@@ -558,32 +558,30 @@ const AdminReports = () => {
                       transition={{ delay: 1.2 }}
                       className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6"
                     >
-                      <Card className="rounded-2xl overflow-hidden shadow-lg border border-gray-200" style={{ backgroundColor: '#FFFFFF' }}>
-                        <CardHeader className="gradient-teal border-b border-gray-100">
-                          <CardTitle className="text-base font-semibold text-white">Leads by Status</CardTitle>
-                        </CardHeader>
-                        <CardContent className="p-6" style={{ backgroundColor: '#FFFFFF' }}>
+                      <motion.div whileHover={{ scale: 1.02 }} className="rounded-2xl overflow-hidden bg-white shadow-lg border border-gray-200">
+                        <div className="bg-gradient-to-r from-teal-50 to-emerald-50 p-4">
+                          <h3 className="font-semibold text-gray-900 mb-2">Leads by Status</h3>
+                        </div>
+                        <div className="bg-white p-6">
                           <LeadsByStatusChart />
-                        </CardContent>
-                      </Card>
-                      
-                      <Card className="rounded-2xl overflow-hidden shadow-lg border border-gray-200" style={{ backgroundColor: '#FFFFFF' }}>
-                        <CardHeader className="gradient-teal border-b border-gray-100">
-                          <CardTitle className="text-base font-semibold text-white">Monthly Growth</CardTitle>
-                        </CardHeader>
-                        <CardContent className="p-6" style={{ backgroundColor: '#FFFFFF' }}>
+                        </div>
+                      </motion.div>
+                      <motion.div whileHover={{ scale: 1.02 }} className="rounded-2xl overflow-hidden bg-white shadow-lg border border-gray-200">
+                        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-4">
+                          <h3 className="font-semibold text-gray-900 mb-2">Monthly Growth</h3>
+                        </div>
+                        <div className="bg-white p-6">
                           <MonthlyGrowthChart />
-                        </CardContent>
-                      </Card>
-                      
-                      <Card className="rounded-2xl overflow-hidden shadow-lg border border-gray-200" style={{ backgroundColor: '#FFFFFF' }}>
-                        <CardHeader className="gradient-teal border-b border-gray-100">
-                          <CardTitle className="text-base font-semibold text-white">Agent Performance</CardTitle>
-                        </CardHeader>
-                        <CardContent className="p-6" style={{ backgroundColor: '#FFFFFF' }}>
+                        </div>
+                      </motion.div>
+                      <motion.div whileHover={{ scale: 1.02 }} className="rounded-2xl overflow-hidden bg-white shadow-lg border border-gray-200">
+                        <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-4">
+                          <h3 className="font-semibold text-gray-900 mb-2">Agent Performance</h3>
+                        </div>
+                        <div className="bg-white p-6">
                           <AgentPerformanceChart />
-                        </CardContent>
-                      </Card>
+                        </div>
+                      </motion.div>
                     </motion.div>
                   </TabsContent>
 
@@ -599,12 +597,12 @@ const AdminReports = () => {
                         className="group"
                       >
                         <Card className="border-gray-200 shadow-lg hover:shadow-xl transition-all duration-500 rounded-2xl overflow-hidden bg-white">
-                          <CardHeader className="gradient-teal border-b border-gray-100">
-                            <CardTitle className="flex items-center gap-3 text-white">
+                          <CardHeader className="bg-gradient-to-r from-teal-50 to-emerald-50 border-b border-gray-100">
+                            <CardTitle className="flex items-center gap-3 text-gray-900">
                               <motion.div
                                 animate={{ rotate: [0, 5, -5, 0] }}
                                 transition={{ duration: 3, repeat: Infinity }}
-                                className="p-2 bg-white/20 backdrop-blur-sm rounded-lg shadow-md"
+                                className="p-2 bg-gradient-to-br from-teal-500 to-teal-600 rounded-lg shadow-md"
                               >
                                 <TrendingUp className="h-5 w-5 text-white" />
                               </motion.div>

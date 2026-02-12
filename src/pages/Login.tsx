@@ -1,265 +1,267 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { motion } from "framer-motion";
-import { useNavigate, useSearchParams } from "react-router-dom";
-import { Mail, Lock, ArrowLeft, Shield, Users, BarChart3 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { Mail, Lock, ArrowLeft, Shield, Users, BarChart3, Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-
-const roleIcons = {
-  admin: Shield,
-  manager: Users,
-  agent: BarChart3,
-};
-
-const roleRoutes = {
-  admin: "/admin",
-  manager: "/manager",
-  agent: "/agent",
-};
+import { Badge } from "@/components/ui/badge";
 
 const Login = () => {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [role, setRole] = useState<"admin" | "manager" | "agent">("admin");
+  const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-
-  useEffect(() => {
-    const roleParam = searchParams.get("role");
-    if (roleParam && ["admin", "manager", "agent"].includes(roleParam)) {
-      setRole(roleParam as "admin" | "manager" | "agent");
-    }
-  }, [searchParams]);
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
-    // Simulate login delay
+    // Simulate login - In production, this will check credentials and route based on user role
     setTimeout(() => {
       setIsLoading(false);
-      navigate(roleRoutes[role]);
+      // For demo, default to admin
+      navigate("/admin");
+    }, 1000);
+  };
+
+  const handleDemoLogin = (role: "admin" | "manager" | "agent") => {
+    setIsLoading(true);
+    setTimeout(() => {
+      setIsLoading(false);
+      navigate(`/${role}`);
     }, 800);
   };
 
-  const RoleIcon = roleIcons[role];
-
   return (
-    <div className="min-h-screen flex bg-gray-50">
-      {/* Left Panel - Form */}
+    <div className="min-h-screen flex items-center justify-center p-3 md:p-4 relative overflow-hidden">
+      {/* Background Image */}
+      <div 
+        className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+        style={{
+          backgroundImage: 'url(/leadmgtback.png)',
+        }}
+      />
+      
+      {/* Overlay for better readability */}
+      <div className="absolute inset-0 bg-gradient-to-br from-black/40 via-black/30 to-black/40 backdrop-blur-[2px]" />
+      
+      {/* Centered Login Form */}
       <motion.div
-        initial={{ opacity: 0, x: -20 }}
-        animate={{ opacity: 1, x: 0 }}
-        className="flex-1 flex flex-col justify-center px-8 lg:px-16 xl:px-24 bg-white"
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.6 }}
+        className="w-full max-w-md bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl p-5 md:p-8 relative z-10"
       >
-        <div className="max-w-md w-full mx-auto">
+        {/* Decorative Background */}
+        <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-teal-50 to-cyan-50 opacity-50" />
+        
+        <div className="relative z-10">
           {/* Back Button */}
-          <Button
-            variant="ghost"
-            onClick={() => navigate("/")}
-            className="mb-8 -ml-2 text-gray-600 hover:text-gray-900"
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
           >
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Home
-          </Button>
+            <Button
+              variant="ghost"
+              onClick={() => navigate("/")}
+              className="mb-3 md:mb-6 -ml-2 text-gray-600 hover:text-teal-600 transition-colors text-sm"
+            >
+              <ArrowLeft className="mr-2 h-3 md:h-4 w-3 md:w-4" />
+              Back to Home
+            </Button>
+          </motion.div>
 
-          {/* Logo */}
-          <div className="flex items-center gap-3 mb-8">
-            <img src="/Athenura logo.png" alt="Athenura" className="h-12 w-auto" />
-          </div>
+          {/* Logo with Animation */}
+          <motion.div
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ delay: 0.3, type: "spring", stiffness: 200 }}
+            className="flex justify-center mb-4 md:mb-6"
+          >
+            <motion.div
+              animate={{ 
+                rotate: [0, 5, -5, 0],
+                scale: [1, 1.05, 1]
+              }}
+              transition={{ 
+                duration: 4, 
+                repeat: Infinity,
+                ease: "easeInOut"
+              }}
+              className="relative"
+            >
+              <img 
+                src="/athenuraroundlogo.png" 
+                alt="Athenura" 
+                className="h-16 md:h-24 w-16 md:w-24 rounded-full shadow-xl"
+              />
+              <motion.div
+                className="absolute inset-0 rounded-full bg-gradient-to-r from-teal-500 to-cyan-500 opacity-20 blur-xl"
+                animate={{
+                  scale: [1, 1.2, 1],
+                  opacity: [0.2, 0.3, 0.2]
+                }}
+                transition={{
+                  duration: 3,
+                  repeat: Infinity,
+                  ease: "easeInOut"
+                }}
+              />
+            </motion.div>
+          </motion.div>
 
           {/* Header */}
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">
-              Welcome back
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+            className="mb-5 md:mb-8 text-center"
+          >
+            <h1 className="text-2xl md:text-4xl font-bold bg-gradient-to-r from-teal-600 to-cyan-600 bg-clip-text text-transparent mb-2 md:mb-3">
+              Welcome Back
             </h1>
-            <p className="text-gray-600">
-              Sign in to access your dashboard and manage leads
+            <p className="text-sm md:text-base text-gray-600">
+              Sign in to access your dashboard
             </p>
-          </div>
+          </motion.div>
 
           {/* Form */}
-          <form onSubmit={handleLogin} className="space-y-6">
+          <motion.form
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5 }}
+            onSubmit={handleLogin}
+            className="space-y-4 md:space-y-6"
+          >
             {/* Email */}
-            <div className="space-y-2">
-              <Label htmlFor="email" className="text-gray-700">Email address</Label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
+            <div className="space-y-1.5 md:space-y-2">
+              <Label htmlFor="email" className="text-sm md:text-base text-gray-700 font-semibold">Email Address</Label>
+              <div className="relative group">
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 md:h-5 w-4 md:w-5 text-gray-400 group-focus-within:text-teal-600 transition-colors" />
                 <Input
                   id="email"
                   type="email"
                   placeholder="name@company.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="pl-10 border-gray-300 focus:border-teal-600 focus:ring-teal-600"
+                  className="pl-10 md:pl-11 h-10 md:h-12 text-sm md:text-base border-gray-300 focus:border-teal-600 focus:ring-2 focus:ring-teal-600/20 transition-all"
+                  required
                 />
               </div>
             </div>
 
             {/* Password */}
-            <div className="space-y-2">
-              <Label htmlFor="password" className="text-gray-700">Password</Label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
+            <div className="space-y-1.5 md:space-y-2">
+              <Label htmlFor="password" className="text-sm md:text-base text-gray-700 font-semibold">Password</Label>
+              <div className="relative group">
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 md:h-5 w-4 md:w-5 text-gray-400 group-focus-within:text-teal-600 transition-colors" />
                 <Input
                   id="password"
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   placeholder="Enter your password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="pl-10 border-gray-300 focus:border-teal-600 focus:ring-teal-600"
+                  className="pl-10 md:pl-11 pr-10 md:pr-11 h-10 md:h-12 text-sm md:text-base border-gray-300 focus:border-teal-600 focus:ring-2 focus:ring-teal-600/20 transition-all"
+                  required
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-teal-600 transition-colors"
+                >
+                  {showPassword ? <EyeOff className="h-4 md:h-5 w-4 md:w-5" /> : <Eye className="h-4 md:h-5 w-4 md:w-5" />}
+                </button>
               </div>
-            </div>
-
-            {/* Role Selection */}
-            <div className="space-y-2">
-              <Label htmlFor="role" className="text-gray-700">Login as</Label>
-              <Select value={role} onValueChange={(v) => setRole(v as typeof role)}>
-                <SelectTrigger className="w-full border-gray-300 focus:border-teal-600 focus:ring-teal-600">
-                  <SelectValue placeholder="Select role" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="admin">
-                    <div className="flex items-center gap-2">
-                      <Shield className="h-4 w-4 text-teal-600" />
-                      Admin
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="manager">
-                    <div className="flex items-center gap-2">
-                      <Users className="h-4 w-4 text-teal-600" />
-                      Manager
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="agent">
-                    <div className="flex items-center gap-2">
-                      <BarChart3 className="h-4 w-4 text-teal-600" />
-                      Agent
-                    </div>
-                  </SelectItem>
-                </SelectContent>
-              </Select>
             </div>
 
             {/* Submit Button */}
             <Button
               type="submit"
-              className="w-full bg-teal-600 hover:bg-teal-700 text-white py-6 text-lg shadow-lg hover:shadow-xl transition-all"
+              className="w-full gradient-teal text-white h-10 md:h-12 text-sm md:text-base font-semibold shadow-lg hover:shadow-xl transition-all hover:scale-[1.02]"
               disabled={isLoading}
             >
               {isLoading ? (
                 <motion.div
                   animate={{ rotate: 360 }}
                   transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                  className="h-5 w-5 border-2 border-white border-t-transparent rounded-full"
+                  className="h-4 md:h-5 w-4 md:w-5 border-2 border-white border-t-transparent rounded-full"
                 />
               ) : (
                 <>
-                  <RoleIcon className="mr-2 h-5 w-5" />
-                  Sign in as {role.charAt(0).toUpperCase() + role.slice(1)}
+                  <Lock className="mr-2 h-4 md:h-5 w-4 md:w-5" />
+                  Sign In Securely
                 </>
               )}
             </Button>
-          </form>
+          </motion.form>
 
-          {/* Quick Access */}
-          <div className="mt-8 pt-8 border-t border-gray-200">
-            <p className="text-sm text-gray-600 mb-4 text-center">
-              Quick access (demo mode)
-            </p>
-            <div className="flex gap-3">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  setRole("admin");
-                  navigate("/admin");
-                }}
-                className="flex-1 border-gray-300 hover:bg-gray-50"
-              >
-                Admin
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  setRole("manager");
-                  navigate("/manager");
-                }}
-                className="flex-1 border-gray-300 hover:bg-gray-50"
-              >
-                Manager
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  setRole("agent");
-                  navigate("/agent");
-                }}
-                className="flex-1 border-gray-300 hover:bg-gray-50"
-              >
-                Agent
-              </Button>
-            </div>
-          </div>
-        </div>
-      </motion.div>
-
-      {/* Right Panel - Decorative */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.2 }}
-        className="hidden lg:flex flex-1 bg-teal-600 items-center justify-center p-12 relative overflow-hidden"
-      >
-        {/* Background decoration */}
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-20 right-20 w-96 h-96 bg-white rounded-full blur-3xl" />
-          <div className="absolute bottom-20 left-20 w-96 h-96 bg-white rounded-full blur-3xl" />
-        </div>
-
-        <div className="relative z-10 text-center max-w-md">
+          {/* Demo Access Section */}
           <motion.div
-            initial={{ scale: 0.8, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ delay: 0.4 }}
-            className="h-24 w-24 rounded-2xl bg-white/20 backdrop-blur-lg flex items-center justify-center mx-auto mb-8"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.6 }}
+            className="mt-5 md:mt-8 pt-4 md:pt-6 border-t border-gray-200"
           >
-            <RoleIcon className="h-12 w-12 text-white" />
+            <div className="text-center mb-3 md:mb-4">
+              <Badge className="border-teal-200 bg-teal-50 text-teal-700 px-3 md:px-4 py-0.5 md:py-1 text-xs">
+                Demo Mode Available
+              </Badge>
+            </div>
+            <p className="text-xs md:text-sm text-gray-600 mb-3 md:mb-4 text-center">
+              Quick access for demonstration
+            </p>
+            <div className="grid grid-cols-3 gap-2 md:gap-3">
+              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                <Button
+                  variant="outline"
+                  onClick={() => handleDemoLogin("admin")}
+                  disabled={isLoading}
+                  className="w-full flex flex-col items-center gap-1.5 md:gap-2 h-auto py-3 md:py-4 border-2 border-gray-200 hover:border-teal-600 hover:bg-teal-50 transition-all group"
+                >
+                  <Shield className="h-5 md:h-6 w-5 md:w-6 text-gray-600 group-hover:text-teal-600 transition-colors" />
+                  <span className="text-xs font-semibold">Admin</span>
+                </Button>
+              </motion.div>
+              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                <Button
+                  variant="outline"
+                  onClick={() => handleDemoLogin("manager")}
+                  disabled={isLoading}
+                  className="w-full flex flex-col items-center gap-1.5 md:gap-2 h-auto py-3 md:py-4 border-2 border-gray-200 hover:border-teal-600 hover:bg-teal-50 transition-all group"
+                >
+                  <Users className="h-5 md:h-6 w-5 md:w-6 text-gray-600 group-hover:text-teal-600 transition-colors" />
+                  <span className="text-xs font-semibold">Manager</span>
+                </Button>
+              </motion.div>
+              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                <Button
+                  variant="outline"
+                  onClick={() => handleDemoLogin("agent")}
+                  disabled={isLoading}
+                  className="w-full flex flex-col items-center gap-1.5 md:gap-2 h-auto py-3 md:py-4 border-2 border-gray-200 hover:border-teal-600 hover:bg-teal-50 transition-all group"
+                >
+                  <BarChart3 className="h-5 md:h-6 w-5 md:w-6 text-gray-600 group-hover:text-teal-600 transition-colors" />
+                  <span className="text-xs font-semibold">Agent</span>
+                </Button>
+              </motion.div>
+            </div>
           </motion.div>
 
-          <motion.h2
-            initial={{ y: 20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 0.5 }}
-            className="text-3xl font-bold text-white mb-4"
+          {/* Security Notice */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.7 }}
+            className="mt-4 md:mt-6 text-center"
           >
-            {role === "admin" && "System Control Center"}
-            {role === "manager" && "Team Management Hub"}
-            {role === "agent" && "Sales Dashboard"}
-          </motion.h2>
-
-          <motion.p
-            initial={{ y: 20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 0.6 }}
-            className="text-white/80"
-          >
-            {role === "admin" && "Full access to all system features, user management, and analytics."}
-            {role === "manager" && "Manage your team, assign leads, and track performance."}
-            {role === "agent" && "View your leads, track follow-ups, and close more deals."}
-          </motion.p>
+            <p className="text-xs text-gray-500 flex items-center justify-center gap-1.5 md:gap-2">
+              <Shield className="h-3 w-3" />
+              Secure authentication • Enterprise-grade encryption
+            </p>
+          </motion.div>
         </div>
       </motion.div>
     </div>

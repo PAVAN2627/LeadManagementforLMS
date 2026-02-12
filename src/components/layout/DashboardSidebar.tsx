@@ -102,7 +102,7 @@ export function DashboardSidebar({ role, isOpen, setIsOpen }: DashboardSidebarPr
       className={sidebarClassNames}
     >
       {/* Logo */}
-      <div className="flex h-16 items-center justify-between px-4 border-b border-sidebar-border">
+      <div className="flex h-16 items-center justify-between px-6 border-b border-sidebar-border">
         <AnimatePresence mode="wait">
           {(!collapsed || isMobile) && (
             <motion.div
@@ -111,7 +111,7 @@ export function DashboardSidebar({ role, isOpen, setIsOpen }: DashboardSidebarPr
               exit={{ opacity: 0 }}
               className="flex items-center gap-2"
             >
-              <img src="/Athenura logo.png" alt="Athenura" className="h-10 w-auto" />
+              <img src="/athenurawhitelogo.png" alt="Athenura" className="h-17 w-auto" />
             </motion.div>
           )}
         </AnimatePresence>
