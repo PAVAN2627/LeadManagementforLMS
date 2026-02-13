@@ -22,3 +22,10 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+# Backend files to ignore
+backend/node_modules/
+backend/.env
+backend/.env.*
+backend/*.log
+backend/package-lock.json
+backend/firebaseKey.json
