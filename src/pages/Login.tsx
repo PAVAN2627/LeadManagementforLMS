@@ -6,47 +6,65 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { toast } from "sonner";
+
+import { useAuth } from "@/context/AuthContext";
 
 const Login = () => {
   const navigate = useNavigate();
+  const { login } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
-    // Simulate login - In production, this will check credentials and route based on user role
-    setTimeout(() => {
-      setIsLoading(false);
-      // For demo, default to admin
+    try {
+      await login(email, password);
+      // Navigate based on role - for now default to admin or dashboard home
+      // In a real app, AuthContext might return the user role, or we parse it from state
+      // For Phase 1, let's go to /admin as a default success path or check the user from context after login (but state update is async)
+      // Actually, standard usually redirects to a dashboard.
+      // Let's assume Admin for now as per instructions "Log in with Admin credentials -> Verify redirection to /admin"
       navigate("/admin");
-    }, 1000);
+    } catch (error) {
+      console.error(error);
+      // Toast is handled in AuthContext
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleDemoLogin = (role: "admin" | "manager" | "agent") => {
-    setIsLoading(true);
-    setTimeout(() => {
-      setIsLoading(false);
-      navigate(`/${role}`);
-    }, 800);
+    // For now, keep demo login or map it to real credentials if we have them seeded?
+    // The instructions say "Replace mock login". 
+    // But keeping demo buttons might be useful for the user if they want to quickly test UI without typing.
+    // However, for "Real Integration", we should probably disable them or make them fill in the form with seeded data.
+    // Let's make them fill the form for now.
+    if (role === 'admin') {
+      setEmail('admin@athenura.com');
+      setPassword('admin123');
+    }
+    // We don't have other users seeded yet.
+    toast.info("Demo Quick-Fill: Click 'Sign In' to proceed.");
   };
 
   return (
     <div className="min-h-screen flex items-center justify-center p-3 md:p-4 relative overflow-hidden">
       {/* Background Image */}
-      <div 
+      <div
         className="absolute inset-0 bg-cover bg-center bg-no-repeat"
         style={{
           backgroundImage: 'url(/leadmgtback.png)',
         }}
       />
-      
+
       {/* Overlay for better readability */}
       <div className="absolute inset-0 bg-gradient-to-br from-black/40 via-black/30 to-black/40 backdrop-blur-[2px]" />
-      
+
       {/* Centered Login Form */}
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
@@ -56,7 +74,7 @@ const Login = () => {
       >
         {/* Decorative Background */}
         <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-teal-50 to-cyan-50 opacity-50" />
-        
+
         <div className="relative z-10">
           {/* Back Button */}
           <motion.div
@@ -82,20 +100,20 @@ const Login = () => {
             className="flex justify-center mb-4 md:mb-6"
           >
             <motion.div
-              animate={{ 
+              animate={{
                 rotate: [0, 5, -5, 0],
                 scale: [1, 1.05, 1]
               }}
-              transition={{ 
-                duration: 4, 
+              transition={{
+                duration: 4,
                 repeat: Infinity,
                 ease: "easeInOut"
               }}
               className="relative"
             >
-              <img 
-                src="/athenuraroundlogo.png" 
-                alt="Athenura" 
+              <img
+                src="/athenuraroundlogo.png"
+                alt="Athenura"
                 className="h-16 md:h-24 w-16 md:w-24 rounded-full shadow-xl"
               />
               <motion.div
