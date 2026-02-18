@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   ClipboardList,
   UserCheck,
@@ -303,14 +303,41 @@ const LandingPage = () => {
       </motion.header>
 
       {/* Hero Section */}
-      <section className="relative overflow-hidden py-12 md:py-20 lg:py-32">
-        <div className="absolute inset-0 gradient-teal opacity-5">
+      <section className="relative overflow-hidden py-16 md:py-24 lg:py-32 bg-gradient-to-br from-teal-50 via-cyan-50 to-blue-50">
+        {/* Animated Background Pattern */}
+        <div className="absolute inset-0 opacity-30">
           <div className="absolute inset-0" style={{
-            backgroundImage: `radial-gradient(circle at 25% 25%, white 2px, transparent 2px), 
-                             radial-gradient(circle at 75% 75%, white 2px, transparent 2px)`,
-            backgroundSize: '60px 60px, 80px 80px'
+            backgroundImage: `radial-gradient(circle at 20% 50%, rgba(20, 184, 166, 0.1) 0%, transparent 50%),
+                             radial-gradient(circle at 80% 80%, rgba(6, 182, 212, 0.1) 0%, transparent 50%),
+                             radial-gradient(circle at 40% 20%, rgba(59, 130, 246, 0.1) 0%, transparent 50%)`,
           }} />
         </div>
+        
+        {/* Floating Shapes */}
+        <motion.div
+          className="absolute top-20 left-10 w-72 h-72 bg-teal-200 rounded-full mix-blend-multiply filter blur-xl opacity-20"
+          animate={{
+            x: [0, 100, 0],
+            y: [0, -50, 0],
+          }}
+          transition={{
+            duration: 20,
+            repeat: Infinity,
+            ease: "easeInOut"
+          }}
+        />
+        <motion.div
+          className="absolute bottom-20 right-10 w-72 h-72 bg-cyan-200 rounded-full mix-blend-multiply filter blur-xl opacity-20"
+          animate={{
+            x: [0, -100, 0],
+            y: [0, 50, 0],
+          }}
+          transition={{
+            duration: 15,
+            repeat: Infinity,
+            ease: "easeInOut"
+          }}
+        />
         
         <div className="relative mx-auto max-w-7xl px-4 md:px-6 lg:px-8">
           <motion.div
@@ -319,34 +346,43 @@ const LandingPage = () => {
             transition={{ duration: 0.8 }}
             className="mx-auto max-w-5xl text-center"
           >
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ delay: 0.2, duration: 0.6 }}
-            >
-              <Badge className="mb-4 md:mb-6 border-teal-200 bg-teal-50 px-4 md:px-6 py-1.5 md:py-2 text-xs md:text-sm font-semibold text-teal-700 hover:bg-teal-100">
-                <Database className="mr-2 h-3 md:h-4 w-3 md:w-4" />
-                Enterprise Lead Management Platform
-              </Badge>
-            </motion.div>
-            
             <motion.h1 
-              className="mb-4 md:mb-6 text-3xl md:text-5xl lg:text-6xl xl:text-7xl font-bold leading-tight tracking-tight text-gray-900"
+              className="mb-6 md:mb-8 text-4xl md:text-6xl lg:text-7xl xl:text-8xl font-bold leading-tight tracking-tight text-gray-900"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3, duration: 0.8 }}
             >
-              Transform Leads Into{" "}
-              <span className="bg-gradient-to-r from-teal-600 via-cyan-600 to-blue-600 bg-clip-text text-transparent">
+              <motion.span
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.5, duration: 0.6 }}
+              >
+                Transform Leads Into{" "}
+              </motion.span>
+              <motion.span 
+                className="bg-gradient-to-r from-teal-600 via-cyan-600 to-blue-600 bg-clip-text text-transparent inline-block"
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ 
+                  delay: 0.8, 
+                  duration: 0.8,
+                  type: "spring",
+                  stiffness: 100
+                }}
+                whileHover={{ 
+                  scale: 1.05,
+                  transition: { duration: 0.2 }
+                }}
+              >
                 Loyal Customers
-              </span>
+              </motion.span>
             </motion.h1>
             
             <motion.p 
-              className="mx-auto mb-6 md:mb-10 max-w-3xl text-base md:text-xl leading-relaxed text-gray-600 px-4"
+              className="mx-auto mb-8 md:mb-12 max-w-3xl text-lg md:text-2xl leading-relaxed text-gray-600 px-4"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ delay: 0.5, duration: 0.8 }}
+              transition={{ delay: 1, duration: 0.8 }}
             >
               A comprehensive web-based platform to capture, manage, track, and convert potential customers 
               efficiently. Centralize your sales operations with role-based access control and real-time analytics.
@@ -356,25 +392,30 @@ const LandingPage = () => {
               className="flex flex-col items-center justify-center gap-4 sm:flex-row px-4"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.7, duration: 0.8 }}
+              transition={{ delay: 1.2, duration: 0.8 }}
             >
-              <Button
-                size="lg"
-                className="w-full sm:w-auto h-12 md:h-16 px-6 md:px-10 text-base md:text-lg font-semibold gradient-teal text-white shadow-2xl transition-all hover:scale-105 hover:shadow-teal-500/50"
-                onClick={() => navigate("/login")}
+              <motion.div
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
               >
-                Access Dashboard
-                <ArrowRight className="ml-2 h-5 md:h-6 w-5 md:w-6" />
-              </Button>
+                <Button
+                  size="lg"
+                  className="w-full sm:w-auto h-14 md:h-16 px-8 md:px-12 text-lg md:text-xl font-semibold gradient-teal text-white shadow-2xl transition-all hover:shadow-teal-500/50"
+                  onClick={() => navigate("/login")}
+                >
+                  Access Dashboard
+                  <ArrowRight className="ml-3 h-6 w-6" />
+                </Button>
+              </motion.div>
             </motion.div>
             
             <motion.p 
-              className="mt-4 md:mt-6 text-xs md:text-sm text-gray-500 flex items-center justify-center gap-2 px-4"
+              className="mt-6 md:mt-8 text-sm md:text-base text-gray-500 flex items-center justify-center gap-2 px-4"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ delay: 0.9 }}
+              transition={{ delay: 1.4 }}
             >
-              <Lock className="h-3 md:h-4 w-3 md:w-4 text-teal-600" />
+              <Lock className="h-4 md:h-5 w-4 md:w-5 text-teal-600" />
               Authorized Personnel Only • Secure Access Required
             </motion.p>
           </motion.div>
@@ -615,159 +656,150 @@ const LandingPage = () => {
       {/* Footer */}
       <footer className="border-t border-teal-700 gradient-teal py-12 md:py-16">
         <div className="w-full px-4 md:px-6 lg:px-12">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 md:gap-12 mb-8 md:mb-12">
-            {/* Company Info */}
-            <div className="col-span-1 md:col-span-2">
-              <div className="flex items-center gap-4 mb-4 md:mb-6">
-                <img src="/athenurawhitelogo.png" alt="Athenura" className="h-16 md:h-20 w-auto" />
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-8 md:gap-12 mb-8 md:mb-12">
+            <div>
+              <div className="flex items-center justify-start gap-4 mb-4 md:mb-6 -ml-[7.25rem] md:-ml-[9rem]">
+                <div className="h-20 md:h-24 w-full max-w-[360px] md:max-w-[420px] overflow-hidden">
+                  <img
+                    src="/athenurawhitelogo.png"
+                    alt="Athenura"
+                    className="h-full w-full object-contain scale-[1.25] origin-left"
+                  />
+                </div>
               </div>
               <p className="text-base md:text-lg text-white font-semibold mb-2 md:mb-3">
                 Next-gen software engineering for the modern enterprise.
               </p>
-              <p className="text-sm md:text-base text-white/90 mb-4 md:mb-6">
+              <p className="text-sm md:text-base text-white/90 mb-6">
                 We build the systems that drive the world.
               </p>
-              <div className="space-y-2">
-                <p className="text-sm md:text-base text-white/80">
-                  © 2026 Athenura Solutions Inc. All rights reserved.
-                </p>
-                <p className="text-xs md:text-sm text-white/70">
-                  Lead Management System • Enterprise Edition
-                </p>
+              <p className="text-xs md:text-sm font-semibold text-white mb-3 uppercase tracking-wider">Follow Us</p>
+              <div className="flex items-center gap-3">
+                <a
+                  href="https://www.linkedin.com/company/athenura/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="h-10 w-10 rounded-full bg-white text-teal-700 flex items-center justify-center hover:scale-105 transition-transform"
+                  aria-label="LinkedIn"
+                >
+                  <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+                  </svg>
+                </a>
+                <a
+                  href="https://www.instagram.com/athenura.in/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="h-10 w-10 rounded-full bg-white text-teal-700 flex items-center justify-center hover:scale-105 transition-transform"
+                  aria-label="Instagram"
+                >
+                  <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 0C8.74 0 8.333.015 7.053.072 5.775.132 4.905.333 4.14.63c-.789.306-1.459.717-2.126 1.384S.935 3.35.63 4.14C.333 4.905.131 5.775.072 7.053.012 8.333 0 8.74 0 12s.015 3.667.072 4.947c.06 1.277.261 2.148.558 2.913.306.788.717 1.459 1.384 2.126.667.666 1.336 1.079 2.126 1.384.766.296 1.636.499 2.913.558C8.333 23.988 8.74 24 12 24s3.667-.015 4.947-.072c1.277-.06 2.148-.262 2.913-.558.788-.306 1.459-.718 2.126-1.384.666-.667 1.079-1.335 1.384-2.126.296-.765.499-1.636.558-2.913.06-1.28.072-1.687.072-4.947s-.015-3.667-.072-4.947c-.06-1.277-.262-2.149-.558-2.913-.306-.789-.718-1.459-1.384-2.126C21.319 1.347 20.651.935 19.86.63c-.765-.297-1.636-.499-2.913-.558C15.667.012 15.26 0 12 0zm0 2.16c3.203 0 3.585.016 4.85.071 1.17.055 1.805.249 2.227.415.562.217.96.477 1.382.896.419.42.679.819.896 1.381.164.422.36 1.057.413 2.227.057 1.266.07 1.646.07 4.85s-.015 3.585-.074 4.85c-.061 1.17-.256 1.805-.421 2.227-.224.562-.479.96-.899 1.382-.419.419-.824.679-1.38.896-.42.164-1.065.36-2.235.413-1.274.057-1.649.07-4.859.07-3.211 0-3.586-.015-4.859-.074-1.171-.061-1.816-.256-2.236-.421-.569-.224-.96-.479-1.379-.899-.421-.419-.69-.824-.9-1.38-.165-.42-.359-1.065-.42-2.235-.045-1.26-.061-1.649-.061-4.844 0-3.196.016-3.586.061-4.861.061-1.17.255-1.814.42-2.234.21-.57.479-.96.9-1.381.419-.419.81-.689 1.379-.898.42-.166 1.051-.361 2.221-.421 1.275-.045 1.65-.06 4.859-.06l.045.03zm0 3.678c-3.405 0-6.162 2.76-6.162 6.162 0 3.405 2.76 6.162 6.162 6.162 3.405 0 6.162-2.76 6.162-6.162 0-3.405-2.76-6.162-6.162-6.162zM12 16c-2.21 0-4-1.79-4-4s1.79-4 4-4 4 1.79 4 4-1.79 4-4 4zm7.846-10.405c0 .795-.646 1.44-1.44 1.44-.795 0-1.44-.646-1.44-1.44 0-.794.646-1.439 1.44-1.439.793-.001 1.44.645 1.44 1.439z"/>
+                  </svg>
+                </a>
+                <a
+                  href="https://x.com/athenura_in"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="h-10 w-10 rounded-full bg-white text-teal-700 flex items-center justify-center hover:scale-105 transition-transform"
+                  aria-label="Twitter/X"
+                >
+                  <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                  </svg>
+                </a>
+                <a
+                  href="https://github.com/athenura"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="h-10 w-10 rounded-full bg-white text-teal-700 flex items-center justify-center hover:scale-105 transition-transform"
+                  aria-label="GitHub"
+                >
+                  <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+                  </svg>
+                </a>
               </div>
             </div>
-            
-            {/* Quick Links */}
+
             <div>
-              <h3 className="text-xs md:text-sm font-bold text-white mb-3 md:mb-4 uppercase tracking-wider">Quick Links</h3>
-              <ul className="space-y-2 md:space-y-3">
-                <li>
-                  <a href="#benefits" className="text-xs md:text-sm text-white/80 hover:text-white transition-colors flex items-center gap-2">
-                    <ArrowRight className="h-3 w-3 flex-shrink-0" />
-                    Benefits
-                  </a>
-                </li>
-                <li>
-                  <a href="#modules" className="text-xs md:text-sm text-white/80 hover:text-white transition-colors flex items-center gap-2">
-                    <ArrowRight className="h-3 w-3 flex-shrink-0" />
-                    Features
-                  </a>
-                </li>
-                <li>
-                  <a href="#roles" className="text-xs md:text-sm text-white/80 hover:text-white transition-colors flex items-center gap-2">
-                    <ArrowRight className="h-3 w-3 flex-shrink-0" />
-                    User Roles
-                  </a>
-                </li>
-                <li>
-                  <a href="#lifecycle" className="text-xs md:text-sm text-white/80 hover:text-white transition-colors flex items-center gap-2">
-                    <ArrowRight className="h-3 w-3 flex-shrink-0" />
-                    Lead Lifecycle
-                  </a>
-                </li>
+              <h3 className="text-sm font-bold text-white mb-4 uppercase tracking-wider">Company</h3>
+              <ul className="space-y-3 text-white/90">
+                <li><a href="/about" className="hover:text-white transition-colors">About Us</a></li>
+                <li><a href="/career" className="hover:text-white transition-colors">Career</a></li>
+                <li><a href="/internship" className="hover:text-white transition-colors">Internship Program</a></li>
+                <li><a href="/internship-policy" className="hover:text-white transition-colors">Internship Policy</a></li>
+                <li><a href="/faqs" className="hover:text-white transition-colors">FAQs</a></li>
               </ul>
             </div>
-            
-            {/* Contact Us */}
+
             <div>
-              <h3 className="text-xs md:text-sm font-bold text-white mb-3 md:mb-4 uppercase tracking-wider">Contact Us</h3>
-              <ul className="space-y-3 md:space-y-4">
+              <h3 className="text-sm font-bold text-white mb-4 uppercase tracking-wider">Services</h3>
+              <ul className="space-y-3 text-white/90">
+                <li><a href="/services/custom-software" className="hover:text-white transition-colors">Custom Software Development</a></li>
+                <li><a href="/services/web-apps" className="hover:text-white transition-colors">Web Application Development</a></li>
+                <li><a href="/services/maintenance" className="hover:text-white transition-colors">Website Maintenance</a></li>
+                <li><a href="/services/testing" className="hover:text-white transition-colors">Software Testing and QA</a></li>
+                <li><a href="/services/automation" className="hover:text-white transition-colors">Business Automation Solutions</a></li>
+              </ul>
+            </div>
+
+            <div>
+              <h3 className="text-sm font-bold text-white mb-4 uppercase tracking-wider">Contact Us</h3>
+              <ul className="space-y-4 text-white/90">
                 <li>
-                  <div className="flex items-start gap-2 md:gap-3">
-                    <Mail className="h-4 md:h-5 w-4 md:w-5 text-white mt-0.5 flex-shrink-0" />
+                  <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 rounded-full bg-white text-teal-700 flex items-center justify-center">
+                      <Mail className="h-5 w-5" />
+                    </div>
                     <div>
-                      <p className="text-xs text-white/70 mb-1">Email</p>
-                      <a href="mailto:official@athenura.in" className="text-xs md:text-sm text-white hover:text-white/80 transition-colors font-medium break-all">
+                      <p className="text-xs text-white/70">Email</p>
+                      <a href="mailto:official@athenura.in" className="text-sm hover:text-white transition-colors">
                         official@athenura.in
                       </a>
                     </div>
                   </div>
                 </li>
                 <li>
-                  <div className="flex items-start gap-2 md:gap-3">
-                    <Phone className="h-4 md:h-5 w-4 md:w-5 text-white mt-0.5 flex-shrink-0" />
+                  <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 rounded-full bg-white text-teal-700 flex items-center justify-center">
+                      <Phone className="h-5 w-5" />
+                    </div>
                     <div>
-                      <p className="text-xs text-white/70 mb-1">Phone</p>
-                      <a href="tel:+919835051934" className="text-xs md:text-sm text-white hover:text-white/80 transition-colors font-medium">
+                      <p className="text-xs text-white/70">Phone</p>
+                      <a href="tel:+919835051934" className="text-sm hover:text-white transition-colors">
                         +91 98350 51934
                       </a>
                     </div>
                   </div>
                 </li>
-                <li className="pt-2">
-                  <Button
-                    size="sm"
-                    className="w-full md:w-auto bg-white text-teal-700 hover:bg-white/90 font-semibold shadow-lg"
-                    onClick={() => navigate("/login")}
-                  >
-                    <Lock className="mr-2 h-3 w-3" />
-                    Access System
-                  </Button>
-                </li>
               </ul>
             </div>
+
+            <div>
+              <h3 className="text-sm font-bold text-white mb-4 uppercase tracking-wider">Location</h3>
+              <div className="rounded-lg overflow-hidden border border-white/20 shadow-sm">
+                <iframe
+                  title="Athenura location"
+                  src="https://www.google.com/maps/embed?pb=!1m14!1m12!1m3!1d14689.457017026245!2d72.5716!3d23.0225!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!5e0!3m2!1sen!2sin!4v1700000000000"
+                  className="h-28 w-full"
+                  loading="lazy"
+                />
+              </div>
+              <p className="text-sm text-white/90 mt-3">
+                Sector 62, Noida, Uttar Pradesh
+              </p>
+            </div>
           </div>
-          
-          {/* Bottom Bar */}
+
           <div className="pt-6 md:pt-8 border-t border-white/20">
-            <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-              <div className="text-center md:text-left">
-                <p className="text-xs md:text-sm font-semibold text-white mb-2 md:mb-3">
-                  Follow Us
-                </p>
-                <div className="flex items-center justify-center md:justify-start gap-4 md:gap-6">
-                  {/* LinkedIn */}
-                  <a 
-                    href="https://www.linkedin.com/company/athenura/" 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="text-white/80 hover:text-white hover:scale-110 transition-all"
-                    aria-label="LinkedIn"
-                  >
-                    <svg className="h-5 w-5 md:h-6 md:w-6" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
-                    </svg>
-                  </a>
-                  
-                  {/* Instagram */}
-                  <a 
-                    href="https://www.instagram.com/athenura.in/" 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="text-white/80 hover:text-white hover:scale-110 transition-all"
-                    aria-label="Instagram"
-                  >
-                    <svg className="h-5 w-5 md:h-6 md:w-6" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M12 0C8.74 0 8.333.015 7.053.072 5.775.132 4.905.333 4.14.63c-.789.306-1.459.717-2.126 1.384S.935 3.35.63 4.14C.333 4.905.131 5.775.072 7.053.012 8.333 0 8.74 0 12s.015 3.667.072 4.947c.06 1.277.261 2.148.558 2.913.306.788.717 1.459 1.384 2.126.667.666 1.336 1.079 2.126 1.384.766.296 1.636.499 2.913.558C8.333 23.988 8.74 24 12 24s3.667-.015 4.947-.072c1.277-.06 2.148-.262 2.913-.558.788-.306 1.459-.718 2.126-1.384.666-.667 1.079-1.335 1.384-2.126.296-.765.499-1.636.558-2.913.06-1.28.072-1.687.072-4.947s-.015-3.667-.072-4.947c-.06-1.277-.262-2.149-.558-2.913-.306-.789-.718-1.459-1.384-2.126C21.319 1.347 20.651.935 19.86.63c-.765-.297-1.636-.499-2.913-.558C15.667.012 15.26 0 12 0zm0 2.16c3.203 0 3.585.016 4.85.071 1.17.055 1.805.249 2.227.415.562.217.96.477 1.382.896.419.42.679.819.896 1.381.164.422.36 1.057.413 2.227.057 1.266.07 1.646.07 4.85s-.015 3.585-.074 4.85c-.061 1.17-.256 1.805-.421 2.227-.224.562-.479.96-.899 1.382-.419.419-.824.679-1.38.896-.42.164-1.065.36-2.235.413-1.274.057-1.649.07-4.859.07-3.211 0-3.586-.015-4.859-.074-1.171-.061-1.816-.256-2.236-.421-.569-.224-.96-.479-1.379-.899-.421-.419-.69-.824-.9-1.38-.165-.42-.359-1.065-.42-2.235-.045-1.26-.061-1.649-.061-4.844 0-3.196.016-3.586.061-4.861.061-1.17.255-1.814.42-2.234.21-.57.479-.96.9-1.381.419-.419.81-.689 1.379-.898.42-.166 1.051-.361 2.221-.421 1.275-.045 1.65-.06 4.859-.06l.045.03zm0 3.678c-3.405 0-6.162 2.76-6.162 6.162 0 3.405 2.76 6.162 6.162 6.162 3.405 0 6.162-2.76 6.162-6.162 0-3.405-2.76-6.162-6.162-6.162zM12 16c-2.21 0-4-1.79-4-4s1.79-4 4-4 4 1.79 4 4-1.79 4-4 4zm7.846-10.405c0 .795-.646 1.44-1.44 1.44-.795 0-1.44-.646-1.44-1.44 0-.794.646-1.439 1.44-1.439.793-.001 1.44.645 1.44 1.439z"/>
-                    </svg>
-                  </a>
-                  
-                  {/* Twitter/X */}
-                  <a 
-                    href="https://x.com/athenura_in" 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="text-white/80 hover:text-white hover:scale-110 transition-all"
-                    aria-label="Twitter/X"
-                  >
-                    <svg className="h-5 w-5 md:h-6 md:w-6" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
-                    </svg>
-                  </a>
-                  
-                  {/* GitHub */}
-                  <a 
-                    href="https://github.com/athenura" 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="text-white/80 hover:text-white hover:scale-110 transition-all"
-                    aria-label="GitHub"
-                  >
-                    <svg className="h-5 w-5 md:h-6 md:w-6" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
-                    </svg>
-                  </a>
-                </div>
+            <div className="flex flex-col md:flex-row items-center justify-between gap-4 text-white/80">
+              <p className="text-xs md:text-sm text-center md:text-left">
+                © 2026 Athenura Solutions Inc. All rights reserved.
+              </p>
+              <div className="flex items-center gap-6 text-xs md:text-sm">
+                <a href="/privacy-policy" className="hover:text-white transition-colors">Privacy Policy</a>
+                <a href="/terms-of-service" className="hover:text-white transition-colors">Terms of Service</a>
               </div>
             </div>
           </div>
