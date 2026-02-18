@@ -3,7 +3,7 @@ import mongoose from 'mongoose';
 import dbConnect from '../../src/lib/db';
 import { verifyToken } from '../../src/lib/jwt';
 import { Lead } from '../../src/models/Lead';
-import { User } from '../../src/models/User';
+import User from '../../src/models/User';
 import { z } from 'zod';
 
 // Validation schema for creating a lead

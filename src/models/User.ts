@@ -15,6 +15,13 @@ export interface IUser extends Document {
     passwordHash: string;
     role: UserRoleType;
     status: 'active' | 'inactive';
+    phone?: string;
+    company?: string;
+    bio?: string;
+    department?: string;
+    avatar?: string;
+    location?: string;
+    settings?: any;
     createdAt: Date;
     updatedAt: Date;
 }
@@ -52,6 +59,13 @@ const UserSchema: Schema<IUser> = new Schema(
             enum: ['active', 'inactive'],
             default: 'active',
         },
+        phone: String,
+        company: String,
+        bio: String,
+        department: String,
+        avatar: String,
+        location: String,
+        settings: Object,
     },
     {
         timestamps: true,

@@ -1,6 +1,8 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { api, ApiUser } from "@/lib/api";
 import {
   User,
   Bell,
@@ -61,22 +63,29 @@ interface SettingsErrors {
 
 const Settings: React.FC = () => {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [activeSection, setActiveSection] = useState<"profile" | "notifications" | "preferences">(
     "profile"
   );
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  // const [isSubmitting, setIsSubmitting] = useState(false); // Managed by mutation
   const [showSuccess, setShowSuccess] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
   const [errors, setErrors] = useState<SettingsErrors>({});
   const [hasChanges, setHasChanges] = useState(false);
 
+  // Fetch User
+  const { data: user, isLoading } = useQuery({
+    queryKey: ['profile'],
+    queryFn: api.getProfile,
+  });
+
   const [formData, setFormData] = useState<SettingsFormData>({
-    firstName: "John",
-    lastName: "Doe",
-    email: "john.doe@example.com",
-    phone: "+1 (555) 123-4567",
-    location: "San Francisco, CA",
-    bio: "Passionate about building relationships and closing deals.",
+    firstName: "",
+    lastName: "",
+    email: "",
+    phone: "",
+    location: "",
+    bio: "",
     defaultLeadSource: "LinkedIn",
     defaultLeadPriority: "Medium",
     workStartTime: "09:00",
@@ -93,6 +102,44 @@ const Settings: React.FC = () => {
     leadSourcePhone: false,
     leadSourceReferral: true,
     leadSourceWebsite: true,
+  });
+
+  useEffect(() => {
+    if (user) {
+      const [first, ...rest] = (user.name || "").split(" ");
+      const last = rest.join(" ");
+
+      const settings = user.settings || {};
+
+      setFormData(prev => ({
+        ...prev,
+        firstName: first || "",
+        lastName: last || "",
+        email: user.email || "",
+        phone: user.phone || "",
+        location: user.location || "",
+        bio: user.bio || "",
+        ...settings // Spread saved settings to override defaults
+      }));
+    }
+  }, [user]);
+
+  const updateSettingsMutation = useMutation({
+    mutationFn: (data: any) => {
+      if (!user?._id) throw new Error("User ID not found");
+      return api.updateUser(user._id, data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['profile'] });
+      setShowSuccess(true);
+      setSuccessMessage("Settings saved successfully!");
+      setHasChanges(false);
+      setTimeout(() => setShowSuccess(false), 3000);
+    },
+    onError: (error: Error) => {
+      console.error(error);
+      // Handle error (maybe show toast)
+    }
   });
 
   const validateForm = (): boolean => {
@@ -155,19 +202,19 @@ const Settings: React.FC = () => {
 
     if (!validateForm()) return;
 
-    setIsSubmitting(true);
+    // Separate profile fields vs settings fields
+    const { firstName, lastName, email, phone, location, bio, ...settings } = formData;
 
-    setTimeout(() => {
-      console.log("Settings Updated:", formData);
-      setIsSubmitting(false);
-      setShowSuccess(true);
-      setSuccessMessage("Settings saved successfully!");
-      setHasChanges(false);
+    const updateData = {
+      name: `${firstName} ${lastName}`.trim(),
+      email,
+      phone,
+      location,
+      bio,
+      settings
+    };
 
-      setTimeout(() => {
-        setShowSuccess(false);
-      }, 3000);
-    }, 1000);
+    updateSettingsMutation.mutate(updateData);
   };
 
   const handleCancel = () => {
@@ -197,6 +244,16 @@ const Settings: React.FC = () => {
 
   const activeSectionConfig = sectionConfig[activeSection];
   const ActiveIcon = activeSectionConfig.icon;
+
+  if (isLoading) {
+    return (
+      <DashboardLayout role="agent" title="Settings">
+        <div className="flex items-center justify-center h-full min-h-[50vh]">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout role="agent" title="Settings">
@@ -234,11 +291,10 @@ const Settings: React.FC = () => {
                 key={section}
                 onClick={() => setActiveSection(section)}
                 whileHover={{ y: -2 }}
-                className={`flex items-center justify-center sm:justify-start gap-2 px-3 sm:px-4 py-3 font-medium transition-colors border-b-2 w-full sm:w-auto ${
-                  isActive
-                    ? "text-foreground border-primary"
-                    : "text-muted-foreground border-transparent hover:text-foreground"
-                }`}
+                className={`flex items-center justify-center sm:justify-start gap-2 px-3 sm:px-4 py-3 font-medium transition-colors border-b-2 w-full sm:w-auto ${isActive
+                  ? "text-foreground border-primary"
+                  : "text-muted-foreground border-transparent hover:text-foreground"
+                  }`}
               >
                 <Icon className="w-4 h-4" />
                 {config.label}
@@ -645,10 +701,10 @@ const Settings: React.FC = () => {
               <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} className="w-full sm:w-auto">
                 <Button
                   type="submit"
-                  disabled={isSubmitting}
+                  disabled={updateSettingsMutation.isPending}
                   className="w-full sm:w-auto"
                 >
-                  {isSubmitting ? (
+                  {updateSettingsMutation.isPending ? (
                     <>
                       <motion.div
                         animate={{ rotate: 360 }}

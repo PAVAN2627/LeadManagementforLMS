@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { User, Mail, Phone, Building, Save, Edit2, Target, Award } from "lucide-react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
@@ -9,31 +9,76 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/components/ui/use-toast";
 import { Badge } from "@/components/ui/badge";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { api, ApiUser } from "@/lib/api";
 
 const AgentProfile = () => {
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [isEditing, setIsEditing] = useState(false);
-  const [formData, setFormData] = useState({
-    name: "Agent User",
-    email: "agent@athenuru.com",
-    phone: "+1 (555) 345-6789",
-    company: "Athenuru",
-    department: "Sales",
-    bio: "Dedicated sales agent focused on lead conversion and customer relationship management."
+  const [formData, setFormData] = useState<Partial<ApiUser>>({
+    name: "",
+    email: "",
+    phone: "",
+    company: "",
+    department: "",
+    bio: ""
+  });
+
+  const { data: user, isLoading } = useQuery({
+    queryKey: ['profile'],
+    queryFn: api.getProfile,
+  });
+
+  useEffect(() => {
+    if (user) {
+      setFormData({
+        name: user.name || "",
+        email: user.email || "",
+        phone: user.phone || "",
+        company: user.company || "",
+        department: user.department || "",
+        bio: user.bio || ""
+      });
+    }
+  }, [user]);
+
+  const updateProfileMutation = useMutation({
+    mutationFn: (data: Partial<ApiUser>) => {
+      if (!user?._id) throw new Error("User ID not found");
+      return api.updateUser(user._id, data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['profile'] });
+      setIsEditing(false);
+      toast({
+        title: "Profile Updated",
+        description: "Your profile information has been saved successfully.",
+        duration: 3000,
+      });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    }
   });
 
   const handleSave = () => {
-    setIsEditing(false);
-    toast({
-      title: "Profile Updated",
-      description: "Your profile information has been saved successfully.",
-      duration: 3000,
-    });
+    updateProfileMutation.mutate(formData);
   };
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
+
+  if (isLoading) {
+    return (
+      <DashboardLayout role="agent" title="Agent Profile">
+        <div className="flex items-center justify-center h-full min-h-[50vh]">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-600"></div>
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout role="agent" title="Agent Profile">
@@ -83,12 +128,16 @@ const AgentProfile = () => {
               {/* Avatar Section */}
               <div className="flex items-center gap-4">
                 <div className="h-20 w-20 rounded-full bg-gray-600 flex items-center justify-center">
-                  <span className="text-2xl font-bold text-white">A</span>
+                  <span className="text-2xl font-bold text-white">
+                    {formData.name?.charAt(0).toUpperCase() || 'A'}
+                  </span>
                 </div>
                 <div className="space-y-1">
                   <h3 className="text-lg font-semibold text-gray-900">{formData.name}</h3>
                   <p className="text-gray-600">{formData.department}</p>
-                  <p className="text-sm text-gray-600 font-medium">Sales Agent</p>
+                  <Badge className="bg-teal-100 text-teal-800 hover:bg-teal-100">
+                    {user?.role ? user.role.charAt(0).toUpperCase() + user.role.slice(1) : 'Agent'}
+                  </Badge>
                 </div>
               </div>
 

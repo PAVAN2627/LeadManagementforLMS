@@ -3,6 +3,22 @@ import { Lead } from "@/models/Lead"; // Frontend may use interface from LeadsTa
 // Actually, let's define the API response types or use the ones from models if possible.
 // For frontend, we usually define interfaces matching the JSON response.
 
+export interface ApiUser {
+    _id: string;
+    name: string;
+    email: string;
+    role: string;
+    status: 'active' | 'inactive';
+    phone?: string;
+    company?: string;
+    bio?: string;
+    department?: string;
+    avatar?: string;
+    location?: string;
+    settings?: any;
+    createdAt: string;
+}
+
 export interface ApiLead {
     _id: string;
     name: string;
@@ -18,6 +34,8 @@ export interface ApiLead {
         role: string;
     };
     date: string;
+    notes?: string;
+    location?: string;
     nextFollowUp?: string;
     createdAt: string;
     updatedAt: string;
@@ -25,6 +43,8 @@ export interface ApiLead {
 
 // Helper to get token
 const getToken = () => localStorage.getItem('token');
+
+const API_URL = import.meta.env.VITE_API_URL || '/api';
 
 const getHeaders = () => ({
     'Content-Type': 'application/json',
@@ -51,8 +71,39 @@ export const api = {
         return response.json();
     },
 
+    // Users
+    getUsers: async (role?: string): Promise<ApiUser[]> => {
+        const query = role ? `?role=${role}` : '';
+        const response = await fetch(`${API_URL}/users${query}`, {
+            method: 'GET',
+            headers: getHeaders(),
+        });
+        if (!response.ok) throw new Error('Failed to fetch users');
+        return response.json();
+    },
+
+    getProfile: async (): Promise<ApiUser> => {
+        const response = await fetch(`${API_URL}/auth/me`, {
+            method: 'GET',
+            headers: getHeaders(),
+        });
+        if (!response.ok) throw new Error('Failed to fetch profile');
+        const data = await response.json();
+        return data.user;
+    },
+
+    updateUser: async (id: string, data: Partial<ApiUser>): Promise<ApiUser> => {
+        const response = await fetch(`${API_URL}/users/${id}`, {
+            method: 'PUT',
+            headers: getHeaders(),
+            body: JSON.stringify(data),
+        });
+        if (!response.ok) throw new Error('Failed to update user');
+        return response.json();
+    },
+
     createLead: async (data: Partial<ApiLead>): Promise<ApiLead> => {
-        const response = await fetch('/api/leads', {
+        const response = await fetch(`${API_URL}/leads`, {
             method: 'POST',
             headers: getHeaders(),
             body: JSON.stringify(data),

@@ -17,11 +17,22 @@ const data = [
   { name: "David", converted: 15, pending: 14, lost: 6 },
 ];
 
-export function AgentPerformanceChart() {
+interface AgentPerformanceChartProps {
+  data?: {
+    name: string;
+    converted: number;
+    pending: number;
+    lost: number;
+  }[];
+}
+
+export function AgentPerformanceChart({ data: propData }: AgentPerformanceChartProps) {
+  const chartData = propData || data;
+
   return (
     <div className="h-[300px]">
       <ResponsiveContainer width="100%" height="100%">
-        <BarChart data={data}>
+        <BarChart data={chartData}>
           <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
           <XAxis
             dataKey="name"

@@ -11,28 +11,17 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 
-export interface Lead {
-  id: string;
-  name: string;
-  email: string;
-  phone: string;
-  company: string;
-  source: string;
-  status: "new" | "contacted" | "qualified" | "proposal" | "negotiation" | "converted" | "lost";
-  assignedAgent: string;
-  date: string;
-  nextFollowUp?: string;
-}
+import { ApiLead } from "@/lib/api";
 
 interface LeadsTableProps {
-  leads: Lead[];
+  leads: ApiLead[];
   showAgent?: boolean;
   showActions?: boolean;
-  onView?: (lead: Lead) => void;
-  onUpdate?: (lead: Lead) => void;
+  onView?: (lead: ApiLead) => void;
+  onUpdate?: (lead: ApiLead) => void;
 }
 
-const statusColors: Record<Lead["status"], string> = {
+const statusColors: Record<ApiLead["status"], string> = {
   new: "bg-gradient-to-r from-teal-500 to-teal-600 text-white",
   contacted: "bg-gradient-to-r from-blue-500 to-blue-600 text-white",
   qualified: "bg-gradient-to-r from-yellow-500 to-yellow-600 text-white",
@@ -60,16 +49,16 @@ export function LeadsTable({
       <div className="md:hidden space-y-4 p-4">
         {leads.map((lead, index) => (
           <motion.div
-            key={lead.id}
+            key={lead._id}
             initial={{ opacity: 0, y: 30, scale: 0.9 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            transition={{ 
-              duration: 0.4, 
+            transition={{
+              duration: 0.4,
               delay: index * 0.1,
               type: "spring",
               stiffness: 200
             }}
-            whileHover={{ 
+            whileHover={{
               scale: 1.02,
               y: -5,
               transition: { duration: 0.2 }
@@ -81,7 +70,7 @@ export function LeadsTable({
             <div className="absolute inset-0 opacity-0 group-hover:opacity-20 transition-opacity duration-500">
               <div className="absolute inset-0 bg-gradient-to-br from-teal-400 to-emerald-600" />
             </div>
-            
+
             {/* Progress bar at top */}
             <div className="absolute top-0 left-0 right-0 h-1">
               <motion.div
@@ -91,7 +80,7 @@ export function LeadsTable({
                 className="h-full bg-gradient-to-r from-teal-400 to-emerald-600"
               />
             </div>
-            
+
             <div className="relative z-10 flex justify-between items-start mb-6">
               <div className="flex items-center gap-3">
                 <motion.div
@@ -105,7 +94,7 @@ export function LeadsTable({
                   <p className="text-sm text-gray-600">{lead.company || 'Lead'}</p>
                 </div>
               </div>
-              
+
               {showActions && (
                 <div className="flex gap-1">
                   <motion.button
@@ -129,9 +118,9 @@ export function LeadsTable({
                 </div>
               )}
             </div>
-            
+
             <div className="relative z-10 space-y-4">
-              <motion.div 
+              <motion.div
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.6 + index * 0.1 }}
@@ -142,7 +131,7 @@ export function LeadsTable({
                   <span className="font-medium text-gray-900">{lead.email}</span>
                 </div>
               </motion.div>
-              
+
               <div className="grid grid-cols-2 gap-3">
                 <motion.div
                   initial={{ scale: 0 }}
@@ -155,7 +144,7 @@ export function LeadsTable({
                     {lead.source}
                   </Badge>
                 </motion.div>
-                
+
                 <motion.div
                   initial={{ scale: 0, rotate: -180 }}
                   animate={{ scale: 1, rotate: 0 }}
@@ -168,7 +157,7 @@ export function LeadsTable({
                   </Badge>
                 </motion.div>
               </div>
-              
+
               {showAgent && (
                 <motion.div
                   initial={{ opacity: 0, y: 10 }}
@@ -177,9 +166,9 @@ export function LeadsTable({
                   className="flex items-center gap-2 text-sm bg-gray-100/80 rounded-lg p-2"
                 >
                   <div className="w-6 h-6 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center text-white text-xs font-bold">
-                    {lead.assignedAgent.split(' ').map(n => n[0]).join('')}
+                    {(lead.assignedTo?.name || 'Unassigned').split(' ').map(n => n[0]).join('')}
                   </div>
-                  <span className="font-medium text-gray-900">{lead.assignedAgent}</span>
+                  <span className="font-medium text-gray-900">{lead.assignedTo?.name || 'Unassigned'}</span>
                 </motion.div>
               )}
             </div>
@@ -192,7 +181,7 @@ export function LeadsTable({
         <div className="relative">
           {/* Premium gradient header */}
           <div className="bg-gradient-to-r from-teal-600 via-emerald-700 to-cyan-600 rounded-t-xl p-4">
-            <motion.h3 
+            <motion.h3
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
               className="text-white font-bold text-lg flex items-center gap-2"
@@ -201,7 +190,7 @@ export function LeadsTable({
               Lead Directory
             </motion.h3>
           </div>
-          
+
           <Table>
             <TableHeader>
               <TableRow className="bg-gradient-to-r from-gray-50 to-gray-100 border-0">
@@ -215,12 +204,12 @@ export function LeadsTable({
             </TableHeader>
             <TableBody>
               {leads.map((lead, index) => (
-                <motion.tr 
-                  key={lead.id} 
+                <motion.tr
+                  key={lead._id}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.1, duration: 0.3 }}
-                  whileHover={{ 
+                  whileHover={{
                     backgroundColor: "rgba(20, 184, 166, 0.05)",
                     scale: 1.01,
                     transition: { duration: 0.2 }
@@ -279,14 +268,14 @@ export function LeadsTable({
                     <TableCell>
                       <div className="flex items-center gap-2">
                         <div className="w-6 h-6 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center text-white text-xs font-bold">
-                          {lead.assignedAgent.split(' ').map(n => n[0]).join('')}
+                          {(lead.assignedTo?.name || 'Unassigned').split(' ').map(n => n[0]).join('')}
                         </div>
-                        <span className="text-gray-700 font-medium">{lead.assignedAgent}</span>
+                        <span className="text-gray-700 font-medium">{lead.assignedTo?.name || 'Unassigned'}</span>
                       </div>
                     </TableCell>
                   )}
                   <TableCell>
-                    <span className="text-gray-600 font-medium">{lead.date}</span>
+                    <span className="text-gray-600 font-medium">{lead.date ? new Date(lead.date).toLocaleDateString() : 'N/A'}</span>
                   </TableCell>
                   {showActions && (
                     <TableCell className="text-center">
