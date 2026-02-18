@@ -28,4 +28,4 @@ backend/.env
 backend/.env.*
 backend/*.log
 backend/package-lock.json
-backend/firebaseKey.json
+
