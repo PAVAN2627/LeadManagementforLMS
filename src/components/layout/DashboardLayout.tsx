@@ -14,6 +14,8 @@ import {
 import { mockNotifications } from "@/data/mockData";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/context/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -27,6 +29,8 @@ export function DashboardLayout({ children, role, title }: DashboardLayoutProps)
   const [globalSearchQuery, setGlobalSearchQuery] = useState("");
   const isMobile = useIsMobile();
   const unreadCount = mockNotifications.filter((n) => !n.read).length;
+  const { logout } = useAuth();
+  const navigate = useNavigate();
 
   // Close sidebar when clicking outside on mobile
   useEffect(() => {
@@ -49,6 +53,11 @@ export function DashboardLayout({ children, role, title }: DashboardLayoutProps)
       setSidebarOpen(false);
     }
   }, [isMobile]);
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -146,9 +155,9 @@ export function DashboardLayout({ children, role, title }: DashboardLayoutProps)
                     Profile Settings
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem 
+                  <DropdownMenuItem
                     className="flex items-center gap-2 text-red-600 focus:text-red-600"
-                    onClick={() => window.location.href = '/'}
+                    onClick={handleLogout}
                   >
                     <LogOut className="h-4 w-4" />
                     Logout
@@ -157,7 +166,7 @@ export function DashboardLayout({ children, role, title }: DashboardLayoutProps)
               </DropdownMenu>
             </div>
           </div>
-          
+
           {/* Mobile Search Bar */}
           <AnimatePresence>
             {mobileSearchOpen && (

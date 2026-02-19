@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { NavLink, useLocation } from "react-router-dom";
+import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   LayoutDashboard,
@@ -19,6 +19,7 @@ import {
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useAuth } from "@/context/AuthContext";
 
 interface SidebarItem {
   icon: React.ElementType;
@@ -67,6 +68,8 @@ const roleItems = {
 export function DashboardSidebar({ role, isOpen, setIsOpen }: DashboardSidebarProps) {
   const [collapsed, setCollapsed] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
+  const { logout } = useAuth();
   const isMobile = useIsMobile();
   const items = roleItems[role];
 
@@ -76,27 +79,36 @@ export function DashboardSidebar({ role, isOpen, setIsOpen }: DashboardSidebarPr
     }
   };
 
+  const handleLogout = (e: React.MouseEvent) => {
+    e.preventDefault();
+    logout();
+    navigate("/");
+    if (isMobile) {
+      setIsOpen(false);
+    }
+  };
+
   const sidebarClassNames = cn(
     "fixed left-0 top-0 z-40 h-screen gradient-teal transition-all duration-300 flex flex-col",
     isMobile
       ? cn(
-          "w-64",
-          isOpen ? "translate-x-0" : "-translate-x-full"
-        )
+        "w-64",
+        isOpen ? "translate-x-0" : "-translate-x-full"
+      )
       : cn(
-          collapsed ? "w-20" : "w-64"
-        )
+        collapsed ? "w-20" : "w-64"
+      )
   );
 
   return (
     <motion.aside
       id="dashboard-sidebar"
       initial={{ x: isMobile ? -264 : -20, opacity: 0 }}
-      animate={{ 
-        x: isMobile 
+      animate={{
+        x: isMobile
           ? (isOpen ? 0 : -264)
-          : 0, 
-        opacity: 1 
+          : 0,
+        opacity: 1
       }}
       transition={{ duration: 0.3 }}
       className={sidebarClassNames}
@@ -115,20 +127,19 @@ export function DashboardSidebar({ role, isOpen, setIsOpen }: DashboardSidebarPr
             </motion.div>
           )}
         </AnimatePresence>
-        
+
         <div className="flex items-center gap-2">
           {/* Mobile logout button */}
           {isMobile && (
-            <NavLink
-              to="/"
-              onClick={handleNavClick}
+            <button
+              onClick={handleLogout}
               className="flex items-center justify-center h-8 w-8 rounded-lg text-sidebar-foreground/80 hover:bg-destructive/20 hover:text-destructive-foreground transition-all duration-200"
               title="Logout"
             >
               <LogOut className="h-4 w-4" />
-            </NavLink>
+            </button>
           )}
-          
+
           {/* Desktop collapse button */}
           {!isMobile && (
             <Button
@@ -140,7 +151,7 @@ export function DashboardSidebar({ role, isOpen, setIsOpen }: DashboardSidebarPr
               {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
             </Button>
           )}
-          
+
           {/* Mobile close button */}
           {isMobile && (
             <Button
@@ -160,14 +171,14 @@ export function DashboardSidebar({ role, isOpen, setIsOpen }: DashboardSidebarPr
         {items.map((item, index) => {
           const isActive = location.pathname === item.path;
           const showLabel = !collapsed || isMobile;
-          
+
           return (
             <motion.div
               key={item.path}
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
-              transition={{ 
-                duration: 0.3, 
+              transition={{
+                duration: 0.3,
                 delay: index * 0.1,
                 ease: "easeOut"
               }}
@@ -223,13 +234,13 @@ export function DashboardSidebar({ role, isOpen, setIsOpen }: DashboardSidebarPr
       </nav>
 
       {/* Role Badge & Logout */}
-      <motion.div 
+      <motion.div
         className="p-3 border-t border-sidebar-border/50"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, delay: 0.5 }}
       >
-        <motion.div 
+        <motion.div
           className={cn(
             "mb-3 rounded-xl bg-gradient-to-r from-sidebar-accent/30 to-sidebar-accent/50 px-4 py-3 backdrop-blur-sm border border-sidebar-accent/20",
             (!collapsed || isMobile) ? "" : "text-center"
@@ -238,7 +249,7 @@ export function DashboardSidebar({ role, isOpen, setIsOpen }: DashboardSidebarPr
           transition={{ duration: 0.2 }}
         >
           {(!collapsed || isMobile) && !isMobile && (
-            <motion.p 
+            <motion.p
               className="text-xs text-sidebar-muted mb-1"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -247,7 +258,7 @@ export function DashboardSidebar({ role, isOpen, setIsOpen }: DashboardSidebarPr
               Logged in as
             </motion.p>
           )}
-          <motion.p 
+          <motion.p
             className="text-sm font-semibold text-sidebar-foreground capitalize flex items-center gap-2"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -261,18 +272,17 @@ export function DashboardSidebar({ role, isOpen, setIsOpen }: DashboardSidebarPr
             {(!collapsed || isMobile) ? role : role[0].toUpperCase()}
           </motion.p>
         </motion.div>
-        
+
         {/* Desktop logout */}
         {!isMobile && (
           <motion.div
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
           >
-            <NavLink
-              to="/"
-              onClick={handleNavClick}
+            <button
+              onClick={handleLogout}
               className={cn(
-                "group relative flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all duration-300",
+                "group relative flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all duration-300 w-full",
                 "text-sidebar-foreground/80 hover:bg-destructive/20 hover:text-destructive-foreground hover:shadow-md backdrop-blur-sm border border-transparent hover:border-destructive/20"
               )}
             >
@@ -296,7 +306,7 @@ export function DashboardSidebar({ role, isOpen, setIsOpen }: DashboardSidebarPr
                 className="absolute inset-0 rounded-xl bg-gradient-to-r from-destructive/5 to-destructive/10 opacity-0 group-hover:opacity-100"
                 transition={{ duration: 0.3 }}
               />
-            </NavLink>
+            </button>
           </motion.div>
         )}
       </motion.div>

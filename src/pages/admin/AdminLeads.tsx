@@ -52,7 +52,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { mockLeads, mockUsers } from "@/data/mockData";
+
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api, ApiLead } from "@/lib/api";
 import { useToast } from "@/components/ui/use-toast";
@@ -211,17 +211,6 @@ const AdminLeads = () => {
     updateLeadMutation.mutate({
       id: editingLead._id,
       data: {
-        ...editFormData,
-        assignedTo: { _id: editFormData.assignedAgent } as any // Handle ID mapping in API or just pass ID as assignedTo if API accepts it. API accepts assignedTo as ID string.
-      } as any // Cast to any to bypass strict type check on assignedTo for now or adjust API type
-    });
-    // Actually API expects assignedTo as string ID for updates? 
-    // Let's check updateLeadSchema in api/leads/[id].ts. It expects z.string().optional() for assignedTo.
-    // So we should pass assignedTo: editFormData.assignedAgent
-
-    updateLeadMutation.mutate({
-      id: editingLead._id,
-      data: {
         name: editFormData.name,
         email: editFormData.email,
         phone: editFormData.phone,
@@ -261,9 +250,14 @@ const AdminLeads = () => {
 
   const handleAddLead = () => {
     createLeadMutation.mutate({
-      ...newLead,
-      assignedTo: newLead.assignedAgent as any // Pass ID
-    });
+      name: newLead.name,
+      email: newLead.email,
+      phone: newLead.phone,
+      company: newLead.company,
+      source: newLead.source,
+      notes: newLead.notes,
+      assignedTo: newLead.assignedAgent as any // Pass agent ID string
+    } as any);
   };
 
   // Close handler to reset form
@@ -412,7 +406,7 @@ const AdminLeads = () => {
                 </Button>
               </motion.div>
 
-              <Dialog open={isAddLeadOpen} onOpenChange={(open) => !open && handleCloseAddLead()}>
+              <Dialog open={isAddLeadOpen} onOpenChange={(open) => open ? setIsAddLeadOpen(true) : handleCloseAddLead()}>
                 <DialogTrigger asChild>
                   <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                     <Button size="sm" className="bg-white hover:bg-gray-50 text-teal-700 shadow-lg hover:shadow-xl transition-all duration-300 font-semibold">
@@ -621,11 +615,11 @@ const AdminLeads = () => {
                           <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="flex-1">
                             <Button
                               onClick={handleAddLead}
-                              disabled={!newLead.name || !newLead.email}
+                              disabled={!newLead.name || !newLead.email || createLeadMutation.isPending}
                               className="w-full py-3 bg-gradient-to-r from-teal-600 to-teal-700 hover:from-teal-700 hover:to-teal-800 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 font-semibold"
                             >
                               <Plus className="h-4 w-4 mr-2" />
-                              Create Lead
+                              {createLeadMutation.isPending ? "Creating..." : "Create Lead"}
                             </Button>
                           </motion.div>
                           <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>

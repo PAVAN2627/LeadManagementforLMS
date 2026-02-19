@@ -7,18 +7,20 @@ import { z } from 'zod';
 
 const updateUserSchema = z.object({
     name: z.string().optional(),
+    email: z.string().email().optional(),
     avatar: z.string().optional(),
     phone: z.string().optional(),
-    company: z.string().optional(), // If user model supports it, check allowed fields
+    company: z.string().optional(),
     bio: z.string().optional(),
     department: z.string().optional(),
     location: z.string().optional(),
     settings: z.any().optional(),
-    // Add other fields as necessary, but avoid sensitive ones like password here
+    role: z.enum(['admin', 'manager', 'agent']).optional(),
+    status: z.enum(['active', 'inactive']).optional(),
 });
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-    if (req.method !== 'PUT' && req.method !== 'GET' && req.method !== 'DELETE') {
+    if (req.method !== 'PUT' && req.method !== 'GET' && req.method !== 'DELETE' && req.method !== 'PATCH') {
         return res.status(405).json({ message: 'Method Not Allowed' });
     }
 
@@ -36,7 +38,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             return res.status(401).json({ message: 'Unauthorized: Invalid token' });
         }
 
-        const { id } = req.query;
+        // Support both Vercel (req.query.id) and Express (req.params.id) routing
+        const id = (req.query.id || (req as any).params?.id) as string | undefined;
 
         if (!id) {
             return res.status(400).json({ message: 'User ID required' });
@@ -53,7 +56,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             return res.status(200).json(user);
         }
 
-        if (req.method === 'PUT') {
+        if (req.method === 'PUT' || req.method === 'PATCH') {
             // Validate body
             const body = req.body;
             const validation = updateUserSchema.safeParse(body);
@@ -64,10 +67,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
             const updates = validation.data;
 
-            // Check if User model actually has these fields
-            // Assuming User model is flexible or schemas match.
-            // If User model is strict, we might need to check mongoose schema.
-            // For now, let's proceed.
+            // Security check: only admin can update role or status
+            if ((updates.role || updates.status) && decoded.role !== 'admin') {
+                return res.status(403).json({ message: "Forbidden: Only admins can update role or status" });
+            }
 
             const updatedUser = await User.findByIdAndUpdate(id, updates, { new: true }).select('-passwordHash');
 
@@ -79,7 +82,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         }
 
         if (req.method === 'DELETE') {
-            // Only admin can delete? Or user delete self?
+            // Only admin can delete
             if (decoded.role !== 'admin') {
                 return res.status(403).json({ message: 'Forbidden. Only admins can delete users.' });
             }

@@ -1,26 +1,41 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Navigate } from "react-router-dom";
 import { Mail, Lock, ArrowLeft, Shield, Users, BarChart3, Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/context/AuthContext";
+import { useToast } from "@/components/ui/use-toast";
 
 const Login = () => {
   const navigate = useNavigate();
-  /* eslint-disable @typescript-eslint/no-unused-vars */
-  const { login } = useAuth();
-  /* eslint-enable @typescript-eslint/no-unused-vars */
+  const { login, user, isAuthenticated, isLoading } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { toast } = useToast();
+
+  // If session is still loading, show nothing (ProtectedRoute handles spinner)
+  if (isLoading) return null;
+
+  // Already authenticated — send user to their own dashboard
+  if (isAuthenticated && user) {
+    const dashboardMap: Record<string, string> = {
+      admin: '/admin',
+      manager: '/manager',
+      agent: '/agent',
+    };
+    return <Navigate to={dashboardMap[user.role] || '/'} replace />;
+  }
+
+
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
+    setIsSubmitting(true);
 
     try {
       const response = await fetch('/api/auth/login', {
@@ -41,21 +56,17 @@ const Login = () => {
 
       const role = data.user.role;
       navigate(`/${role}`);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Login error:', error);
-      // Ideally show toast error here
+      toast({
+        variant: "destructive",
+        title: "Login Failed",
+        description: error.message || "Invalid credentials",
+      });
     } finally {
-      setIsLoading(false);
+      setIsSubmitting(false);
     }
   };
-
-  // Demo login - modified to hit API if needed or kept as mock for now? 
-  // Requirement says "Replace any mock auth logic".
-  // Let's remove demo login or update it to use a hardcoded demo account against API if exists.
-  // For now, let's keep it but make it clear it's a demo bypass or remove it.
-  // The plan tasks say "Update Login.tsx to use useAuth().login".
-  // I will comment out demo login for now or remove it.
-  // Actually, let's remove it to strictly follow "Replace mock data".
 
 
   return (
@@ -205,9 +216,9 @@ const Login = () => {
             <Button
               type="submit"
               className="w-full gradient-teal text-white h-10 md:h-12 text-sm md:text-base font-semibold shadow-lg hover:shadow-xl transition-all hover:scale-[1.02]"
-              disabled={isLoading}
+              disabled={isSubmitting}
             >
-              {isLoading ? (
+              {isSubmitting ? (
                 <motion.div
                   animate={{ rotate: 360 }}
                   transition={{ duration: 1, repeat: Infinity, ease: "linear" }}

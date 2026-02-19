@@ -63,6 +63,8 @@ const ManagerDashboard = () => {
   const [dateFilter, setDateFilter] = useState<string>("all");
   const [bulkAssignOpen, setBulkAssignOpen] = useState(false);
   const [selectedLeads, setSelectedLeads] = useState<string[]>([]);
+  // Track per-row selected agent (key: leadId, value: agentId)
+  const [rowAgentMap, setRowAgentMap] = useState<Record<string, string>>({});
 
   const { data: leads = [], isLoading: isLoadingLeads } = useQuery({
     queryKey: ['leads'],
@@ -119,17 +121,15 @@ const ManagerDashboard = () => {
     }
   });
 
-  const handleBulkAssign = (agentName: string) => {
-    // Find agent by name (UI uses name currently)
-    const agent = agents.find((a: ApiUser) => a.name === agentName);
+  const handleBulkAssign = (agentId: string) => {
+    const agent = agents.find((a: ApiUser) => a._id === agentId);
     if (!agent) return;
 
     selectedLeads.forEach(leadId => {
-      // Send ID as assignedTo. API should handle it.
       updateLeadMutation.mutate({ id: leadId, data: { assignedTo: agent._id } as any });
     });
 
-    toast({ title: "Bulk Assign", description: `Assigned leads to ${agentName}` });
+    toast({ title: "Bulk Assign", description: `Assigned leads to ${agent.name}` });
     setSelectedLeads([]);
     setBulkAssignOpen(false);
   };
@@ -285,7 +285,7 @@ const ManagerDashboard = () => {
                                 </SelectTrigger>
                                 <SelectContent>
                                   {agents.map((agent) => (
-                                    <SelectItem key={agent._id} value={agent.name}>
+                                    <SelectItem key={agent._id} value={agent._id}>
                                       {agent.name}
                                     </SelectItem>
                                   ))}
@@ -534,13 +534,16 @@ const ManagerDashboard = () => {
                             </motion.div>
                           </TableCell>
                           <TableCell>
-                            <Select defaultValue={lead.assignedTo?.name || "Unassigned"}>
+                            <Select
+                              value={rowAgentMap[lead._id] || lead.assignedTo?._id || ""}
+                              onValueChange={(val) => setRowAgentMap(prev => ({ ...prev, [lead._id]: val }))}
+                            >
                               <SelectTrigger className="w-32 h-8 select-animated">
-                                <SelectValue />
+                                <SelectValue placeholder="Select agent" />
                               </SelectTrigger>
                               <SelectContent>
                                 {agents.map((agent) => (
-                                  <SelectItem key={agent._id} value={agent.name}>
+                                  <SelectItem key={agent._id} value={agent._id}>
                                     {agent.name}
                                   </SelectItem>
                                 ))}
@@ -564,8 +567,17 @@ const ManagerDashboard = () => {
                               whileHover={{ scale: 1.05 }}
                               whileTap={{ scale: 0.95 }}
                             >
-                              <Button size="sm" className="gradient-bg-animated text-primary-foreground button-ripple hover:scale-105 transition-all shadow-md">
-                                Assign
+                              <Button
+                                size="sm"
+                                className="gradient-bg-animated text-primary-foreground button-ripple hover:scale-105 transition-all shadow-md"
+                                onClick={() => {
+                                  const agentId = rowAgentMap[lead._id] || lead.assignedTo?._id || "";
+                                  if (!agentId) return;
+                                  updateLeadMutation.mutate({ id: lead._id, data: { assignedTo: agentId } as any });
+                                }}
+                                disabled={(!rowAgentMap[lead._id] && !lead.assignedTo?._id) || updateLeadMutation.isPending}
+                              >
+                                {updateLeadMutation.isPending ? "Saving..." : "Assign"}
                               </Button>
                             </motion.div>
                           </TableCell>

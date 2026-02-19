@@ -34,7 +34,7 @@ import { LeadsByStatusChart } from "@/components/charts/LeadsByStatusChart";
 import { MonthlyGrowthChart } from "@/components/charts/MonthlyGrowthChart";
 import { AgentPerformanceChart } from "@/components/charts/AgentPerformanceChart";
 import { LeadsTable } from "@/components/tables/LeadsTable";
-import { mockLeads, mockUsers } from "@/data/mockData";
+
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import {
@@ -71,11 +71,12 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
 
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api, ApiLead } from "@/lib/api";
 
 const AdminDashboard = () => {
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   // Fetch Leads
   const { data: leads = [], isLoading: isLoadingLeads } = useQuery({
@@ -118,7 +119,7 @@ const AdminDashboard = () => {
     name: '',
     email: '',
     role: 'Agent' as any,
-    status: 'Active' as any
+    status: 'active' as any
   });
 
   const totalLeads = leads.length;
@@ -298,24 +299,46 @@ const AdminDashboard = () => {
       company: lead.company,
       source: lead.source,
       status: lead.status,
-      assignedAgent: lead.assignedAgent
+      assignedAgent: lead.assignedTo?._id || ''
     });
     setIsEditLeadOpen(true);
   };
 
+  // Mutations
+  const updateLeadMutation = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: Partial<ApiLead> }) => api.updateLead(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['leads'] });
+      toast({ title: "Lead Updated", description: "Lead updated successfully." });
+      setIsEditLeadOpen(false);
+      setEditingLead(null);
+    },
+    onError: (error: Error) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    }
+  });
+
+  const updateUserMutation = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: Partial<any> }) => api.updateUser(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['users'] });
+      toast({ title: "User Updated", description: "User updated successfully." });
+      setIsEditUserOpen(false);
+      setEditingUser(null);
+    },
+    onError: (error: Error) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    }
+  });
+
   const handleSaveLead = () => {
-    setLeads(leads.map(lead =>
-      lead.id === editingLead.id
-        ? { ...lead, ...leadFormData }
-        : lead
-    ));
-
-    setIsEditLeadOpen(false);
-    setEditingLead(null);
-
-    toast({
-      title: "Lead Updated",
-      description: `${leadFormData.name} has been updated successfully.`,
+    if (!editingLead) return;
+    updateLeadMutation.mutate({
+      id: editingLead._id,
+      data: {
+        ...leadFormData,
+        // map assignedAgent to assignedTo if needed, but simplistic update for now
+      }
     });
   };
 
@@ -337,25 +360,17 @@ const AdminDashboard = () => {
   };
 
   const handleSaveUser = () => {
-    setUsers(users.map(user =>
-      user.id === editingUser.id
-        ? { ...user, ...userFormData }
-        : user
-    ));
-
-    setIsEditUserOpen(false);
-    setEditingUser(null);
-
-    toast({
-      title: "User Updated",
-      description: `${userFormData.name} has been updated successfully.`,
+    if (!editingUser) return;
+    updateUserMutation.mutate({
+      id: editingUser._id,
+      data: userFormData
     });
   };
 
   const handleToggleUserStatus = (userId: string) => {
     // Ideally this would be an API call mutation
     // setUsers(users.map(user =>
-    //   user.id === userId
+    //   user._id === userId
     //     ? { ...user, status: user.status === "Active" ? "Inactive" : "Active" }
     //     : user
     // ));
@@ -1376,7 +1391,7 @@ const AdminDashboard = () => {
                 >
                   {/* Animated background gradient */}
                   <div className="absolute inset-0 opacity-0 group-hover:opacity-20 transition-opacity duration-500">
-                    <div className={`absolute inset-0 bg-gradient-to-br ${user.status === 'Active' ? 'from-green-400 to-emerald-600' : 'from-gray-400 to-gray-600'
+                    <div className={`absolute inset-0 bg-gradient-to-br ${user.status === 'active' ? 'from-green-400 to-emerald-600' : 'from-gray-400 to-gray-600'
                       }`} />
                   </div>
 
@@ -1386,7 +1401,7 @@ const AdminDashboard = () => {
                       initial={{ width: 0 }}
                       animate={{ width: "100%" }}
                       transition={{ delay: 0.5 + index * 0.1, duration: 1 }}
-                      className={`h-full bg-gradient-to-r ${user.status === 'Active' ? 'from-green-400 to-emerald-600' : 'from-gray-400 to-gray-500'
+                      className={`h-full bg-gradient-to-r ${user.status === 'active' ? 'from-green-400 to-emerald-600' : 'from-gray-400 to-gray-500'
                         }`}
                     />
                   </div>
@@ -1467,7 +1482,7 @@ const AdminDashboard = () => {
                         transition={{ delay: 0.8 + index * 0.1, type: "spring" }}
                       >
                         <Badge
-                          className={`px-3 py-1 font-semibold shadow-sm ${user.status === "Active"
+                          className={`px-3 py-1 font-semibold shadow-sm ${user.status === "active"
                             ? "bg-gradient-to-r from-green-500 to-emerald-600 text-white"
                             : "bg-gradient-to-r from-red-500 to-red-600 text-white"
                             }`}
@@ -1565,7 +1580,7 @@ const AdminDashboard = () => {
                             transition={{ delay: 0.2 + index * 0.05, type: "spring" }}
                           >
                             <Badge
-                              className={`px-3 py-1 font-semibold shadow-sm ${user.status === "Active"
+                              className={`px-3 py-1 font-semibold shadow-sm ${user.status === "active"
                                 ? "bg-gradient-to-r from-green-500 to-emerald-600 text-white"
                                 : "bg-gradient-to-r from-red-500 to-red-600 text-white"
                                 }`}
@@ -1603,7 +1618,7 @@ const AdminDashboard = () => {
                               whileHover={{ scale: 1.2, y: -2 }}
                               whileTap={{ scale: 0.9 }}
                               className="p-2 rounded-lg bg-red-100 hover:bg-red-200 text-red-600 transition-all duration-200 shadow-sm hover:shadow-md"
-                              onClick={() => handleToggleUserStatus(user.id)}
+                              onClick={() => handleToggleUserStatus(user._id)}
                             >
                               <Ban className="h-4 w-4" />
                             </motion.button>
@@ -1667,7 +1682,7 @@ const AdminDashboard = () => {
                         </div>
                         <div>
                           <span className="text-gray-500">Assigned Agent: </span>
-                          <span className="text-gray-900">{selectedLead.assignedAgent}</span>
+                          <span className="text-gray-900">{selectedLead.assignedTo ? selectedLead.assignedTo.name : 'Unassigned'}</span>
                         </div>
                         <div>
                           <span className="text-gray-500">Date Added: </span>
@@ -1791,7 +1806,7 @@ const AdminDashboard = () => {
                   <Button
                     variant={selectedUser.status === "Active" ? "destructive" : "default"}
                     className="flex-1"
-                    onClick={() => handleToggleUserStatus(selectedUser.id)}
+                    onClick={() => handleToggleUserStatus(selectedUser._id)}
                   >
                     <Ban className="h-4 w-4 mr-2" />
                     {selectedUser.status === "Active" ? "Deactivate" : "Activate"}
@@ -1886,8 +1901,8 @@ const AdminDashboard = () => {
                   <SelectValue placeholder="Select agent" />
                 </SelectTrigger>
                 <SelectContent>
-                  {users.filter(u => u.role === "Agent").map(agent => (
-                    <SelectItem key={agent.id} value={agent.name}>{agent.name}</SelectItem>
+                  {users.filter(u => u.role.toLowerCase() === "agent").map(agent => (
+                    <SelectItem key={agent._id} value={agent._id}>{agent.name}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -1937,9 +1952,9 @@ const AdminDashboard = () => {
                   <SelectValue placeholder="Select role" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Admin">Admin</SelectItem>
-                  <SelectItem value="Manager">Manager</SelectItem>
-                  <SelectItem value="Agent">Agent</SelectItem>
+                  <SelectItem value="admin">Admin</SelectItem>
+                  <SelectItem value="manager">Manager</SelectItem>
+                  <SelectItem value="agent">Agent</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -1950,8 +1965,8 @@ const AdminDashboard = () => {
                   <SelectValue placeholder="Select status" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Active">Active</SelectItem>
-                  <SelectItem value="Inactive">Inactive</SelectItem>
+                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="inactive">Inactive</SelectItem>
                 </SelectContent>
               </Select>
             </div>

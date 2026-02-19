@@ -18,7 +18,8 @@ const updateLeadSchema = z.object({
 });
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-    const { id } = req.query;
+    // Support both Vercel (req.query.id) and Express (req.params.id) routing
+    const id = (req.query.id || (req as any).params?.id) as string | undefined;
 
     if (!id || typeof id !== 'string') {
         return res.status(400).json({ message: 'Invalid Lead ID' });
@@ -62,8 +63,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         }
     }
 
-    // PUT: Update Lead
-    if (req.method === 'PUT') {
+    // PUT/PATCH: Update Lead
+    if (req.method === 'PUT' || req.method === 'PATCH') {
         try {
             const existingLead = await Lead.findById(id);
 

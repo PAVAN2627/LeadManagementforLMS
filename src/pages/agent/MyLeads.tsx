@@ -72,8 +72,8 @@ const MyLeads = () => {
   const createLeadMutation = useMutation({
     mutationFn: (data: any) => api.createLead({
       ...data,
-      assignedTo: 'SELF', // Placeholder, backend should handle or use current user
-      source: data.source || 'Manual'
+      source: data.source || 'Manual',
+      // assignedTo omitted — backend auto-assigns to the creating agent
     }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['leads'] });

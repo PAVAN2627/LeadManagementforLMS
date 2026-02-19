@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { motion } from "framer-motion";
 import {
   BarChart3,
@@ -40,11 +40,73 @@ import {
 } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/components/ui/use-toast";
+import { useQuery } from "@tanstack/react-query";
+import { api, ApiLead, ApiUser } from "@/lib/api";
 
 const AdminReports = () => {
   const { toast } = useToast();
   const [dateRange, setDateRange] = useState("30");
   const [reportType, setReportType] = useState("leads");
+
+  // Fetch data
+  const { data: leads = [] } = useQuery({
+    queryKey: ['leads'],
+    queryFn: api.getLeads
+  });
+
+  const { data: users = [] } = useQuery({
+    queryKey: ['users'],
+    queryFn: () => api.getUsers('agent')
+  });
+
+  // Compute Leads By Status
+  const leadsByStatusData = useMemo(() => {
+    const statusCounts = leads.reduce((acc: Record<string, number>, lead: ApiLead) => {
+      // Normalize status to key (e.g. "new" -> "New")
+      const rawStatus = lead.status;
+      // Default to capitalized if valid status, else raw
+      const status = rawStatus ? rawStatus.charAt(0).toUpperCase() + rawStatus.slice(1) : "Unknown";
+      acc[status] = (acc[status] || 0) + 1;
+      return acc;
+    }, {});
+
+    const colorMap: Record<string, string> = {
+      New: "#1F8A98",
+      Contacted: "#17A2B8",
+      Qualified: "#20C997",
+      Converted: "#28A745",
+      Lost: "#DC3545",
+      Proposal: "#6f42c1",
+      Negotiation: "#fd7e14",
+      Unknown: "#6c757d"
+    };
+
+    return Object.keys(statusCounts).map(status => ({
+      name: status,
+      value: statusCounts[status],
+      color: colorMap[status] || "#6c757d"
+    })).filter(item => item.value > 0);
+  }, [leads]);
+
+  // Compute Agent Performance
+  const agentPerformanceData = useMemo(() => {
+    const agents = users.filter((u: any) => u.role.toLowerCase() === 'agent');
+    if (agents.length === 0) return undefined; // Let chart use default if no agents or data not ready
+
+    return agents.map((agent: any) => {
+      const agentLeads = leads.filter((l: ApiLead) => l.assignedTo?._id === agent._id);
+      const converted = agentLeads.filter((l: ApiLead) => l.status === 'converted').length;
+      const lost = agentLeads.filter((l: ApiLead) => l.status === 'lost').length;
+      const pending = agentLeads.length - converted - lost;
+
+      return {
+        name: agent.name.split(' ')[0],
+        converted,
+        pending,
+        lost
+      };
+    });
+  }, [users, leads]);
 
   // Export all reports function
   const exportAllReports = () => {
@@ -79,7 +141,7 @@ const AdminReports = () => {
     link.href = url;
     link.download = `comprehensive-reports-${new Date().toISOString().split('T')[0]}.json`;
     link.click();
-    
+
     toast({
       title: "Export Successful",
       description: "All reports have been exported successfully.",
@@ -91,18 +153,24 @@ const AdminReports = () => {
     // Simulate refresh
     setDateRange("30");
     setReportType("leads");
-    
+
     toast({
       title: "Data Refreshed",
       description: "Reports data has been refreshed successfully.",
     });
   };
 
-  // Mock data for reports
+  // Calculate real conversion rate
+  const conversionRate = useMemo(() => {
+    if (leads.length === 0) return "0%";
+    const converted = leads.filter((l: ApiLead) => l.status === 'converted').length;
+    return ((converted / leads.length) * 100).toFixed(1) + "%";
+  }, [leads]);
+
   const kpiData = [
     {
       title: "Total Revenue",
-      value: "$247,890",
+      value: "$247,890", // Placeholder as revenue is not tracked yet
       change: "+12.5%",
       trend: "up",
       icon: DollarSign,
@@ -110,8 +178,8 @@ const AdminReports = () => {
     },
     {
       title: "Conversion Rate",
-      value: "18.4%",
-      change: "+2.1%",
+      value: conversionRate,
+      change: "+2.1%", // Static comparison for now
       trend: "up",
       icon: Target,
       color: "bg-teal-600"
@@ -241,7 +309,7 @@ const AdminReports = () => {
                 transition={{ delay: 0.3 }}
                 className="flex flex-wrap items-center gap-6 text-sm"
               >
-                <motion.div 
+                <motion.div
                   whileHover={{ scale: 1.05 }}
                   className="flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-lg px-3 py-2"
                 >
@@ -252,16 +320,16 @@ const AdminReports = () => {
                   />
                   <span className="text-teal-100">Real-time Data</span>
                 </motion.div>
-                
-                <motion.div 
+
+                <motion.div
                   whileHover={{ scale: 1.05 }}
                   className="flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-lg px-3 py-2"
                 >
                   <Activity className="h-4 w-4 text-teal-200" />
                   <span className="text-teal-100">Live Analytics</span>
                 </motion.div>
-                
-                <motion.div 
+
+                <motion.div
                   whileHover={{ scale: 1.05 }}
                   className="flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-lg px-3 py-2"
                 >
@@ -292,11 +360,11 @@ const AdminReports = () => {
                   </SelectContent>
                 </Select>
               </motion.div>
-              
+
               <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                <Button 
-                  variant="secondary" 
-                  size="sm" 
+                <Button
+                  variant="secondary"
+                  size="sm"
                   className="bg-white/20 hover:bg-white/30 text-white border-0 backdrop-blur-sm transition-all duration-300 shadow-lg hover:shadow-xl"
                   onClick={refreshReports}
                 >
@@ -309,10 +377,10 @@ const AdminReports = () => {
                   Refresh
                 </Button>
               </motion.div>
-              
+
               <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                <Button 
-                  size="sm" 
+                <Button
+                  size="sm"
                   className="bg-white hover:bg-gray-50 text-teal-700 shadow-lg hover:shadow-xl transition-all duration-300 font-semibold"
                   onClick={exportAllReports}
                 >
@@ -336,13 +404,13 @@ const AdminReports = () => {
               key={kpi.title}
               initial={{ opacity: 0, y: 30, rotateX: -15 }}
               animate={{ opacity: 1, y: 0, rotateX: 0 }}
-              transition={{ 
+              transition={{
                 delay: 0.4 + index * 0.1,
                 type: "spring",
                 stiffness: 100,
                 damping: 15
               }}
-              whileHover={{ 
+              whileHover={{
                 y: -8,
                 rotateX: 5,
                 scale: 1.02,
@@ -371,7 +439,7 @@ const AdminReports = () => {
                 <CardContent className="relative z-10 p-6">
                   <div className="flex items-center justify-between">
                     <div className="flex-1">
-                      <motion.p 
+                      <motion.p
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         transition={{ delay: 0.5 + index * 0.1 }}
@@ -379,30 +447,29 @@ const AdminReports = () => {
                       >
                         {kpi.title}
                       </motion.p>
-                      
-                      <motion.p 
+
+                      <motion.p
                         initial={{ opacity: 0, scale: 0.8 }}
                         animate={{ opacity: 1, scale: 1 }}
-                        transition={{ 
+                        transition={{
                           delay: 0.6 + index * 0.1,
                           type: "spring",
-                          stiffness: 200 
+                          stiffness: 200
                         }}
                         className="text-3xl font-bold text-gray-900 mb-2 group-hover:text-gray-800 transition-colors"
                       >
                         {kpi.value}
                       </motion.p>
-                      
-                      <motion.div 
+
+                      <motion.div
                         initial={{ opacity: 0, x: -10 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: 0.7 + index * 0.1 }}
-                        className={`flex items-center gap-2 text-sm font-semibold ${
-                          kpi.trend === "up" ? "text-emerald-600" : "text-red-600"
-                        }`}
+                        className={`flex items-center gap-2 text-sm font-semibold ${kpi.trend === "up" ? "text-emerald-600" : "text-red-600"
+                          }`}
                       >
                         <motion.div
-                          animate={{ 
+                          animate={{
                             y: kpi.trend === "up" ? [0, -2, 0] : [0, 2, 0],
                             rotate: kpi.trend === "up" ? [0, 5, 0] : [0, -5, 0]
                           }}
@@ -420,19 +487,19 @@ const AdminReports = () => {
 
                     {/* Floating Icon */}
                     <motion.div
-                      animate={{ 
+                      animate={{
                         rotate: [0, 5, -5, 0],
-                        scale: [1, 1.05, 1] 
+                        scale: [1, 1.05, 1]
                       }}
-                      transition={{ 
-                        duration: 4, 
+                      transition={{
+                        duration: 4,
                         repeat: Infinity,
-                        delay: index * 0.5 
+                        delay: index * 0.5
                       }}
                       className={`relative p-4 rounded-xl shadow-lg ${kpi.color}`}
                     >
                       <kpi.icon className="h-6 w-6 text-white" />
-                      
+
                       {/* Glow Effect */}
                       <motion.div
                         className={`absolute inset-0 rounded-xl blur-lg opacity-0 group-hover:opacity-50 transition-opacity duration-500 ${kpi.color}`}
@@ -498,7 +565,7 @@ const AdminReports = () => {
                       <h3 className="text-xl font-bold text-gray-900 mb-1">Analytics Dashboard</h3>
                       <p className="text-sm text-gray-600">Real-time insights and performance metrics</p>
                     </div>
-                    
+
                     <motion.div
                       animate={{ rotate: [0, 360] }}
                       transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
@@ -526,7 +593,7 @@ const AdminReports = () => {
                           animate={{ opacity: 1, y: 0 }}
                           transition={{ delay: 1.1 + index * 0.1 }}
                         >
-                          <TabsTrigger 
+                          <TabsTrigger
                             value={tab.value}
                             className="relative flex items-center gap-2 p-3 rounded-lg font-semibold text-gray-600 
                                      data-[state=active]:bg-gradient-to-r data-[state=active]:from-teal-600 data-[state=active]:to-teal-700 
@@ -535,7 +602,7 @@ const AdminReports = () => {
                           >
                             <tab.icon className="h-4 w-4" />
                             <span className="hidden sm:inline">{tab.label}</span>
-                            
+
                             {/* Active indicator */}
                             <motion.div
                               className="absolute inset-0 rounded-lg bg-gradient-to-r from-teal-400/20 to-teal-600/20 opacity-0"
@@ -563,7 +630,7 @@ const AdminReports = () => {
                           <h3 className="font-semibold text-gray-900 mb-2">Leads by Status</h3>
                         </div>
                         <div className="bg-white p-6">
-                          <LeadsByStatusChart />
+                          <LeadsByStatusChart data={leadsByStatusData.length > 0 ? leadsByStatusData : undefined} />
                         </div>
                       </motion.div>
                       <motion.div whileHover={{ scale: 1.02 }} className="rounded-2xl overflow-hidden bg-white shadow-lg border border-gray-200">
@@ -579,7 +646,7 @@ const AdminReports = () => {
                           <h3 className="font-semibold text-gray-900 mb-2">Agent Performance</h3>
                         </div>
                         <div className="bg-white p-6">
-                          <AgentPerformanceChart />
+                          <AgentPerformanceChart data={agentPerformanceData} />
                         </div>
                       </motion.div>
                     </motion.div>
@@ -622,7 +689,7 @@ const AdminReports = () => {
                                   <span className="font-bold text-xl text-gray-900">18.4%</span>
                                 </div>
                                 <div className="relative w-full bg-gray-200 rounded-full h-3 overflow-hidden">
-                                  <motion.div 
+                                  <motion.div
                                     className="absolute top-0 left-0 h-full bg-gradient-to-r from-teal-500 to-teal-600 rounded-full"
                                     initial={{ width: "0%" }}
                                     animate={{ width: "84%" }}
@@ -630,7 +697,7 @@ const AdminReports = () => {
                                   />
                                 </div>
                               </motion.div>
-                              
+
                               <motion.div
                                 initial={{ opacity: 0, x: -20 }}
                                 animate={{ opacity: 1, x: 0 }}
@@ -642,7 +709,7 @@ const AdminReports = () => {
                                   <span className="font-bold text-xl text-gray-900">16.3%</span>
                                 </div>
                                 <div className="relative w-full bg-gray-200 rounded-full h-3 overflow-hidden">
-                                  <motion.div 
+                                  <motion.div
                                     className="absolute top-0 left-0 h-full bg-gradient-to-r from-gray-400 to-gray-500 rounded-full"
                                     initial={{ width: "0%" }}
                                     animate={{ width: "75%" }}
@@ -650,7 +717,7 @@ const AdminReports = () => {
                                   />
                                 </div>
                               </motion.div>
-                              
+
                               <motion.div
                                 initial={{ opacity: 0, y: 10 }}
                                 animate={{ opacity: 1, y: 0 }}
@@ -713,7 +780,7 @@ const AdminReports = () => {
                                       {performer.score}
                                     </Badge>
                                     <motion.div
-                                      animate={{ 
+                                      animate={{
                                         y: performer.trend === "up" ? [0, -2, 0] : [0, 2, 0],
                                         rotate: performer.trend === "up" ? [0, 5, 0] : [0, -5, 0]
                                       }}
@@ -747,12 +814,12 @@ const AdminReports = () => {
                           key={report.title}
                           initial={{ opacity: 0, y: 30, scale: 0.9 }}
                           animate={{ opacity: 1, y: 0, scale: 1 }}
-                          transition={{ 
+                          transition={{
                             delay: 1.3 + index * 0.1,
                             type: "spring",
-                            stiffness: 100 
+                            stiffness: 100
                           }}
-                          whileHover={{ 
+                          whileHover={{
                             y: -10,
                             scale: 1.05,
                             transition: { type: "spring", stiffness: 400 }
@@ -780,14 +847,14 @@ const AdminReports = () => {
                             <CardHeader className="relative z-10 pb-3 bg-gradient-to-r from-gray-50 to-teal-25">
                               <div className="flex items-center gap-3">
                                 <motion.div
-                                  animate={{ 
+                                  animate={{
                                     rotate: [0, 5, -5, 0],
                                     scale: [1, 1.1, 1]
                                   }}
-                                  transition={{ 
-                                    duration: 3, 
+                                  transition={{
+                                    duration: 3,
                                     repeat: Infinity,
-                                    delay: index * 0.2 
+                                    delay: index * 0.2
                                   }}
                                   className="p-3 bg-gradient-to-br from-teal-500 to-teal-600 rounded-xl shadow-lg group-hover:shadow-2xl transition-shadow duration-500"
                                 >
@@ -803,10 +870,10 @@ const AdminReports = () => {
                                 </div>
                               </div>
                             </CardHeader>
-                            
+
                             <CardContent className="relative z-10 pt-0 p-6 bg-white">
                               <div className="flex items-center justify-between">
-                                <motion.span 
+                                <motion.span
                                   initial={{ opacity: 0 }}
                                   animate={{ opacity: 1 }}
                                   transition={{ delay: 1.4 + index * 0.1 }}
@@ -815,7 +882,7 @@ const AdminReports = () => {
                                   <Clock className="h-3 w-3" />
                                   Last: {report.lastGenerated}
                                 </motion.span>
-                                
+
                                 <motion.div
                                   whileHover={{ scale: 1.1 }}
                                   whileTap={{ scale: 0.9 }}
@@ -901,7 +968,7 @@ const AdminReports = () => {
                                     </div>
                                   </div>
                                   <div className="text-right">
-                                    <motion.div 
+                                    <motion.div
                                       className="font-bold text-xl text-gray-900"
                                       animate={{ scale: [1, 1.05, 1] }}
                                       transition={{ duration: 2, repeat: Infinity, delay: index * 0.3 }}
@@ -925,9 +992,9 @@ const AdminReports = () => {
                           <CardHeader className="bg-gradient-to-r from-orange-50 to-red-50 border-b border-gray-100">
                             <CardTitle className="flex items-center gap-3 text-gray-900">
                               <motion.div
-                                animate={{ 
+                                animate={{
                                   scale: [1, 1.1, 1],
-                                  rotate: [0, 5, -5, 0] 
+                                  rotate: [0, 5, -5, 0]
                                 }}
                                 transition={{ duration: 3, repeat: Infinity }}
                                 className="p-2 bg-gradient-to-br from-orange-500 to-red-500 rounded-lg shadow-md"
@@ -964,14 +1031,14 @@ const AdminReports = () => {
                                     <span className="font-medium text-gray-700">{item.activity}</span>
                                   </div>
                                   <div className="flex items-center gap-3">
-                                    <motion.span 
+                                    <motion.span
                                       className="font-bold text-xl text-gray-900"
                                       animate={{ scale: [1, 1.05, 1] }}
                                       transition={{ duration: 2, repeat: Infinity, delay: index * 0.1 }}
                                     >
                                       {item.count}
                                     </motion.span>
-                                    <motion.span 
+                                    <motion.span
                                       className="text-sm font-semibold text-emerald-600 bg-emerald-100 px-2 py-1 rounded-full"
                                       animate={{ scale: [1, 1.1, 1] }}
                                       transition={{ duration: 2, repeat: Infinity, delay: index * 0.15 }}

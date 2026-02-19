@@ -1,7 +1,4 @@
 
-import { Lead } from "@/models/Lead"; // Frontend may use interface from LeadsTable, let's align types.
-// Actually, let's define the API response types or use the ones from models if possible.
-// For frontend, we usually define interfaces matching the JSON response.
 
 export interface ApiUser {
     _id: string;
@@ -54,7 +51,7 @@ const getHeaders = () => ({
 export const api = {
     // Leads
     getLeads: async (): Promise<ApiLead[]> => {
-        const response = await fetch('/api/leads', {
+        const response = await fetch(`${API_URL}/leads`, {
             method: 'GET',
             headers: getHeaders(),
         });
@@ -63,7 +60,7 @@ export const api = {
     },
 
     getLead: async (id: string): Promise<ApiLead> => {
-        const response = await fetch(`/api/leads/${id}`, {
+        const response = await fetch(`${API_URL}/leads/${id}`, {
             method: 'GET',
             headers: getHeaders(),
         });
@@ -94,11 +91,27 @@ export const api = {
 
     updateUser: async (id: string, data: Partial<ApiUser>): Promise<ApiUser> => {
         const response = await fetch(`${API_URL}/users/${id}`, {
-            method: 'PUT',
+            method: 'PATCH',
             headers: getHeaders(),
             body: JSON.stringify(data),
         });
-        if (!response.ok) throw new Error('Failed to update user');
+        if (!response.ok) {
+            const error = await response.json().catch(() => ({}));
+            throw new Error(error.message || 'Failed to update user');
+        }
+        return response.json();
+    },
+
+    createUser: async (data: Partial<ApiUser>): Promise<ApiUser> => {
+        const response = await fetch(`${API_URL}/users`, {
+            method: 'POST',
+            headers: getHeaders(),
+            body: JSON.stringify(data),
+        });
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.message || 'Failed to create user');
+        }
         return response.json();
     },
 
@@ -116,17 +129,20 @@ export const api = {
     },
 
     updateLead: async (id: string, data: Partial<ApiLead>): Promise<ApiLead> => {
-        const response = await fetch(`/api/leads/${id}`, {
-            method: 'PUT',
+        const response = await fetch(`${API_URL}/leads/${id}`, {
+            method: 'PATCH',
             headers: getHeaders(),
             body: JSON.stringify(data),
         });
-        if (!response.ok) throw new Error('Failed to update lead');
+        if (!response.ok) {
+            const error = await response.json().catch(() => ({}));
+            throw new Error(error.message || 'Failed to update lead');
+        }
         return response.json();
     },
 
     deleteLead: async (id: string): Promise<void> => {
-        const response = await fetch(`/api/leads/${id}`, {
+        const response = await fetch(`${API_URL}/leads/${id}`, {
             method: 'DELETE',
             headers: getHeaders(),
         });

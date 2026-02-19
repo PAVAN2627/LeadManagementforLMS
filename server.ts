@@ -19,8 +19,15 @@ app.use(express.json());
 // Express (req, res) structure is compatible enough for this use case.
 
 // Helper to wrap Vercel-style handlers for Express
+// Vercel handlers read dynamic route params from req.query (e.g. req.query.id)
+// but Express puts them in req.params. We merge params into query so handlers work correctly.
 const wrapHandler = (handler: any) => async (req: express.Request, res: express.Response) => {
     try {
+        // Merge Express route params (e.g. :id) into req.query
+        // Use Object.assign to mutate existing object (avoids issues with non-writable descriptors)
+        if (req.params && Object.keys(req.params).length > 0) {
+            Object.assign(req.query, req.params);
+        }
         await handler(req, res);
     } catch (error) {
         console.error('API Error:', error);

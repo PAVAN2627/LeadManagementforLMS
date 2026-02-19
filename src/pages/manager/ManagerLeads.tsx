@@ -57,6 +57,8 @@ const ManagerLeads = () => {
   const [dateFilter, setDateFilter] = useState<string>("all");
   const [bulkAssignOpen, setBulkAssignOpen] = useState(false);
   const [selectedLeads, setSelectedLeads] = useState<string[]>([]);
+  // Track per-row selected agent (key: leadId, value: agentId)
+  const [rowAgentMap, setRowAgentMap] = useState<Record<string, string>>({});
 
   const { data: leads = [], isLoading: isLoadingLeads } = useQuery({
     queryKey: ['leads'],
@@ -119,10 +121,9 @@ const ManagerLeads = () => {
     );
   };
 
-  const handleManualAssign = (leadId: string, agentName: string) => {
-    const agent = agents.find((a: ApiUser) => a.name === agentName);
-    if (!agent) return;
-    updateLeadMutation.mutate({ id: leadId, data: { assignedTo: agent._id } as any });
+  const handleManualAssign = (leadId: string, agentId: string) => {
+    if (!agentId) return;
+    updateLeadMutation.mutate({ id: leadId, data: { assignedTo: agentId } as any });
   };
 
   return (
@@ -407,15 +408,15 @@ const ManagerLeads = () => {
                         </TableCell>
                         <TableCell>
                           <Select
-                            defaultValue={lead.assignedTo?.name || "Unassigned"}
-                            onValueChange={(val) => handleManualAssign(lead._id, val)}
+                            value={rowAgentMap[lead._id] || lead.assignedTo?._id || ""}
+                            onValueChange={(val) => setRowAgentMap(prev => ({ ...prev, [lead._id]: val }))}
                           >
                             <SelectTrigger className="w-32 h-8">
-                              <SelectValue />
+                              <SelectValue placeholder="Select agent" />
                             </SelectTrigger>
                             <SelectContent>
                               {agents.map((agent) => (
-                                <SelectItem key={agent._id} value={agent.name}>
+                                <SelectItem key={agent._id} value={agent._id}>
                                   {agent.name}
                                 </SelectItem>
                               ))}
@@ -435,8 +436,13 @@ const ManagerLeads = () => {
                           </Select>
                         </TableCell>
                         <TableCell className="text-right">
-                          <Button size="sm" className="gradient-bg-animated text-primary-foreground button-ripple hover:scale-105 transition-all shadow-md">
-                            Assign
+                          <Button
+                            size="sm"
+                            className="gradient-bg-animated text-primary-foreground button-ripple hover:scale-105 transition-all shadow-md"
+                            onClick={() => handleManualAssign(lead._id, rowAgentMap[lead._id] || lead.assignedTo?._id || "")}
+                            disabled={!rowAgentMap[lead._id] && !lead.assignedTo?._id || updateLeadMutation.isPending}
+                          >
+                            {updateLeadMutation.isPending ? "Saving..." : "Assign"}
                           </Button>
                         </TableCell>
                       </motion.tr>

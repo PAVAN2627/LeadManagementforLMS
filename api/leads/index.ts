@@ -3,6 +3,7 @@ import mongoose from 'mongoose';
 import dbConnect from '../../src/lib/db';
 import { verifyToken } from '../../src/lib/jwt';
 import { Lead } from '../../src/models/Lead';
+import { Note } from '../../src/models/Note';
 import User from '../../src/models/User';
 import { z } from 'zod';
 
@@ -10,13 +11,14 @@ import { z } from 'zod';
 const createLeadSchema = z.object({
     name: z.string().min(1, 'Name is required'),
     email: z.string().email('Invalid email address'),
-    phone: z.string().min(1, 'Phone is required'),
-    company: z.string().min(1, 'Company is required'),
+    phone: z.string().optional(),
+    company: z.string().optional(),
     source: z.string().min(1, 'Source is required'),
     status: z.enum(["new", "contacted", "qualified", "proposal", "negotiation", "converted", "lost"]).optional(),
-    assignedTo: z.string().min(1, 'Assigned agent is required'), // User ID
+    assignedTo: z.string().optional(), // User ID - optional
     date: z.string().optional(),
     nextFollowUp: z.string().optional(),
+    notes: z.string().optional(),
 });
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -29,7 +31,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     const token = authHeader.split(' ')[1];
-    const decoded = verifyToken(token);
+    const decoded = verifyToken(token) as any;
 
     if (!decoded) {
         return res.status(401).json({ message: 'Unauthorized: Invalid token' });
@@ -72,25 +74,46 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 });
             }
 
-            const { name, email, phone, company, source, status, assignedTo, date, nextFollowUp } = validation.data;
+            const { name, email, phone, company, source, status, assignedTo, date, nextFollowUp, notes } = validation.data;
 
-            // Verify assigned agent exists
-            const agent = await User.findById(assignedTo);
-            if (!agent) {
-                return res.status(404).json({ message: 'Assigned agent not found' });
+            // Determine who to assign the lead to:
+            // - If assignedTo is explicitly provided, use it
+            // - If the creator is an agent, auto-assign to themselves
+            // - Otherwise leave unassigned (admin/manager creating unassigned lead)
+            let resolvedAssignedTo: string | undefined = assignedTo;
+
+            if (!resolvedAssignedTo && role === 'agent') {
+                resolvedAssignedTo = userId;
+            }
+
+            // Verify assigned agent exists (only if provided)
+            if (resolvedAssignedTo) {
+                const agent = await User.findById(resolvedAssignedTo);
+                if (!agent) {
+                    return res.status(404).json({ message: 'Assigned agent not found' });
+                }
             }
 
             const newLead = await Lead.create({
                 name,
                 email,
-                phone,
-                company,
+                phone: phone || '',
+                company: company || '',
                 source,
                 status: status || 'new',
-                assignedTo,
+                assignedTo: resolvedAssignedTo || undefined,
                 date: date ? new Date(date) : new Date(),
                 nextFollowUp: nextFollowUp ? new Date(nextFollowUp) : undefined,
             });
+
+            // Create Note if provided
+            if (notes && notes.trim().length > 0) {
+                await Note.create({
+                    content: notes,
+                    lead: newLead._id,
+                    author: userId,
+                });
+            }
 
             // Populate response
             const populatedLead = await newLead.populate('assignedTo', 'name email role');

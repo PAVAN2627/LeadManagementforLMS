@@ -22,7 +22,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // Check for stored session
         const storedToken = localStorage.getItem('token');
         if (storedToken) {
-            // Validate token with /api/auth/me
+            // Validate token with /api/auth/me — if token is invalid/expired, clear session
             fetch('/api/auth/me', {
                 headers: {
                     'Authorization': `Bearer ${storedToken}`
@@ -30,6 +30,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             })
                 .then(res => {
                     if (res.ok) return res.json();
+                    // Any non-OK response means session is invalid — clear it
                     throw new Error('Session invalid');
                 })
                 .then(data => {
@@ -37,8 +38,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                     setToken(storedToken);
                 })
                 .catch(() => {
-                    // Invalid token, clear storage
+                    // Invalid or expired token — wipe localStorage and state
                     localStorage.removeItem('token');
+                    setUser(null);
+                    setToken(null);
                 })
                 .finally(() => {
                     setIsLoading(false);
@@ -55,9 +58,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
 
     const logout = () => {
+        // Clear token from storage AND state — both must be wiped
         localStorage.removeItem('token');
         setToken(null);
         setUser(null);
+        // isAuthenticated = !!user will become false immediately
     };
 
     return (

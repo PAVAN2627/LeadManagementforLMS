@@ -1,4 +1,6 @@
 import { ReactNode, useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/context/AuthContext";
 import { motion, AnimatePresence } from "framer-motion";
 import { Bell, Search, Menu, X, User, LogOut } from "lucide-react";
 import { ManagerSidebar } from "./ManagerSidebar";
@@ -25,6 +27,13 @@ export function ManagerLayout({ children, title }: ManagerLayoutProps) {
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const isMobile = useIsMobile();
   const unreadCount = mockNotifications.filter((n) => !n.read).length;
+  const { logout } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
 
   // Close sidebar when clicking outside on mobile
   useEffect(() => {
@@ -145,9 +154,9 @@ export function ManagerLayout({ children, title }: ManagerLayoutProps) {
                     Profile Settings
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem 
+                  <DropdownMenuItem
                     className="flex items-center gap-2 text-red-600 focus:text-red-600"
-                    onClick={() => window.location.href = '/'}
+                    onClick={handleLogout}
                   >
                     <LogOut className="h-4 w-4" />
                     Logout
@@ -156,7 +165,7 @@ export function ManagerLayout({ children, title }: ManagerLayoutProps) {
               </DropdownMenu>
             </div>
           </div>
-          
+
           {/* Mobile Search Bar */}
           <AnimatePresence>
             {mobileSearchOpen && (

@@ -75,16 +75,8 @@ const AgentDashboard = () => {
   const createLeadMutation = useMutation({
     mutationFn: (data: any) => api.createLead({
       ...data,
-      assignedTo: undefined // Agent creates lead, backend assigns to them or they pick? 
-      // Backend schema says assignedTo is required string ID.
-      // If agent creates, maybe backend should auto-assign to creator if not provided?
-      // api/leads/index.ts:75 destructures assignedTo from body. 
-      // checks if agent exists.
-      // createLeadSchema requires assignedTo.
-      // I need to send the current user's ID.
-      // Frontend doesn't strictly know its own ID unless I decode token or store in context.
-      // For now, I might need to fetch "me" or similar.
-      // OR, I can update backend to default assignedTo to req.user.userId if role is agent.
+      source: data.source || 'Manual',
+      // assignedTo is omitted — backend auto-assigns to the agent
     }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['leads'] });
@@ -159,7 +151,7 @@ const AgentDashboard = () => {
                 // Actually, I should probably decode token here to get ID if I can.
                 // Or just send it.
                 // Let's send a placeholder and fix backend to use req.user.userId if assignedTo is missing and role is agent.
-                createLeadMutation.mutate({ ...newLead, source: 'Manual', assignedTo: 'SELF' });
+                createLeadMutation.mutate({ ...newLead, source: 'Manual' });
               }}>
                 <div className="space-y-2">
                   <Label htmlFor="leadName" className="text-gray-700">Full Name</Label>
