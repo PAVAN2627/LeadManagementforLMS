@@ -1,8 +1,8 @@
 
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import dbConnect from '../../src/lib/db';
-import User from '../../src/models/User';
-import { verifyToken } from '../../src/lib/jwt';
+import dbConnect from '../../src/lib/db.js';
+import User from '../../src/models/User.js';
+import { verifyToken } from '../../src/lib/jwt.js';
 import { z } from 'zod';
 
 const updateUserSchema = z.object({

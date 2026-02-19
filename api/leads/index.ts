@@ -1,10 +1,10 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import mongoose from 'mongoose';
-import dbConnect from '../../src/lib/db';
-import { verifyToken } from '../../src/lib/jwt';
-import { Lead } from '../../src/models/Lead';
-import { Note } from '../../src/models/Note';
-import User from '../../src/models/User';
+import dbConnect from '../../src/lib/db.js';
+import { verifyToken } from '../../src/lib/jwt.js';
+import { Lead } from '../../src/models/Lead.js';
+import { Note } from '../../src/models/Note.js';
+import User from '../../src/models/User.js';
 import { z } from 'zod';
 
 // Validation schema for creating a lead

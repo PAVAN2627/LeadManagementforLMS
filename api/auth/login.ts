@@ -1,10 +1,10 @@
 
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { z } from 'zod';
-import dbConnect from '../../src/lib/db';
-import User from '../../src/models/User';
-import { comparePassword } from '../../src/lib/auth-utils';
-import { signToken } from '../../src/lib/jwt';
+import dbConnect from '../../src/lib/db.js';
+import User from '../../src/models/User.js';
+import { comparePassword } from '../../src/lib/auth-utils.js';
+import { signToken } from '../../src/lib/jwt.js';
 
 // Define Validation Schema
 const LoginSchema = z.object({
@@ -54,7 +54,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
         // 5. Generate Token
         const token = signToken({
-            userId: user._id as string,
+            userId: user._id.toString(),
             role: user.role
         });
 

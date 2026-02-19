@@ -1,9 +1,9 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import mongoose from 'mongoose';
-import dbConnect from '../../src/lib/db';
-import { verifyToken } from '../../src/lib/jwt';
-import { Lead } from '../../src/models/Lead';
-import { Note } from '../../src/models/Note';
+import dbConnect from '../../src/lib/db.js';
+import { verifyToken } from '../../src/lib/jwt.js';
+import { Lead } from '../../src/models/Lead.js';
+import { Note } from '../../src/models/Note.js';
 import { z } from 'zod';
 
 const updateLeadSchema = z.object({

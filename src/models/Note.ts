@@ -1,6 +1,6 @@
 import mongoose, { Schema, Document } from 'mongoose';
-import { ILead } from './Lead';
-import { IUser } from './User';
+import { ILead } from './Lead.js';
+import { IUser } from './User.js';
 
 export interface INote extends Document {
     content: string;

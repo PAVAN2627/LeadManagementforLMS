@@ -1,5 +1,5 @@
 import mongoose, { Schema, Document } from 'mongoose';
-import { IUser } from './User';
+import { IUser } from './User.js';
 
 export interface ILead extends Document {
     name: string;

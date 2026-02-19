@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import dbConnect from '../../src/lib/db';
-import { verifyToken } from '../../src/lib/jwt';
-import User from '../../src/models/User';
+import dbConnect from '../../src/lib/db.js';
+import { verifyToken } from '../../src/lib/jwt.js';
+import User from '../../src/models/User.js';
 import { z } from 'zod';
 import bcrypt from 'bcryptjs';
 
