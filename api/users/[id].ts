@@ -19,7 +19,13 @@ const updateUserSchema = z.object({
     status: z.enum(['active', 'inactive']).optional(),
 });
 
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+    // Handle CORS preflight
+    if (req.method === 'OPTIONS') {
+        return res.status(200).end();
+    }
+
     if (req.method !== 'PUT' && req.method !== 'GET' && req.method !== 'DELETE' && req.method !== 'PATCH') {
         return res.status(405).json({ message: 'Method Not Allowed' });
     }
@@ -39,9 +45,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         }
 
         // Support both Vercel (req.query.id) and Express (req.params.id) routing
-        const id = (req.query.id || (req as any).params?.id) as string | undefined;
+        let id = req.query.id || (req as any).params?.id;
+        
+        // Handle array case for id (Vercel specific)
+        if (Array.isArray(id)) {
+            id = id[0];
+        }
 
-        if (!id) {
+        if (!id || typeof id !== 'string') {
             return res.status(400).json({ message: 'User ID required' });
         }
 
@@ -94,8 +105,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             return res.status(200).json({ message: 'User deleted' });
         }
 
-    } catch (error) {
+    } catch (error: any) {
         console.error('User API Error:', error);
-        return res.status(500).json({ message: 'Internal Server Error' });
+        return res.status(500).json({ message: error.message || 'Internal Server Error' });
     }
 }
+

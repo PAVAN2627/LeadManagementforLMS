@@ -17,34 +17,45 @@ const updateLeadSchema = z.object({
     nextFollowUp: z.string().optional().nullable(),
 });
 
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+    // Handle CORS preflight
+    if (req.method === 'OPTIONS') {
+        return res.status(200).end();
+    }
+
     // Support both Vercel (req.query.id) and Express (req.params.id) routing
-    const id = (req.query.id || (req as any).params?.id) as string | undefined;
+    let id = req.query.id || (req as any).params?.id;
+
+    // Handle array case for id
+    if (Array.isArray(id)) {
+        id = id[0];
+    }
 
     if (!id || typeof id !== 'string') {
         return res.status(400).json({ message: 'Invalid Lead ID' });
     }
 
-    await dbConnect();
+    try {
+        await dbConnect();
 
-    // AUTHENTICATION
-    const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-        return res.status(401).json({ message: 'Unauthorized: No token provided' });
-    }
+        // AUTHENTICATION
+        const authHeader = req.headers.authorization;
+        if (!authHeader || !authHeader.startsWith('Bearer ')) {
+            return res.status(401).json({ message: 'Unauthorized: No token provided' });
+        }
 
-    const token = authHeader.split(' ')[1];
-    const decoded = verifyToken(token);
+        const token = authHeader.split(' ')[1];
+        const decoded = verifyToken(token);
 
-    if (!decoded) {
-        return res.status(401).json({ message: 'Unauthorized: Invalid token' });
-    }
+        if (!decoded) {
+            return res.status(401).json({ message: 'Unauthorized: Invalid token' });
+        }
 
-    const { role, userId } = decoded;
+        const { role, userId } = decoded;
 
-    // GET: Fetch Single Lead
-    if (req.method === 'GET') {
-        try {
+        // GET: Fetch Single Lead
+        if (req.method === 'GET') {
             const lead = await Lead.findById(id).populate('assignedTo', 'name email role');
 
             if (!lead) {
@@ -52,20 +63,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             }
 
             // Authorization check for Agent
-            if (role === 'agent' && lead.assignedTo._id.toString() !== userId) {
+            if (role === 'agent' && lead.assignedTo?._id.toString() !== userId) {
                 return res.status(403).json({ message: 'Forbidden: You do not have access to this lead' });
             }
 
             return res.status(200).json(lead);
-        } catch (error) {
-            console.error('Error fetching lead:', error);
-            return res.status(500).json({ message: 'Internal Server Error' });
         }
-    }
 
-    // PUT/PATCH: Update Lead
-    if (req.method === 'PUT' || req.method === 'PATCH') {
-        try {
+        // PUT/PATCH: Update Lead
+        if (req.method === 'PUT' || req.method === 'PATCH') {
             const existingLead = await Lead.findById(id);
 
             if (!existingLead) {
@@ -73,7 +79,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             }
 
             // Authorization check
-            if (role === 'agent' && existingLead.assignedTo.toString() !== userId) {
+            if (role === 'agent' && existingLead.assignedTo?.toString() !== userId) {
                 return res.status(403).json({ message: 'Forbidden: You can only update your assigned leads' });
             }
 
@@ -88,6 +94,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
             const updates = validation.data;
 
+
             // Handle nextFollowUp specially (Date conversion)
             const updateData: any = { ...updates };
             if (updates.nextFollowUp) {
@@ -97,19 +104,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 updateData.nextFollowUp = null;
             }
 
+            // Handle empty string for assignedTo (prevent CastError)
+            if (updateData.assignedTo === "") {
+                updateData.assignedTo = null;
+            }
+
+
             const updatedLead = await Lead.findByIdAndUpdate(id, updateData, { new: true })
                 .populate('assignedTo', 'name email role');
 
             return res.status(200).json(updatedLead);
-        } catch (error) {
-            console.error('Error updating lead:', error);
-            return res.status(500).json({ message: 'Internal Server Error' });
         }
-    }
 
-    // DELETE: Delete Lead (Admin Only)
-    if (req.method === 'DELETE') {
-        try {
+        // DELETE: Delete Lead (Admin Only)
+        if (req.method === 'DELETE') {
             if (role !== 'admin') {
                 return res.status(403).json({ message: 'Forbidden: Only admins can delete leads' });
             }
@@ -124,11 +132,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             await Note.deleteMany({ lead: id });
 
             return res.status(200).json({ message: 'Lead deleted successfully' });
-        } catch (error) {
-            console.error('Error deleting lead:', error);
-            return res.status(500).json({ message: 'Internal Server Error' });
         }
+
+    } catch (error: any) {
+        console.error('Error in lead handler:', error);
+        return res.status(500).json({ message: error.message || 'Internal Server Error' });
     }
 
     return res.status(405).json({ message: 'Method Not Allowed' });
 }
+
