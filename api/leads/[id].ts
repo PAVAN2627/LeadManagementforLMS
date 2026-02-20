@@ -4,6 +4,8 @@ import dbConnect from '../../src/lib/db.js';
 import { verifyToken } from '../../src/lib/jwt.js';
 import { Lead } from '../../src/models/Lead.js';
 import { Note } from '../../src/models/Note.js';
+import User from '../../src/models/User.js';
+
 import { z } from 'zod';
 
 const updateLeadSchema = z.object({
