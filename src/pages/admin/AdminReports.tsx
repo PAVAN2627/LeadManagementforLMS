@@ -13,7 +13,11 @@ import {
   PieChart,
   LineChart,
   Activity,
-  DollarSign
+  DollarSign,
+  ArrowUp,
+  ArrowDown,
+  Award,
+  Clock
 } from "lucide-react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Button } from "@/components/ui/button";
@@ -481,148 +485,9 @@ const AdminReports = () => {
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: 1.2 }}
-                      className="grid grid-cols-1 lg:grid-cols-2 gap-6"
+                      className="text-center py-12"
                     >
-                      <motion.div
-                        whileHover={{ scale: 1.02, y: -5 }}
-                        className="group"
-                      >
-                        <Card className="border-gray-200 shadow-lg hover:shadow-xl transition-all duration-500 rounded-2xl overflow-hidden bg-white">
-                          <CardHeader className="bg-gradient-to-r from-teal-50 to-emerald-50 border-b border-gray-100">
-                            <CardTitle className="flex items-center gap-3 text-gray-900">
-                              <motion.div
-                                animate={{ rotate: [0, 5, -5, 0] }}
-                                transition={{ duration: 3, repeat: Infinity }}
-                                className="p-2 bg-gradient-to-br from-teal-500 to-teal-600 rounded-lg shadow-md"
-                              >
-                                <TrendingUp className="h-5 w-5 text-white" />
-                              </motion.div>
-                              Conversion Trends
-                            </CardTitle>
-                          </CardHeader>
-                          <CardContent className="p-6">
-                            <div className="space-y-6">
-                              <motion.div
-                                initial={{ opacity: 0, x: -20 }}
-                                animate={{ opacity: 1, x: 0 }}
-                                transition={{ delay: 1.3 }}
-                                className="space-y-2"
-                              >
-                                <div className="flex items-center justify-between">
-                                  <span className="text-sm font-medium text-gray-600">This Month</span>
-                                  <span className="font-bold text-xl text-gray-900">18.4%</span>
-                                </div>
-                                <div className="relative w-full bg-gray-200 rounded-full h-3 overflow-hidden">
-                                  <motion.div
-                                    className="absolute top-0 left-0 h-full bg-gradient-to-r from-teal-500 to-teal-600 rounded-full"
-                                    initial={{ width: "0%" }}
-                                    animate={{ width: "84%" }}
-                                    transition={{ delay: 1.5, duration: 1.5 }}
-                                  />
-                                </div>
-                              </motion.div>
-
-                              <motion.div
-                                initial={{ opacity: 0, x: -20 }}
-                                animate={{ opacity: 1, x: 0 }}
-                                transition={{ delay: 1.4 }}
-                                className="space-y-2"
-                              >
-                                <div className="flex items-center justify-between">
-                                  <span className="text-sm font-medium text-gray-600">Last Month</span>
-                                  <span className="font-bold text-xl text-gray-900">16.3%</span>
-                                </div>
-                                <div className="relative w-full bg-gray-200 rounded-full h-3 overflow-hidden">
-                                  <motion.div
-                                    className="absolute top-0 left-0 h-full bg-gradient-to-r from-gray-400 to-gray-500 rounded-full"
-                                    initial={{ width: "0%" }}
-                                    animate={{ width: "75%" }}
-                                    transition={{ delay: 1.6, duration: 1.5 }}
-                                  />
-                                </div>
-                              </motion.div>
-
-                              <motion.div
-                                initial={{ opacity: 0, y: 10 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ delay: 1.7 }}
-                                className="pt-4 border-t border-gray-100"
-                              >
-                                <div className="flex items-center gap-2 text-emerald-600">
-                                  <ArrowUp className="h-4 w-4" />
-                                  <span className="font-semibold">+2.1% improvement</span>
-                                </div>
-                              </motion.div>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      </motion.div>
-
-                      <motion.div
-                        whileHover={{ scale: 1.02, y: -5 }}
-                        className="group"
-                      >
-                        <Card className="border-gray-200 shadow-lg hover:shadow-xl transition-all duration-500 rounded-2xl overflow-hidden bg-white">
-                          <CardHeader className="bg-gradient-to-r from-yellow-50 to-orange-50 border-b border-gray-100">
-                            <CardTitle className="flex items-center gap-3 text-gray-900">
-                              <motion.div
-                                animate={{ scale: [1, 1.1, 1] }}
-                                transition={{ duration: 2, repeat: Infinity }}
-                                className="p-2 bg-gradient-to-br from-yellow-500 to-orange-500 rounded-lg shadow-md"
-                              >
-                                <Award className="h-5 w-5 text-white" />
-                              </motion.div>
-                              Top Performers
-                            </CardTitle>
-                          </CardHeader>
-                          <CardContent className="p-6 bg-white">
-                            <div className="space-y-4">
-                              {topPerformers.slice(0, 5).map((performer, index) => (
-                                <motion.div
-                                  key={performer.name}
-                                  initial={{ opacity: 0, x: -20 }}
-                                  animate={{ opacity: 1, x: 0 }}
-                                  transition={{ delay: 1.3 + index * 0.1 }}
-                                  whileHover={{ x: 5, scale: 1.02 }}
-                                  className="flex items-center justify-between p-3 rounded-xl hover:bg-gray-50 transition-all duration-300"
-                                >
-                                  <div className="flex items-center gap-3">
-                                    <motion.div
-                                      animate={{ rotate: [0, 5, -5, 0] }}
-                                      transition={{ duration: 4, repeat: Infinity, delay: index * 0.2 }}
-                                      className="h-10 w-10 bg-gradient-to-br from-teal-500 to-teal-600 rounded-xl flex items-center justify-center text-white text-sm font-bold shadow-md"
-                                    >
-                                      {index + 1}
-                                    </motion.div>
-                                    <div>
-                                      <div className="font-semibold text-gray-900">{performer.name}</div>
-                                      <div className="text-sm text-gray-600">{performer.metric}</div>
-                                    </div>
-                                  </div>
-                                  <div className="flex items-center gap-3">
-                                    <Badge className="bg-green-100 text-green-800 font-semibold px-3 py-1">
-                                      {performer.score}
-                                    </Badge>
-                                    <motion.div
-                                      animate={{
-                                        y: performer.trend === "up" ? [0, -2, 0] : [0, 2, 0],
-                                        rotate: performer.trend === "up" ? [0, 5, 0] : [0, -5, 0]
-                                      }}
-                                      transition={{ duration: 2, repeat: Infinity, delay: index * 0.3 }}
-                                    >
-                                      {performer.trend === "up" ? (
-                                        <ArrowUp className="h-4 w-4 text-emerald-600" />
-                                      ) : (
-                                        <ArrowDown className="h-4 w-4 text-red-600" />
-                                      )}
-                                    </motion.div>
-                                  </div>
-                                </motion.div>
-                              ))}
-                            </div>
-                          </CardContent>
-                        </Card>
-                      </motion.div>
+                      <p className="text-gray-500">Performance metrics coming soon...</p>
                     </motion.div>
                   </TabsContent>
 
