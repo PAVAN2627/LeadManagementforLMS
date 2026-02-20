@@ -52,6 +52,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     try {
         await dbConnect();
 
+
         // AUTHENTICATION
         const authHeader = req.headers.authorization;
         if (!authHeader || !authHeader.startsWith('Bearer ')) {
