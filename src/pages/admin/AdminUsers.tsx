@@ -1142,14 +1142,15 @@ const AdminUsers = () => {
                           animate={{ scale: 1 }}
                           transition={{ delay: 0.1 + index * 0.05 }}
                         >
-                          <Badge className={`px-3 py-1 font-semibold shadow-sm ${user.role === 'Admin'
-                            ? 'bg-gradient-to-r from-purple-500 to-purple-600 text-white'
-                            : user.role === 'Manager'
-                              ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white'
-                              : user.role === 'Agent'
-                                ? 'bg-gradient-to-r from-teal-500 to-teal-600 text-white'
-                                : 'bg-gradient-to-r from-gray-500 to-gray-600 text-white'
-                            }`}>
+                          <Badge className={`px-3 py-1 font-semibold shadow-sm ${
+                            user.role.toLowerCase() === 'admin'
+                              ? 'bg-gradient-to-r from-red-500 to-red-600 text-white'
+                              : user.role.toLowerCase() === 'manager'
+                                ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white'
+                                : user.role.toLowerCase() === 'agent'
+                                  ? 'bg-gradient-to-r from-green-500 to-green-600 text-white'
+                                  : 'bg-gradient-to-r from-gray-500 to-gray-600 text-white'
+                          }`}>
                             {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
                           </Badge>
                         </motion.div>

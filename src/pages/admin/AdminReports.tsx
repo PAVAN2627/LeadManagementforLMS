@@ -12,12 +12,7 @@ import {
   FileText,
   PieChart,
   LineChart,
-  Activity,
-  DollarSign,
-  Clock,
-  Award,
-  ArrowUp,
-  ArrowDown
+  Activity
 } from "lucide-react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Button } from "@/components/ui/button";
@@ -113,7 +108,6 @@ const AdminReports = () => {
     const reportData = {
       exportDate: new Date().toISOString().split('T')[0],
       dateRange: dateRange,
-      kpiData: kpiData,
       reportTemplates: reportTemplates,
       topPerformers: topPerformers,
       conversionTrends: {
@@ -167,40 +161,7 @@ const AdminReports = () => {
     return ((converted / leads.length) * 100).toFixed(1) + "%";
   }, [leads]);
 
-  const kpiData = [
-    {
-      title: "Total Revenue",
-      value: "$247,890", // Placeholder as revenue is not tracked yet
-      change: "+12.5%",
-      trend: "up",
-      icon: DollarSign,
-      color: "bg-green-600"
-    },
-    {
-      title: "Conversion Rate",
-      value: conversionRate,
-      change: "+2.1%", // Static comparison for now
-      trend: "up",
-      icon: Target,
-      color: "bg-teal-600"
-    },
-    {
-      title: "Avg Response Time",
-      value: "2.4h",
-      change: "-0.3h",
-      trend: "down",
-      icon: Clock,
-      color: "bg-blue-600"
-    },
-    {
-      title: "Customer Satisfaction",
-      value: "4.8/5",
-      change: "+0.2",
-      trend: "up",
-      icon: Award,
-      color: "bg-purple-600"
-    }
-  ];
+
 
   const reportTemplates = [
     {
@@ -392,144 +353,6 @@ const AdminReports = () => {
           </div>
         </motion.div>
 
-        {/* Premium KPI Cards */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"
-        >
-          {kpiData.map((kpi, index) => (
-            <motion.div
-              key={kpi.title}
-              initial={{ opacity: 0, y: 30, rotateX: -15 }}
-              animate={{ opacity: 1, y: 0, rotateX: 0 }}
-              transition={{
-                delay: 0.4 + index * 0.1,
-                type: "spring",
-                stiffness: 100,
-                damping: 15
-              }}
-              whileHover={{
-                y: -8,
-                rotateX: 5,
-                scale: 1.02,
-                transition: { type: "spring", stiffness: 400, damping: 30 }
-              }}
-              className="group relative"
-            >
-              <Card className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-white to-gray-25 border border-gray-200 shadow-lg hover:shadow-2xl transition-all duration-500">
-                {/* Animated Background Gradient */}
-                <motion.div
-                  className="absolute inset-0 opacity-0 group-hover:opacity-10 transition-opacity duration-500"
-                  style={{
-                    background: `linear-gradient(135deg, ${kpi.color.replace('bg-', '')}, ${kpi.color.replace('bg-', '').replace('-600', '-400')})`
-                  }}
-                  animate={{
-                    background: [
-                      `linear-gradient(135deg, ${kpi.color.replace('bg-', '')}, ${kpi.color.replace('bg-', '').replace('-600', '-400')})`,
-                      `linear-gradient(225deg, ${kpi.color.replace('bg-', '')}, ${kpi.color.replace('bg-', '').replace('-600', '-400')})`,
-                      `linear-gradient(315deg, ${kpi.color.replace('bg-', '')}, ${kpi.color.replace('bg-', '').replace('-600', '-400')})`,
-                      `linear-gradient(135deg, ${kpi.color.replace('bg-', '')}, ${kpi.color.replace('bg-', '').replace('-600', '-400')})`
-                    ]
-                  }}
-                  transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
-                />
-
-                <CardContent className="relative z-10 p-6">
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1">
-                      <motion.p
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        transition={{ delay: 0.5 + index * 0.1 }}
-                        className="text-sm font-semibold text-gray-600 mb-2"
-                      >
-                        {kpi.title}
-                      </motion.p>
-
-                      <motion.p
-                        initial={{ opacity: 0, scale: 0.8 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{
-                          delay: 0.6 + index * 0.1,
-                          type: "spring",
-                          stiffness: 200
-                        }}
-                        className="text-3xl font-bold text-gray-900 mb-2 group-hover:text-gray-800 transition-colors"
-                      >
-                        {kpi.value}
-                      </motion.p>
-
-                      <motion.div
-                        initial={{ opacity: 0, x: -10 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: 0.7 + index * 0.1 }}
-                        className={`flex items-center gap-2 text-sm font-semibold ${kpi.trend === "up" ? "text-emerald-600" : "text-red-600"
-                          }`}
-                      >
-                        <motion.div
-                          animate={{
-                            y: kpi.trend === "up" ? [0, -2, 0] : [0, 2, 0],
-                            rotate: kpi.trend === "up" ? [0, 5, 0] : [0, -5, 0]
-                          }}
-                          transition={{ duration: 2, repeat: Infinity, delay: index * 0.2 }}
-                        >
-                          {kpi.trend === "up" ? (
-                            <ArrowUp className="h-4 w-4" />
-                          ) : (
-                            <ArrowDown className="h-4 w-4" />
-                          )}
-                        </motion.div>
-                        {kpi.change}
-                      </motion.div>
-                    </div>
-
-                    {/* Floating Icon */}
-                    <motion.div
-                      animate={{
-                        rotate: [0, 5, -5, 0],
-                        scale: [1, 1.05, 1]
-                      }}
-                      transition={{
-                        duration: 4,
-                        repeat: Infinity,
-                        delay: index * 0.5
-                      }}
-                      className={`relative p-4 rounded-xl shadow-lg ${kpi.color}`}
-                    >
-                      <kpi.icon className="h-6 w-6 text-white" />
-
-                      {/* Glow Effect */}
-                      <motion.div
-                        className={`absolute inset-0 rounded-xl blur-lg opacity-0 group-hover:opacity-50 transition-opacity duration-500 ${kpi.color}`}
-                        animate={{
-                          scale: [1, 1.2, 1],
-                          opacity: [0, 0.3, 0]
-                        }}
-                        transition={{
-                          duration: 2,
-                          repeat: Infinity,
-                          delay: index * 0.3
-                        }}
-                      />
-                    </motion.div>
-                  </div>
-                </CardContent>
-
-                {/* Animated Border */}
-                <motion.div
-                  className="absolute inset-0 rounded-2xl border-2 border-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-                  style={{
-                    background: `linear-gradient(135deg, ${kpi.color.replace('bg-', '').replace('-600', '')}) border-box`,
-                    WebkitMask: 'linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0)',
-                    WebkitMaskComposite: 'exclude'
-                  }}
-                />
-              </Card>
-            </motion.div>
-          ))}
-        </motion.div>
 
         {/* Enhanced Analytics Tabs */}
         <motion.div

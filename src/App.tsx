@@ -8,6 +8,10 @@ import { LoadingScreen } from "@/components/LoadingScreen";
 import Index from "./pages/Index";
 import LandingPage from "./pages/LandingPage";
 import Login from "./pages/Login";
+import Benefits from "./pages/Benefits";
+import Features from "./pages/Features";
+import Roles from "./pages/Roles";
+import Lifecycle from "./pages/Lifecycle";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminLeads from "./pages/admin/AdminLeads";
 import AdminUsers from "./pages/admin/AdminUsers";
@@ -47,6 +51,10 @@ const App = () => {
               <Route path="/" element={<LandingPage />} />
               <Route path="/home" element={<Index />} />
               <Route path="/login" element={<Login />} />
+              <Route path="/benefits" element={<Benefits />} />
+              <Route path="/features" element={<Features />} />
+              <Route path="/roles" element={<Roles />} />
+              <Route path="/lifecycle" element={<Lifecycle />} />
 
               {/* Admin Routes */}
               <Route path="/admin" element={
