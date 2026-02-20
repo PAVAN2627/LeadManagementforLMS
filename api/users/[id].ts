@@ -32,28 +32,15 @@ function setCorsHeaders(res: VercelResponse) {
 export default async function handler(req: VercelRequest, res: VercelResponse) {
     setCorsHeaders(res);
 
-    // Handle CORS preflight
-    if (req.method === 'OPTIONS') {
-        return res.status(200).end();
-    }
+    const { method } = req;
 
-    if (req.method !== 'PUT' && req.method !== 'GET' && req.method !== 'DELETE' && req.method !== 'PATCH') {
-        return res.status(405).json({ message: 'Method Not Allowed' });
+    // Handle CORS preflight
+    if (method === 'OPTIONS') {
+        return res.status(200).end();
     }
 
     try {
         await dbConnect();
-
-        const authHeader = req.headers.authorization;
-        if (!authHeader || !authHeader.startsWith('Bearer ')) {
-            return res.status(401).json({ message: 'Unauthorized' });
-        }
-
-        const token = authHeader.split(' ')[1];
-        const decoded = verifyToken(token) as any;
-        if (!decoded) {
-            return res.status(401).json({ message: 'Unauthorized: Invalid token' });
-        }
 
         // Support both Vercel (req.query.id) and Express (req.params.id) routing
         let id = req.query.id || (req as any).params?.id;
@@ -67,56 +54,70 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             return res.status(400).json({ message: 'User ID required' });
         }
 
+        const authHeader = req.headers.authorization;
+        if (!authHeader || !authHeader.startsWith('Bearer ')) {
+            return res.status(401).json({ message: 'Unauthorized' });
+        }
+
+        const token = authHeader.split(' ')[1];
+        const decoded = verifyToken(token) as any;
+        if (!decoded) {
+            return res.status(401).json({ message: 'Unauthorized: Invalid token' });
+        }
+
         // Logic check: Only admin can update anyone, or user can update themselves
         if (decoded.userId !== id && decoded.role !== 'admin') {
             return res.status(403).json({ message: 'Forbidden' });
         }
 
-        if (req.method === 'GET') {
-            const user = await User.findById(id).select('-passwordHash');
-            if (!user) return res.status(404).json({ message: 'User not found' });
-            return res.status(200).json(user);
-        }
+        switch (method) {
+            case 'GET':
+                const user = await User.findById(id).select('-passwordHash');
+                if (!user) return res.status(404).json({ message: 'User not found' });
+                return res.status(200).json(user);
 
-        if (req.method === 'PUT' || req.method === 'PATCH') {
-            // Validate body
-            const body = req.body;
-            console.log('Update User Body:', body); // Debug log
+            case 'PUT':
+            case 'PATCH':
+                // Validate body
+                const body = req.body;
+                console.log('Update User Body:', body);
 
-            const validation = updateUserSchema.safeParse(body);
+                const validation = updateUserSchema.safeParse(body);
 
-            if (!validation.success) {
-                console.error('Validation Error:', JSON.stringify(validation.error.format())); // Debug log
-                return res.status(400).json({ message: 'Validation Error', errors: validation.error.format() });
-            }
+                if (!validation.success) {
+                    console.error('Validation Error:', JSON.stringify(validation.error.format()));
+                    return res.status(400).json({ message: 'Validation Error', errors: validation.error.format() });
+                }
 
-            const updates = validation.data;
+                const updates = validation.data;
 
-            // Security check: only admin can update role or status
-            if ((updates.role || updates.status) && decoded.role !== 'admin') {
-                return res.status(403).json({ message: "Forbidden: Only admins can update role or status" });
-            }
+                // Security check: only admin can update role or status
+                if ((updates.role || updates.status) && decoded.role !== 'admin') {
+                    return res.status(403).json({ message: "Forbidden: Only admins can update role or status" });
+                }
 
-            const updatedUser = await User.findByIdAndUpdate(id, updates, { new: true }).select('-passwordHash');
+                const updatedUser = await User.findByIdAndUpdate(id, updates, { new: true }).select('-passwordHash');
 
-            if (!updatedUser) {
-                return res.status(404).json({ message: 'User not found' });
-            }
+                if (!updatedUser) {
+                    return res.status(404).json({ message: 'User not found' });
+                }
 
-            return res.status(200).json(updatedUser);
-        }
+                return res.status(200).json(updatedUser);
 
-        if (req.method === 'DELETE') {
-            // Only admin can delete
-            if (decoded.role !== 'admin') {
-                return res.status(403).json({ message: 'Forbidden. Only admins can delete users.' });
-            }
+            case 'DELETE':
+                // Only admin can delete
+                if (decoded.role !== 'admin') {
+                    return res.status(403).json({ message: 'Forbidden. Only admins can delete users.' });
+                }
 
-            const deletedUser = await User.findByIdAndDelete(id);
-            if (!deletedUser) {
-                return res.status(404).json({ message: 'User not found' });
-            }
-            return res.status(200).json({ message: 'User deleted' });
+                const deletedUser = await User.findByIdAndDelete(id);
+                if (!deletedUser) {
+                    return res.status(404).json({ message: 'User not found' });
+                }
+                return res.status(200).json({ message: 'User deleted' });
+
+            default:
+                return res.status(405).json({ message: `Method ${method} Not Allowed` });
         }
 
     } catch (error: any) {
@@ -124,5 +125,3 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(500).json({ message: error.message || 'Internal Server Error' });
     }
 }
-
-

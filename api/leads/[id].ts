@@ -28,8 +28,10 @@ function setCorsHeaders(res: VercelResponse) {
 export default async function handler(req: VercelRequest, res: VercelResponse) {
     setCorsHeaders(res);
 
+    const { method } = req;
+
     // Handle CORS preflight
-    if (req.method === 'OPTIONS') {
+    if (method === 'OPTIONS') {
         return res.status(200).end();
     }
 
@@ -63,93 +65,91 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
         const { role, userId } = decoded;
 
-        // GET: Fetch Single Lead
-        if (req.method === 'GET') {
-            const lead = await Lead.findById(id).populate('assignedTo', 'name email role');
+        switch (method) {
+            case 'GET':
+                const lead = await Lead.findById(id).populate('assignedTo', 'name email role');
 
-            if (!lead) {
-                return res.status(404).json({ message: 'Lead not found' });
-            }
+                if (!lead) {
+                    return res.status(404).json({ message: 'Lead not found' });
+                }
 
-            // Authorization check for Agent
-            if (role === 'agent' && lead.assignedTo?._id.toString() !== userId) {
-                return res.status(403).json({ message: 'Forbidden: You do not have access to this lead' });
-            }
+                // Authorization check for Agent
+                if (role === 'agent' && lead.assignedTo?._id.toString() !== userId) {
+                    return res.status(403).json({ message: 'Forbidden: You do not have access to this lead' });
+                }
 
-            return res.status(200).json(lead);
-        }
+                return res.status(200).json(lead);
 
-        // PUT/PATCH: Update Lead
-        if (req.method === 'PUT' || req.method === 'PATCH') {
-            const existingLead = await Lead.findById(id);
+            case 'PUT':
+            case 'PATCH':
+                const existingLead = await Lead.findById(id);
 
-            if (!existingLead) {
-                return res.status(404).json({ message: 'Lead not found' });
-            }
+                if (!existingLead) {
+                    return res.status(404).json({ message: 'Lead not found' });
+                }
 
-            // Authorization check
-            if (role === 'agent' && existingLead.assignedTo?.toString() !== userId) {
-                return res.status(403).json({ message: 'Forbidden: You can only update your assigned leads' });
-            }
+                // Authorization check
+                if (role === 'agent' && existingLead.assignedTo?.toString() !== userId) {
+                    return res.status(403).json({ message: 'Forbidden: You can only update your assigned leads' });
+                }
 
-            console.log('Update Lead Body:', req.body); // Debug log
+                console.log('Update Lead Body:', req.body); // Debug log
 
-            const validation = updateLeadSchema.safeParse(req.body);
+                const validation = updateLeadSchema.safeParse(req.body);
 
-            if (!validation.success) {
-                console.error('Validation Error:', JSON.stringify(validation.error.errors)); // Debug log
-                return res.status(400).json({
-                    message: 'Validation Error',
-                    errors: validation.error.errors,
-                });
-            }
+                if (!validation.success) {
+                    console.error('Validation Error:', JSON.stringify(validation.error.errors)); // Debug log
+                    return res.status(400).json({
+                        message: 'Validation Error',
+                        errors: validation.error.errors,
+                    });
+                }
 
-            const updates = validation.data;
-
-
-            // Handle nextFollowUp specially (Date conversion)
-            const updateData: any = { ...updates };
-            if (updates.nextFollowUp) {
-                updateData.nextFollowUp = new Date(updates.nextFollowUp);
-            } else if (updates.nextFollowUp === null) {
-                // Allow clearing follow up
-                updateData.nextFollowUp = null;
-            }
-
-            // Handle empty string for assignedTo (prevent CastError)
-            if (updateData.assignedTo === "") {
-                updateData.assignedTo = null;
-            }
+                const updates = validation.data;
 
 
-            const updatedLead = await Lead.findByIdAndUpdate(id, updateData, { new: true })
-                .populate('assignedTo', 'name email role');
+                // Handle nextFollowUp specially (Date conversion)
+                const updateData: any = { ...updates };
+                if (updates.nextFollowUp) {
+                    updateData.nextFollowUp = new Date(updates.nextFollowUp);
+                } else if (updates.nextFollowUp === null) {
+                    // Allow clearing follow up
+                    updateData.nextFollowUp = null;
+                }
 
-            return res.status(200).json(updatedLead);
-        }
+                // Handle empty string for assignedTo (prevent CastError)
+                if (updateData.assignedTo === "") {
+                    updateData.assignedTo = null;
+                }
 
-        // DELETE: Delete Lead (Admin Only)
-        if (req.method === 'DELETE') {
-            if (role !== 'admin') {
-                return res.status(403).json({ message: 'Forbidden: Only admins can delete leads' });
-            }
 
-            const deletedLead = await Lead.findByIdAndDelete(id);
+                const updatedLead = await Lead.findByIdAndUpdate(id, updateData, { new: true })
+                    .populate('assignedTo', 'name email role');
 
-            if (!deletedLead) {
-                return res.status(404).json({ message: 'Lead not found' });
-            }
+                return res.status(200).json(updatedLead);
 
-            // Also delete associated notes
-            await Note.deleteMany({ lead: id });
+            case 'DELETE':
+                if (role !== 'admin') {
+                    return res.status(403).json({ message: 'Forbidden: Only admins can delete leads' });
+                }
 
-            return res.status(200).json({ message: 'Lead deleted successfully' });
+                const deletedLead = await Lead.findByIdAndDelete(id);
+
+                if (!deletedLead) {
+                    return res.status(404).json({ message: 'Lead not found' });
+                }
+
+                // Also delete associated notes
+                await Note.deleteMany({ lead: id });
+
+                return res.status(200).json({ message: 'Lead deleted successfully' });
+
+            default:
+                return res.status(405).json({ message: `Method ${method} Not Allowed` });
         }
 
     } catch (error: any) {
         console.error('Error in lead handler:', error);
         return res.status(500).json({ message: error.message || 'Internal Server Error' });
     }
-
-    return res.status(405).json({ message: 'Method Not Allowed' });
 }
