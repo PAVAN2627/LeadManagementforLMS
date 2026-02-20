@@ -124,9 +124,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                     updateData.assignedTo = null;
                 }
 
+                // Verify assigned agent exists if provided (and explicitly use User model to ensure registration)
+                if (updateData.assignedTo) {
+                    const agent = await User.findById(updateData.assignedTo);
+                    if (!agent) {
+                        return res.status(400).json({ message: 'Assigned agent not found' });
+                    }
+                }
 
                 const updatedLead = await Lead.findByIdAndUpdate(id, updateData, { new: true })
                     .populate('assignedTo', 'name email role');
+
 
                 return res.status(200).json(updatedLead);
 
