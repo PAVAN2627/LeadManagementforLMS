@@ -54,10 +54,163 @@ const AdminReports = () => {
     queryFn: api.getLeads
   });
 
-  const { data: users = [] } = useQuery({
+  const { data: allUsers = [] } = useQuery({
     queryKey: ['users'],
-    queryFn: () => api.getUsers('agent')
+    queryFn: () => api.getUsers()
   });
+
+  // Calculate Top Performers from real data
+  const topPerformers = useMemo(() => {
+    const agents = allUsers.filter((u: any) => u.role.toLowerCase() === 'agent');
+    
+    const performanceData = agents.map((agent: any) => {
+      const agentLeads = leads.filter((l: ApiLead) => l.assignedTo?._id === agent._id);
+      const converted = agentLeads.filter((l: ApiLead) => l.status === 'converted').length;
+      const total = agentLeads.length;
+      const score = total > 0 ? ((converted / total) * 100).toFixed(0) : "0";
+      
+      return {
+        name: agent.name,
+        metric: `${converted} conversions`,
+        score: `${score}%`,
+        trend: parseInt(score) >= 80 ? "up" : "down",
+        convertedCount: converted
+      };
+    });
+
+    // Sort by converted count and return top 5
+    return performanceData
+      .sort((a, b) => b.convertedCount - a.convertedCount)
+      .slice(0, 5);
+  }, [allUsers, leads]);
+
+  // Calculate Conversion Trends from real data
+  const conversionTrends = useMemo(() => {
+    const now = new Date();
+    const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0);
+
+    const thisMonthLeads = leads.filter((l: ApiLead) => {
+      const leadDate = new Date(l.createdAt);
+      return leadDate >= thisMonthStart;
+    });
+
+    const lastMonthLeads = leads.filter((l: ApiLead) => {
+      const leadDate = new Date(l.createdAt);
+      return leadDate >= lastMonthStart && leadDate <= lastMonthEnd;
+    });
+
+    const thisMonthConverted = thisMonthLeads.filter((l: ApiLead) => l.status === 'converted').length;
+    const lastMonthConverted = lastMonthLeads.filter((l: ApiLead) => l.status === 'converted').length;
+
+    const thisMonthRate = thisMonthLeads.length > 0 ? (thisMonthConverted / thisMonthLeads.length) * 100 : 0;
+    const lastMonthRate = lastMonthLeads.length > 0 ? (lastMonthConverted / lastMonthLeads.length) * 100 : 0;
+    const improvement = thisMonthRate - lastMonthRate;
+
+    return {
+      thisMonth: thisMonthRate.toFixed(1) + "%",
+      lastMonth: lastMonthRate.toFixed(1) + "%",
+      improvement: (improvement >= 0 ? "+" : "") + improvement.toFixed(1) + "%",
+      thisMonthProgress: Math.min(thisMonthRate, 100),
+      lastMonthProgress: Math.min(lastMonthRate, 100)
+    };
+  }, [leads]);
+
+  // Calculate Team Performance from real data
+  const teamPerformance = useMemo(() => {
+    const departments = ['Sales', 'Marketing', 'Support'];
+    
+    return departments.map(dept => {
+      const deptUsers = allUsers.filter((u: any) => u.department === dept);
+      const deptLeads = leads.filter((l: ApiLead) => 
+        deptUsers.some((u: any) => u._id === l.assignedTo?._id)
+      );
+      const converted = deptLeads.filter((l: ApiLead) => l.status === 'converted').length;
+      const performance = deptLeads.length > 0 ? ((converted / deptLeads.length) * 100).toFixed(0) : "0";
+
+      const colorMap: Record<string, string> = {
+        Sales: "from-emerald-500 to-green-500",
+        Marketing: "from-blue-500 to-blue-600",
+        Support: "from-purple-500 to-purple-600"
+      };
+
+      const bgColorMap: Record<string, string> = {
+        Sales: "bg-emerald-500",
+        Marketing: "bg-blue-500",
+        Support: "bg-purple-500"
+      };
+
+      return {
+        department: `${dept} Team`,
+        members: deptUsers.length,
+        performance: parseInt(performance),
+        color: colorMap[dept] || "from-gray-500 to-gray-600",
+        bgColor: bgColorMap[dept] || "bg-gray-500"
+      };
+    });
+  }, [allUsers, leads]);
+
+  // Calculate Activity Overview from real data
+  const activityOverview = useMemo(() => {
+    const now = new Date();
+    const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0);
+
+    const thisMonthLeads = leads.filter((l: ApiLead) => {
+      const leadDate = new Date(l.createdAt);
+      return leadDate >= thisMonthStart;
+    });
+
+    const lastMonthLeads = leads.filter((l: ApiLead) => {
+      const leadDate = new Date(l.createdAt);
+      return leadDate >= lastMonthStart && leadDate <= lastMonthEnd;
+    });
+
+    const calculateChange = (current: number, previous: number) => {
+      if (previous === 0) return current > 0 ? "+100%" : "0%";
+      const change = ((current - previous) / previous) * 100;
+      return (change >= 0 ? "+" : "") + change.toFixed(0) + "%";
+    };
+
+    const thisMonthContacted = thisMonthLeads.filter((l: ApiLead) => 
+      ['contacted', 'qualified', 'proposal', 'negotiation', 'converted'].includes(l.status)
+    ).length;
+    const lastMonthContacted = lastMonthLeads.filter((l: ApiLead) => 
+      ['contacted', 'qualified', 'proposal', 'negotiation', 'converted'].includes(l.status)
+    ).length;
+
+    return [
+      { 
+        activity: "Leads Processed", 
+        count: thisMonthLeads.length, 
+        change: calculateChange(thisMonthLeads.length, lastMonthLeads.length),
+        icon: Target
+      },
+      { 
+        activity: "Leads Contacted", 
+        count: thisMonthContacted, 
+        change: calculateChange(thisMonthContacted, lastMonthContacted),
+        icon: Users
+      },
+      { 
+        activity: "Active Agents", 
+        count: allUsers.filter((u: any) => u.role === 'agent' && u.status === 'active').length, 
+        change: "+0%",
+        icon: Activity
+      },
+      { 
+        activity: "Conversions", 
+        count: thisMonthLeads.filter((l: ApiLead) => l.status === 'converted').length, 
+        change: calculateChange(
+          thisMonthLeads.filter((l: ApiLead) => l.status === 'converted').length,
+          lastMonthLeads.filter((l: ApiLead) => l.status === 'converted').length
+        ),
+        icon: Calendar
+      },
+    ];
+  }, [leads, allUsers]);
 
   // Compute Leads By Status
   const leadsByStatusData = useMemo(() => {
@@ -90,8 +243,8 @@ const AdminReports = () => {
 
   // Compute Agent Performance
   const agentPerformanceData = useMemo(() => {
-    const agents = users.filter((u: any) => u.role.toLowerCase() === 'agent');
-    if (agents.length === 0) return undefined; // Let chart use default if no agents or data not ready
+    const agents = allUsers.filter((u: any) => u.role.toLowerCase() === 'agent');
+    if (agents.length === 0) return undefined;
 
     return agents.map((agent: any) => {
       const agentLeads = leads.filter((l: ApiLead) => l.assignedTo?._id === agent._id);
@@ -106,7 +259,7 @@ const AdminReports = () => {
         lost
       };
     });
-  }, [users, leads]);
+  }, [allUsers, leads]);
 
   // Export all reports function
   const exportAllReports = () => {
@@ -115,22 +268,12 @@ const AdminReports = () => {
       dateRange: dateRange,
       reportTemplates: reportTemplates,
       topPerformers: topPerformers,
-      conversionTrends: {
-        thisMonth: "18.4%",
-        lastMonth: "16.3%",
-        improvement: "+2.1%"
-      },
-      teamPerformance: [
-        { department: "Sales Team", members: 12, performance: 92, color: "bg-green-500" },
-        { department: "Marketing Team", members: 8, performance: 88, color: "bg-blue-500" },
-        { department: "Support Team", members: 6, performance: 95, color: "bg-purple-500" },
-      ],
-      activityOverview: [
-        { activity: "Leads Processed", count: 156, change: "+12%" },
-        { activity: "Calls Made", count: 89, change: "+8%" },
-        { activity: "Emails Sent", count: 234, change: "+15%" },
-        { activity: "Meetings Scheduled", count: 45, change: "+5%" },
-      ]
+      conversionTrends: conversionTrends,
+      teamPerformance: teamPerformance,
+      activityOverview: activityOverview,
+      totalLeads: leads.length,
+      totalUsers: allUsers.length,
+      conversionRate: conversionRate
     };
 
     const dataStr = JSON.stringify(reportData, null, 2);
@@ -165,8 +308,6 @@ const AdminReports = () => {
     const converted = leads.filter((l: ApiLead) => l.status === 'converted').length;
     return ((converted / leads.length) * 100).toFixed(1) + "%";
   }, [leads]);
-
-
 
   const reportTemplates = [
     {
@@ -211,14 +352,6 @@ const AdminReports = () => {
       type: "summary",
       lastGenerated: "2 days ago"
     }
-  ];
-
-  const topPerformers = [
-    { name: "John Smith", metric: "24 conversions", score: "95%", trend: "up" },
-    { name: "Emily Davis", metric: "18 conversions", score: "88%", trend: "up" },
-    { name: "Mike Wilson", metric: "28 conversions", score: "92%", trend: "down" },
-    { name: "Sarah Johnson", metric: "22 conversions", score: "90%", trend: "up" },
-    { name: "David Lee", metric: "15 conversions", score: "78%", trend: "up" }
   ];
 
   const generateReport = (type: string) => {
@@ -445,7 +578,7 @@ const AdminReports = () => {
                 </div>
 
                 {/* Tab Content Areas */}
-                <div className="p-6">
+                <div className="p-6 bg-white">
                   <TabsContent value="overview" className="space-y-6 mt-0">
                     <motion.div
                       initial={{ opacity: 0, y: 20 }}
@@ -514,13 +647,13 @@ const AdminReports = () => {
                               >
                                 <div className="flex items-center justify-between">
                                   <span className="text-sm font-medium text-gray-600">This Month</span>
-                                  <span className="font-bold text-xl text-gray-900">18.4%</span>
+                                  <span className="font-bold text-xl text-gray-900">{conversionTrends.thisMonth}</span>
                                 </div>
                                 <div className="relative w-full bg-gray-200 rounded-full h-3 overflow-hidden">
                                   <motion.div
                                     className="absolute top-0 left-0 h-full bg-gradient-to-r from-teal-500 to-teal-600 rounded-full"
                                     initial={{ width: "0%" }}
-                                    animate={{ width: "84%" }}
+                                    animate={{ width: `${conversionTrends.thisMonthProgress}%` }}
                                     transition={{ delay: 1.5, duration: 1.5 }}
                                   />
                                 </div>
@@ -534,13 +667,13 @@ const AdminReports = () => {
                               >
                                 <div className="flex items-center justify-between">
                                   <span className="text-sm font-medium text-gray-600">Last Month</span>
-                                  <span className="font-bold text-xl text-gray-900">16.3%</span>
+                                  <span className="font-bold text-xl text-gray-900">{conversionTrends.lastMonth}</span>
                                 </div>
                                 <div className="relative w-full bg-gray-200 rounded-full h-3 overflow-hidden">
                                   <motion.div
                                     className="absolute top-0 left-0 h-full bg-gradient-to-r from-gray-400 to-gray-500 rounded-full"
                                     initial={{ width: "0%" }}
-                                    animate={{ width: "75%" }}
+                                    animate={{ width: `${conversionTrends.lastMonthProgress}%` }}
                                     transition={{ delay: 1.6, duration: 1.5 }}
                                   />
                                 </div>
@@ -553,8 +686,12 @@ const AdminReports = () => {
                                 className="pt-4 border-t border-gray-100"
                               >
                                 <div className="flex items-center gap-2 text-emerald-600">
-                                  <ArrowUp className="h-4 w-4" />
-                                  <span className="font-semibold">+2.1% improvement</span>
+                                  {conversionTrends.improvement.startsWith('+') ? (
+                                    <ArrowUp className="h-4 w-4" />
+                                  ) : (
+                                    <ArrowDown className="h-4 w-4" />
+                                  )}
+                                  <span className="font-semibold">{conversionTrends.improvement} improvement</span>
                                 </div>
                               </motion.div>
                             </div>
@@ -771,11 +908,7 @@ const AdminReports = () => {
                           </CardHeader>
                           <CardContent className="p-6 bg-white">
                             <div className="space-y-6">
-                              {[
-                                { department: "Sales Team", members: 12, performance: 92, color: "from-emerald-500 to-green-500", bgColor: "bg-emerald-500" },
-                                { department: "Marketing Team", members: 8, performance: 88, color: "from-blue-500 to-blue-600", bgColor: "bg-blue-500" },
-                                { department: "Support Team", members: 6, performance: 95, color: "from-purple-500 to-purple-600", bgColor: "bg-purple-500" },
-                              ].map((team, index) => (
+                              {teamPerformance.map((team, index) => (
                                 <motion.div
                                   key={team.department}
                                   initial={{ opacity: 0, x: -20 }}
@@ -834,12 +967,7 @@ const AdminReports = () => {
                           </CardHeader>
                           <CardContent className="p-6 bg-white">
                             <div className="space-y-5">
-                              {[
-                                { activity: "Leads Processed", count: 156, change: "+12%", icon: Target },
-                                { activity: "Calls Made", count: 89, change: "+8%", icon: Users },
-                                { activity: "Emails Sent", count: 234, change: "+15%", icon: Activity },
-                                { activity: "Meetings Scheduled", count: 45, change: "+5%", icon: Calendar },
-                              ].map((item, index) => (
+                              {activityOverview.map((item, index) => (
                                 <motion.div
                                   key={item.activity}
                                   initial={{ opacity: 0, y: 10 }}
