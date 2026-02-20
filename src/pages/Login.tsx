@@ -73,20 +73,6 @@ const Login = () => {
 
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-3 md:p-4 relative overflow-hidden">
-      {/* Background Image */}
-      <div
-        className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-        style={{
-          backgroundImage: 'url(/leadmgtback.png)',
-        }}
-      />
-
-      {/* Overlay for better readability */}
-      <div className="absolute inset-0 bg-gradient-to-br from-black/40 via-black/30 to-black/40 backdrop-blur-[2px]" />
-
-      {/* Centered Login Form */}
-
     <div className="min-h-screen flex relative overflow-hidden">
       {/* Full Gradient Background - Teal Theme */}
       <div className="absolute inset-0 bg-gradient-to-br from-teal-500 via-cyan-500 to-blue-500" />
@@ -220,29 +206,6 @@ const Login = () => {
           </motion.div>
         </div>
       </motion.div>
-
-            {/* Submit Button */}
-            <Button
-              type="submit"
-              className="w-full gradient-teal text-white h-10 md:h-12 text-sm md:text-base font-semibold shadow-lg hover:shadow-xl transition-all hover:scale-[1.02]"
-              disabled={isSubmitting}
-            >
-              {isSubmitting ? (
-                <motion.div
-                  animate={{ rotate: 360 }}
-                  transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                  className="h-4 md:h-5 w-4 md:w-5 border-2 border-white border-t-transparent rounded-full"
-                />
-              ) : (
-                <>
-                  <Lock className="mr-2 h-4 md:h-5 w-4 md:w-5" />
-                  Sign In Securely
-                </>
-              )}
-            </Button>
-          </motion.form>
-
-          {/* Demo Access Section Removed */}
 
       {/* Right Side - Login Form */}
       <motion.div
