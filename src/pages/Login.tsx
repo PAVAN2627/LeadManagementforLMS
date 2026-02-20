@@ -1,9 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { useNavigate, Navigate } from "react-router-dom";
-import { Mail, Lock, ArrowLeft, Shield, Users, BarChart3, Eye, EyeOff } from "lucide-react";
-
-import { useNavigate } from "react-router-dom";
 import { Mail, Lock, ArrowLeft, Shield, Users, BarChart3, Eye, EyeOff, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -65,6 +62,50 @@ const Login = () => {
         variant: "destructive",
         title: "Login Failed",
         description: error.message || "Invalid credentials",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleDemoLogin = async (role: string) => {
+    const demoCredentials: Record<string, { email: string; password: string }> = {
+      admin: { email: "admin@athenura.com", password: "admin123" },
+      manager: { email: "manager@athenura.com", password: "manager123" },
+      agent: { email: "agent@athenura.com", password: "agent123" },
+    };
+
+    const credentials = demoCredentials[role];
+    if (!credentials) return;
+
+    setEmail(credentials.email);
+    setPassword(credentials.password);
+
+    setIsSubmitting(true);
+
+    try {
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(credentials),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Login failed');
+      }
+
+      login(data.token, data.user);
+      navigate(`/${role}`);
+    } catch (error: any) {
+      console.error('Demo login error:', error);
+      toast({
+        variant: "destructive",
+        title: "Demo Login Failed",
+        description: error.message || "Could not log in with demo credentials",
       });
     } finally {
       setIsSubmitting(false);
@@ -204,6 +245,7 @@ const Login = () => {
               </div>
             </div>
           </motion.div>
+        </div>
         </div>
       </motion.div>
 
