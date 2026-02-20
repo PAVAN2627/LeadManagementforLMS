@@ -1,12 +1,10 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-main
 import { useNavigate, Navigate } from "react-router-dom";
 import { Mail, Lock, ArrowLeft, Shield, Users, BarChart3, Eye, EyeOff } from "lucide-react";
 
 import { useNavigate } from "react-router-dom";
 import { Mail, Lock, ArrowLeft, Shield, Users, BarChart3, Eye, EyeOff, CheckCircle2 } from "lucide-react";
- main
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -75,7 +73,6 @@ const Login = () => {
 
 
   return (
- main
     <div className="min-h-screen flex items-center justify-center p-3 md:p-4 relative overflow-hidden">
       {/* Background Image */}
       <div
@@ -95,14 +92,12 @@ const Login = () => {
       <div className="absolute inset-0 bg-gradient-to-br from-teal-500 via-cyan-500 to-blue-500" />
       
       {/* Left Side - Information */}
-main
       <motion.div
         initial={{ opacity: 0, x: -50 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ duration: 0.6 }}
         className="hidden lg:flex lg:w-1/2 relative z-10 flex-col justify-start pt-20 p-12 xl:p-20"
       >
-main
         {/* Decorative Background */}
         <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-teal-50 to-cyan-50 opacity-50" />
 
@@ -131,7 +126,6 @@ main
           <ArrowLeft className="mr-2 h-4 w-4" />
           Back to Home
         </Button>
- main
 
         <div className="max-w-xl">
           <motion.div
@@ -140,7 +134,6 @@ main
             transition={{ delay: 0.2 }}
             className="mb-1"
           >
-main
             <motion.div
               animate={{
                 rotate: [0, 5, -5, 0],
@@ -177,7 +170,6 @@ main
               alt="Athenura" 
               className="h-36"
             />
- main
           </motion.div>
 
           <motion.h1
@@ -229,7 +221,6 @@ main
         </div>
       </motion.div>
 
- main
             {/* Submit Button */}
             <Button
               type="submit"
@@ -396,7 +387,6 @@ main
                 </Button>
               </div>
             </div>
-main
 
             {/* Security Notice */}
             <div className="mt-6 text-center">
