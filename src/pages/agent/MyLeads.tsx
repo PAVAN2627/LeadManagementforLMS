@@ -1,5 +1,8 @@
 import { useState, useMemo } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { api, ApiLead } from "@/lib/api";
 import { motion } from "framer-motion";
+import { useToast } from "@/components/ui/use-toast";
 import {
   Search,
   Filter,
@@ -29,12 +32,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Lead } from "@/components/tables/LeadsTable";
-import { mockLeads } from "@/data/mockData";
 import { LeadDetailModal } from "@/components/agent/LeadDetailModal";
 import { AddLeadModal } from "@/components/agent/AddLeadModal";
 
-const statusColors: Record<string, string> = {
+const statusColors: Record<ApiLead["status"], string> = {
   new: "bg-gradient-to-r from-blue-500/20 to-cyan-500/20 text-blue-700 border border-blue-300 dark:text-blue-400 shadow-sm",
   contacted:
     "bg-gradient-to-r from-purple-500/20 to-pink-500/20 text-purple-700 border border-purple-300 dark:text-purple-400 shadow-sm",
@@ -50,29 +51,60 @@ const statusColors: Record<string, string> = {
 };
 
 const MyLeads = () => {
-  const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  // Fetch Leads
+  const { data: leads = [], isLoading } = useQuery({
+    queryKey: ['leads'],
+    queryFn: api.getLeads,
+  });
+
+  const [selectedLead, setSelectedLead] = useState<ApiLead | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [isAddLeadModalOpen, setIsAddLeadModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
   const [filterSource, setFilterSource] = useState("all");
   const [sortBy, setSortBy] = useState("date");
-  const [currentAgent] = useState("John Smith");
 
-  // Get agent's leads
-  const agentLeads = useMemo(() => {
-    return mockLeads.filter((l) => l.assignedAgent === currentAgent);
-  }, [currentAgent]);
+  // Mutation for creating lead
+  const createLeadMutation = useMutation({
+    mutationFn: (data: any) => api.createLead({
+      ...data,
+      source: data.source || 'Manual',
+      // assignedTo omitted — backend auto-assigns to the creating agent
+    }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['leads'] });
+      toast({ title: "Success", description: "Lead created successfully" });
+      setIsAddLeadModalOpen(false);
+    },
+    onError: (error: Error) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    }
+  });
+
+  // Mutation for updating lead
+  const updateLeadMutation = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: Partial<ApiLead> }) =>
+      api.updateLead(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['leads'] });
+      toast({ title: "Updated", description: "Lead updated successfully" });
+      setIsDetailModalOpen(false);
+    }
+  });
 
   // Filter and search leads
   const filteredLeads = useMemo(() => {
-    let leads = [...agentLeads];
+    let result = [...leads];
 
     // Search filter
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
-      leads = leads.filter(
-        (l) =>
+      result = result.filter(
+        (l: ApiLead) =>
           l.name.toLowerCase().includes(term) ||
           l.email.toLowerCase().includes(term) ||
           l.company.toLowerCase().includes(term)
@@ -81,48 +113,46 @@ const MyLeads = () => {
 
     // Status filter
     if (filterStatus !== "all") {
-      leads = leads.filter((l) => l.status === filterStatus);
+      result = result.filter((l: ApiLead) => l.status === filterStatus);
     }
 
     // Source filter
     if (filterSource !== "all") {
-      leads = leads.filter((l) => l.source === filterSource);
+      result = result.filter((l: ApiLead) => l.source === filterSource);
     }
 
     // Sorting
     if (sortBy === "date") {
-      leads.sort(
+      result.sort(
         (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
       );
     } else if (sortBy === "name") {
-      leads.sort((a, b) => a.name.localeCompare(b.name));
+      result.sort((a, b) => a.name.localeCompare(b.name));
     } else if (sortBy === "followup") {
-      leads.sort((a, b) => {
+      result.sort((a, b) => {
         const aDate = a.nextFollowUp ? new Date(a.nextFollowUp).getTime() : 0;
         const bDate = b.nextFollowUp ? new Date(b.nextFollowUp).getTime() : 0;
         return aDate - bDate;
       });
     }
 
-    return leads;
-  }, [agentLeads, searchTerm, filterStatus, filterSource, sortBy]);
+    return result;
+  }, [leads, searchTerm, filterStatus, filterSource, sortBy]);
 
-  const handleLeadSelect = (lead: Lead) => {
+  const handleLeadSelect = (lead: ApiLead) => {
     setSelectedLead(lead);
     setIsDetailModalOpen(true);
   };
 
-  const handleSaveLead = (lead: Lead, updates: any) => {
-    console.log("Saving lead:", lead.id, updates);
-    // In a real app, this would make an API call
+  const handleSaveLead = (lead: ApiLead, updates: any) => {
+    updateLeadMutation.mutate({ id: lead._id, data: updates });
   };
 
   const handleAddLead = (leadData: any) => {
-    console.log("Adding new lead:", leadData);
-    // In a real app, this would make an API call
+    createLeadMutation.mutate(leadData);
   };
 
-  const uniqueSources = Array.from(new Set(mockLeads.map((l) => l.source)));
+  const uniqueSources = Array.from(new Set(leads.map((l: ApiLead) => l.source)));
 
   return (
     <DashboardLayout role="agent" title="My Leads">
@@ -136,7 +166,7 @@ const MyLeads = () => {
           <div>
             <h1 className="text-3xl font-bold text-foreground">My Leads</h1>
             <p className="text-muted-foreground mt-1">
-              Showing {filteredLeads.length} of {agentLeads.length} leads
+              Showing {filteredLeads.length} of {leads.length} leads
             </p>
           </div>
           <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
@@ -297,7 +327,7 @@ const MyLeads = () => {
               <TableBody>
                 {filteredLeads.map((lead, index) => (
                   <motion.tr
-                    key={lead.id}
+                    key={lead._id}
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: index * 0.05 }}
@@ -348,10 +378,10 @@ const MyLeads = () => {
                           </span>
                           {new Date(lead.nextFollowUp).toDateString() ===
                             new Date().toDateString() && (
-                            <Badge className="text-xs bg-yellow-500/20 text-yellow-700 border border-yellow-200 dark:border-yellow-800 dark:text-yellow-400 dark:bg-yellow-950/20 whitespace-nowrap">
-                              Today
-                            </Badge>
-                          )}
+                              <Badge className="text-xs bg-yellow-500/20 text-yellow-700 border border-yellow-200 dark:border-yellow-800 dark:text-yellow-400 dark:bg-yellow-950/20 whitespace-nowrap">
+                                Today
+                              </Badge>
+                            )}
                         </div>
                       ) : (
                         <span className="text-muted-foreground text-xs">—</span>

@@ -1,15 +1,15 @@
 import React, { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { 
-  Plus, 
-  Search, 
-  Filter, 
-  Download, 
-  Eye, 
-  Edit, 
-  Phone, 
-  Mail, 
-  Building, 
+import {
+  Plus,
+  Search,
+  Filter,
+  Download,
+  Eye,
+  Edit,
+  Phone,
+  Mail,
+  Building,
   Calendar,
   User,
   ArrowRight,
@@ -28,13 +28,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow
 } from "@/components/ui/table";
 import {
   Dialog,
@@ -52,21 +52,73 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { mockLeads, mockUsers } from "@/data/mockData";
-import { Lead } from "@/components/tables/LeadsTable";
+
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { api, ApiLead } from "@/lib/api";
 import { useToast } from "@/components/ui/use-toast";
 
 const AdminLeads = () => {
   const { toast } = useToast();
-  const [leads, setLeads] = useState<Lead[]>(mockLeads);
+  const queryClient = useQueryClient();
+
+  // Fetch Leads
+  const { data: leads = [], isLoading: isLoadingLeads, error: leadsError } = useQuery({
+    queryKey: ['leads'],
+    queryFn: api.getLeads,
+  });
+
+  // Fetch Users (Agents) for dropdown
+  const { data: users = [] } = useQuery({
+    queryKey: ['users'],
+    queryFn: () => api.getUsers('agent'), // Fetch all users, can filter by role if API supports or client side
+  });
+
+  // Filter agents for dropdown
+  const agents = useMemo(() => users.filter((u: any) => u.role === 'agent'), [users]);
+
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [sourceFilter, setSourceFilter] = useState("all");
-  const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
+  const [selectedLead, setSelectedLead] = useState<ApiLead | null>(null);
   const [isAddLeadOpen, setIsAddLeadOpen] = useState(false);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [isEditLeadOpen, setIsEditLeadOpen] = useState(false);
-  const [editingLead, setEditingLead] = useState<Lead | null>(null);
+  const [editingLead, setEditingLead] = useState<ApiLead | null>(null);
+
+  // Mutations
+  const createLeadMutation = useMutation({
+    mutationFn: api.createLead,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['leads'] });
+      toast({ title: "Success", description: "Lead created successfully" });
+      setIsAddLeadOpen(false);
+      setNewLead({
+        name: "",
+        email: "",
+        phone: "",
+        company: "",
+        source: "Website",
+        assignedAgent: "", // This will store the User ID
+        notes: ""
+      });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    }
+  });
+
+  const updateLeadMutation = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: Partial<ApiLead> }) => api.updateLead(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['leads'] });
+      toast({ title: "Success", description: "Lead updated successfully" });
+      setIsEditLeadOpen(false);
+      setEditingLead(null);
+    },
+    onError: (error: Error) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    }
+  });
 
   // New lead form state
   const [newLead, setNewLead] = useState({
@@ -75,10 +127,10 @@ const AdminLeads = () => {
     phone: "",
     company: "",
     source: "Website",
-    assignedAgent: "",
+    assignedAgent: "", // Stores ID
     notes: ""
   });
-  
+
   // Edit lead form state
   const [editFormData, setEditFormData] = useState({
     name: "",
@@ -86,8 +138,8 @@ const AdminLeads = () => {
     phone: "",
     company: "",
     source: "",
-    status: "new" as Lead["status"],
-    assignedAgent: ""
+    status: "new" as ApiLead["status"],
+    assignedAgent: "" // Stores ID
   });
 
   // Export to CSV function
@@ -101,13 +153,13 @@ const AdminLeads = () => {
         lead.company,
         lead.source,
         lead.status,
-        lead.assignedAgent || '',
-        lead.date,
-        lead.nextFollowUp || ''
+        lead.assignedTo?.name || 'Unassigned',
+        new Date(lead.date).toLocaleDateString(),
+        lead.nextFollowUp ? new Date(lead.nextFollowUp).toLocaleDateString() : ''
       ])
     ]
-    .map(row => row.map(field => `"${field}"`).join(','))
-    .join('\n');
+      .map(row => row.map(field => `"${field ?? ''}"`).join(','))
+      .join('\n');
 
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
@@ -118,7 +170,7 @@ const AdminLeads = () => {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    
+
     toast({
       title: "Export Successful",
       description: "Leads data has been exported to CSV successfully.",
@@ -127,11 +179,11 @@ const AdminLeads = () => {
 
   // Refresh data function
   const refreshData = () => {
-    setLeads([...mockLeads]);
+    queryClient.invalidateQueries({ queryKey: ['leads'] });
     setSearchQuery("");
     setStatusFilter("all");
     setSourceFilter("all");
-    
+
     toast({
       title: "Data Refreshed",
       description: "Leads data has been refreshed successfully.",
@@ -139,7 +191,7 @@ const AdminLeads = () => {
   };
 
   // Edit lead handler
-  const handleEditLead = (lead) => {
+  const handleEditLead = (lead: ApiLead) => {
     setEditingLead(lead);
     setEditFormData({
       name: lead.name,
@@ -148,25 +200,25 @@ const AdminLeads = () => {
       company: lead.company,
       source: lead.source,
       status: lead.status,
-      assignedAgent: lead.assignedAgent
+      assignedAgent: lead.assignedTo?._id || ""
     });
     setIsEditLeadOpen(true);
   };
-  
+
   // Save edited lead
   const handleSaveEditedLead = () => {
-    setLeads(leads.map(lead =>
-      lead.id === editingLead?.id
-        ? { ...lead, ...editFormData }
-        : lead
-    ));
-    
-    setIsEditLeadOpen(false);
-    setEditingLead(null);
-    
-    toast({
-      title: "Lead Updated",
-      description: `${editFormData.name} has been updated successfully.`,
+    if (!editingLead) return;
+    updateLeadMutation.mutate({
+      id: editingLead._id,
+      data: {
+        name: editFormData.name,
+        email: editFormData.email,
+        phone: editFormData.phone,
+        company: editFormData.company,
+        source: editFormData.source,
+        status: editFormData.status,
+        assignedTo: editFormData.assignedAgent as any // Pass ID string
+      }
     });
   };
 
@@ -184,28 +236,32 @@ const AdminLeads = () => {
   // Filter leads based on search and filters
   const filteredLeads = useMemo(() => {
     return leads.filter(lead => {
-      const matchesSearch = 
+      const matchesSearch =
         lead.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         lead.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
         lead.company.toLowerCase().includes(searchQuery.toLowerCase());
-      
+
       const matchesStatus = statusFilter === "all" || lead.status === statusFilter;
       const matchesSource = sourceFilter === "all" || lead.source === sourceFilter;
-      
+
       return matchesSearch && matchesStatus && matchesSource;
     });
   }, [leads, searchQuery, statusFilter, sourceFilter]);
 
   const handleAddLead = () => {
-    const lead: Lead = {
-      id: (leads.length + 1).toString(),
-      ...newLead,
-      status: "new" as const,
-      date: new Date().toISOString().split('T')[0],
-      nextFollowUp: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
-    };
-    
-    setLeads([lead, ...leads]);
+    createLeadMutation.mutate({
+      name: newLead.name,
+      email: newLead.email,
+      phone: newLead.phone,
+      company: newLead.company,
+      source: newLead.source,
+      notes: newLead.notes,
+      assignedTo: newLead.assignedAgent as any // Pass agent ID string
+    } as any);
+  };
+
+  // Close handler to reset form
+  const handleCloseAddLead = () => {
     setNewLead({
       name: "",
       email: "",
@@ -218,27 +274,7 @@ const AdminLeads = () => {
     setIsAddLeadOpen(false);
   };
 
-  // Close handler to reset form
-  const handleCloseAddLead = () => {
-    setNewLead({
-      name: "",
-      email: "", 
-      phone: "",
-      company: "",
-      source: "Website",
-      assignedAgent: "",
-      notes: ""
-    });
-    setIsAddLeadOpen(false);
-  };
-
-  const updateLeadStatus = (leadId: string, newStatus: Lead["status"]) => {
-    setLeads(leads.map(lead => 
-      lead.id === leadId ? { ...lead, status: newStatus } : lead
-    ));
-  };
-
-  const getStatusBadge = (status: Lead["status"]) => {
+  const getStatusBadge = (status: ApiLead["status"]) => {
     const step = lifecycleSteps.find(s => s.key === status);
     return (
       <Badge className={step?.color || "bg-gray-100 text-gray-800"}>
@@ -304,7 +340,7 @@ const AdminLeads = () => {
                 transition={{ delay: 0.3 }}
                 className="flex flex-wrap items-center gap-6 text-sm"
               >
-                <motion.div 
+                <motion.div
                   whileHover={{ scale: 1.05 }}
                   className="flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-lg px-3 py-2"
                 >
@@ -315,16 +351,16 @@ const AdminLeads = () => {
                   />
                   <span className="text-teal-100">Live Pipeline</span>
                 </motion.div>
-                
-                <motion.div 
+
+                <motion.div
                   whileHover={{ scale: 1.05 }}
                   className="flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-lg px-3 py-2"
                 >
                   <TrendingUp className="h-4 w-4 text-teal-200" />
                   <span className="text-teal-100">{filteredLeads.length} Active Leads</span>
                 </motion.div>
-                
-                <motion.div 
+
+                <motion.div
                   whileHover={{ scale: 1.05 }}
                   className="flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-lg px-3 py-2"
                 >
@@ -342,9 +378,9 @@ const AdminLeads = () => {
               className="flex flex-wrap gap-3"
             >
               <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                <Button 
-                  variant="secondary" 
-                  size="sm" 
+                <Button
+                  variant="secondary"
+                  size="sm"
                   className="bg-white/20 hover:bg-white/30 text-white border-0 backdrop-blur-sm transition-all duration-300 shadow-lg hover:shadow-xl"
                   onClick={refreshData}
                 >
@@ -357,11 +393,11 @@ const AdminLeads = () => {
                   Refresh
                 </Button>
               </motion.div>
-              
+
               <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                <Button 
-                  variant="secondary" 
-                  size="sm" 
+                <Button
+                  variant="secondary"
+                  size="sm"
                   className="bg-white/20 hover:bg-white/30 text-white border-0 backdrop-blur-sm transition-all duration-300 shadow-lg hover:shadow-xl"
                   onClick={exportToCSV}
                 >
@@ -369,8 +405,8 @@ const AdminLeads = () => {
                   Export
                 </Button>
               </motion.div>
-              
-              <Dialog open={isAddLeadOpen} onOpenChange={(open) => !open && handleCloseAddLead()}>
+
+              <Dialog open={isAddLeadOpen} onOpenChange={(open) => open ? setIsAddLeadOpen(true) : handleCloseAddLead()}>
                 <DialogTrigger asChild>
                   <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                     <Button size="sm" className="bg-white hover:bg-gray-50 text-teal-700 shadow-lg hover:shadow-xl transition-all duration-300 font-semibold">
@@ -379,229 +415,229 @@ const AdminLeads = () => {
                     </Button>
                   </motion.div>
                 </DialogTrigger>
-              <DialogContent className="max-w-lg rounded-3xl border-0 shadow-2xl bg-gradient-to-br from-white via-gray-25 to-teal-25">
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.95, y: 20 }}
-                  animate={{ opacity: 1, scale: 1, y: 0 }}
-                  transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                  className="relative"
-                >
-                  {/* Background Pattern */}
-                  <div className="absolute inset-0 rounded-3xl opacity-10">
-                    <div className="absolute inset-0" style={{
-                      backgroundImage: `radial-gradient(circle at 25% 25%, rgba(20, 184, 166, 0.3) 2px, transparent 2px), 
+                <DialogContent className="max-w-lg rounded-3xl border-0 shadow-2xl bg-gradient-to-br from-white via-gray-25 to-teal-25">
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                    className="relative"
+                  >
+                    {/* Background Pattern */}
+                    <div className="absolute inset-0 rounded-3xl opacity-10">
+                      <div className="absolute inset-0" style={{
+                        backgroundImage: `radial-gradient(circle at 25% 25%, rgba(20, 184, 166, 0.3) 2px, transparent 2px), 
                                        radial-gradient(circle at 75% 75%, rgba(20, 184, 166, 0.3) 2px, transparent 2px)`,
-                      backgroundSize: '40px 40px, 60px 60px'
-                    }} />
-                  </div>
+                        backgroundSize: '40px 40px, 60px 60px'
+                      }} />
+                    </div>
 
-                  <div className="relative z-10 p-6">
-                    <DialogHeader className="text-center mb-6 relative">
-                      {/* Custom Close Button */}
-                      <DialogClose className="absolute right-0 top-0">
-                        <Button 
-                          variant="ghost" 
-                          size="icon"
-                          className="h-8 w-8 rounded-full hover:bg-gray-100 transition-colors"
-                          onClick={handleCloseAddLead}
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      </DialogClose>
-                      
-                      <motion.div
-                        animate={{ rotate: [0, 5, -5, 0] }}
-                        transition={{ duration: 3, repeat: Infinity, delay: 0.5 }}
-                        className="mx-auto w-16 h-16 bg-gradient-to-br from-teal-500 to-teal-600 rounded-2xl flex items-center justify-center mb-4 shadow-lg"
-                      >
-                        <Plus className="h-8 w-8 text-white" />
-                      </motion.div>
-                      <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-gray-900 to-teal-800 bg-clip-text text-transparent">
-                        Add New Lead
-                      </DialogTitle>
-                      <p className="text-gray-600 mt-2">Capture and qualify a new prospect</p>
-                    </DialogHeader>
-
-                    <motion.div
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.2 }}
-                      className="space-y-6"
-                    >
-                      <div className="grid grid-cols-2 gap-4">
-                        <motion.div
-                          initial={{ opacity: 0, x: -10 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          transition={{ delay: 0.3 }}
-                          className="space-y-2"
-                        >
-                          <Label className="text-gray-700 font-semibold flex items-center gap-2">
-                            <User className="h-4 w-4 text-teal-600" />
-                            Full Name
-                          </Label>
-                          <Input 
-                            value={newLead.name}
-                            onChange={(e) => setNewLead({...newLead, name: e.target.value})}
-                            placeholder="John Doe"
-                            className="rounded-xl border-gray-300 focus:border-teal-400 focus:ring-teal-100 transition-all duration-300"
-                          />
-                        </motion.div>
-                        
-                        <motion.div
-                          initial={{ opacity: 0, x: 10 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          transition={{ delay: 0.4 }}
-                          className="space-y-2"
-                        >
-                          <Label className="text-gray-700 font-semibold flex items-center gap-2">
-                            <Mail className="h-4 w-4 text-teal-600" />
-                            Email
-                          </Label>
-                          <Input 
-                            value={newLead.email}
-                            onChange={(e) => setNewLead({...newLead, email: e.target.value})}
-                            placeholder="john@company.com"
-                            className="rounded-xl border-gray-300 focus:border-teal-400 focus:ring-teal-100 transition-all duration-300"
-                          />
-                        </motion.div>
-                      </div>
-                      
-                      <div className="grid grid-cols-2 gap-4">
-                        <motion.div
-                          initial={{ opacity: 0, x: -10 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          transition={{ delay: 0.5 }}
-                          className="space-y-2"
-                        >
-                          <Label className="text-gray-700 font-semibold flex items-center gap-2">
-                            <Phone className="h-4 w-4 text-teal-600" />
-                            Phone
-                          </Label>
-                          <Input 
-                            value={newLead.phone}
-                            onChange={(e) => setNewLead({...newLead, phone: e.target.value})}
-                            placeholder="+1 234 567 8900"
-                            className="rounded-xl border-gray-300 focus:border-teal-400 focus:ring-teal-100 transition-all duration-300"
-                          />
-                        </motion.div>
-                        
-                        <motion.div
-                          initial={{ opacity: 0, x: 10 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          transition={{ delay: 0.6 }}
-                          className="space-y-2"
-                        >
-                          <Label className="text-gray-700 font-semibold flex items-center gap-2">
-                            <Building className="h-4 w-4 text-teal-600" />
-                            Company
-                          </Label>
-                          <Input 
-                            value={newLead.company}
-                            onChange={(e) => setNewLead({...newLead, company: e.target.value})}
-                            placeholder="Acme Corp"
-                            className="rounded-xl border-gray-300 focus:border-teal-400 focus:ring-teal-100 transition-all duration-300"
-                          />
-                        </motion.div>
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-4">
-                        <motion.div
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: 0.7 }}
-                          className="space-y-2"
-                        >
-                          <Label className="text-gray-700 font-semibold flex items-center gap-2">
-                            <TrendingUp className="h-4 w-4 text-teal-600" />
-                            Source
-                          </Label>
-                          <Select value={newLead.source} onValueChange={(value) => setNewLead({...newLead, source: value})}>
-                            <SelectTrigger className="rounded-xl border-gray-300 focus:border-teal-400 focus:ring-teal-100">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent className="rounded-xl">
-                              <SelectItem value="Website">Website</SelectItem>
-                              <SelectItem value="Referral">Referral</SelectItem>
-                              <SelectItem value="LinkedIn">LinkedIn</SelectItem>
-                              <SelectItem value="Ads">Ads</SelectItem>
-                              <SelectItem value="Cold Call">Cold Call</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </motion.div>
-                        
-                        <motion.div
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: 0.8 }}
-                          className="space-y-2"
-                        >
-                          <Label className="text-gray-700 font-semibold flex items-center gap-2">
-                            <UserCheck className="h-4 w-4 text-teal-600" />
-                            Assign Agent
-                          </Label>
-                          <Select value={newLead.assignedAgent} onValueChange={(value) => setNewLead({...newLead, assignedAgent: value})}>
-                            <SelectTrigger className="rounded-xl border-gray-300 focus:border-teal-400 focus:ring-teal-100">
-                              <SelectValue placeholder="Select agent" />
-                            </SelectTrigger>
-                            <SelectContent className="rounded-xl">
-                              {mockUsers.filter(u => u.role === "Agent").map(agent => (
-                                <SelectItem key={agent.id} value={agent.name}>{agent.name}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </motion.div>
-                      </div>
-
-                      <motion.div
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.9 }}
-                        className="space-y-2"
-                      >
-                        <Label className="text-gray-700 font-semibold flex items-center gap-2">
-                          <Edit className="h-4 w-4 text-teal-600" />
-                          Notes
-                        </Label>
-                        <Textarea 
-                          value={newLead.notes}
-                          onChange={(e) => setNewLead({...newLead, notes: e.target.value})}
-                          placeholder="Additional notes about this prospect..."
-                          className="rounded-xl border-gray-300 focus:border-teal-400 focus:ring-teal-100 transition-all duration-300 min-h-[80px]"
-                        />
-                      </motion.div>
-
-                      <motion.div
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 1.0 }}
-                        className="flex gap-3 pt-4"
-                      >
-                        <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="flex-1">
-                          <Button 
-                            onClick={handleAddLead}
-                            disabled={!newLead.name || !newLead.email}
-                            className="w-full py-3 bg-gradient-to-r from-teal-600 to-teal-700 hover:from-teal-700 hover:to-teal-800 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 font-semibold"
-                          >
-                            <Plus className="h-4 w-4 mr-2" />
-                            Create Lead
-                          </Button>
-                        </motion.div>
-                        <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                          <Button 
-                            variant="outline" 
+                    <div className="relative z-10 p-6">
+                      <DialogHeader className="text-center mb-6 relative">
+                        {/* Custom Close Button */}
+                        <DialogClose className="absolute right-0 top-0">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 rounded-full hover:bg-gray-100 transition-colors"
                             onClick={handleCloseAddLead}
-                            className="px-6 py-3 border-gray-300 hover:bg-gray-50 rounded-xl transition-all duration-300"
                           >
-                            Cancel
+                            <X className="h-4 w-4" />
                           </Button>
+                        </DialogClose>
+
+                        <motion.div
+                          animate={{ rotate: [0, 5, -5, 0] }}
+                          transition={{ duration: 3, repeat: Infinity, delay: 0.5 }}
+                          className="mx-auto w-16 h-16 bg-gradient-to-br from-teal-500 to-teal-600 rounded-2xl flex items-center justify-center mb-4 shadow-lg"
+                        >
+                          <Plus className="h-8 w-8 text-white" />
+                        </motion.div>
+                        <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-gray-900 to-teal-800 bg-clip-text text-transparent">
+                          Add New Lead
+                        </DialogTitle>
+                        <p className="text-gray-600 mt-2">Capture and qualify a new prospect</p>
+                      </DialogHeader>
+
+                      <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.2 }}
+                        className="space-y-6"
+                      >
+                        <div className="grid grid-cols-2 gap-4">
+                          <motion.div
+                            initial={{ opacity: 0, x: -10 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: 0.3 }}
+                            className="space-y-2"
+                          >
+                            <Label className="text-gray-700 font-semibold flex items-center gap-2">
+                              <User className="h-4 w-4 text-teal-600" />
+                              Full Name
+                            </Label>
+                            <Input
+                              value={newLead.name}
+                              onChange={(e) => setNewLead({ ...newLead, name: e.target.value })}
+                              placeholder="John Doe"
+                              className="rounded-xl border-gray-300 focus:border-teal-400 focus:ring-teal-100 transition-all duration-300"
+                            />
+                          </motion.div>
+
+                          <motion.div
+                            initial={{ opacity: 0, x: 10 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: 0.4 }}
+                            className="space-y-2"
+                          >
+                            <Label className="text-gray-700 font-semibold flex items-center gap-2">
+                              <Mail className="h-4 w-4 text-teal-600" />
+                              Email
+                            </Label>
+                            <Input
+                              value={newLead.email}
+                              onChange={(e) => setNewLead({ ...newLead, email: e.target.value })}
+                              placeholder="john@company.com"
+                              className="rounded-xl border-gray-300 focus:border-teal-400 focus:ring-teal-100 transition-all duration-300"
+                            />
+                          </motion.div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                          <motion.div
+                            initial={{ opacity: 0, x: -10 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: 0.5 }}
+                            className="space-y-2"
+                          >
+                            <Label className="text-gray-700 font-semibold flex items-center gap-2">
+                              <Phone className="h-4 w-4 text-teal-600" />
+                              Phone
+                            </Label>
+                            <Input
+                              value={newLead.phone}
+                              onChange={(e) => setNewLead({ ...newLead, phone: e.target.value })}
+                              placeholder="+1 234 567 8900"
+                              className="rounded-xl border-gray-300 focus:border-teal-400 focus:ring-teal-100 transition-all duration-300"
+                            />
+                          </motion.div>
+
+                          <motion.div
+                            initial={{ opacity: 0, x: 10 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: 0.6 }}
+                            className="space-y-2"
+                          >
+                            <Label className="text-gray-700 font-semibold flex items-center gap-2">
+                              <Building className="h-4 w-4 text-teal-600" />
+                              Company
+                            </Label>
+                            <Input
+                              value={newLead.company}
+                              onChange={(e) => setNewLead({ ...newLead, company: e.target.value })}
+                              placeholder="Acme Corp"
+                              className="rounded-xl border-gray-300 focus:border-teal-400 focus:ring-teal-100 transition-all duration-300"
+                            />
+                          </motion.div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                          <motion.div
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.7 }}
+                            className="space-y-2"
+                          >
+                            <Label className="text-gray-700 font-semibold flex items-center gap-2">
+                              <TrendingUp className="h-4 w-4 text-teal-600" />
+                              Source
+                            </Label>
+                            <Select value={newLead.source} onValueChange={(value) => setNewLead({ ...newLead, source: value })}>
+                              <SelectTrigger className="rounded-xl border-gray-300 focus:border-teal-400 focus:ring-teal-100">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent className="rounded-xl">
+                                <SelectItem value="Website">Website</SelectItem>
+                                <SelectItem value="Referral">Referral</SelectItem>
+                                <SelectItem value="LinkedIn">LinkedIn</SelectItem>
+                                <SelectItem value="Ads">Ads</SelectItem>
+                                <SelectItem value="Cold Call">Cold Call</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </motion.div>
+
+                          <motion.div
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.8 }}
+                            className="space-y-2"
+                          >
+                            <Label className="text-gray-700 font-semibold flex items-center gap-2">
+                              <UserCheck className="h-4 w-4 text-teal-600" />
+                              Assign Agent
+                            </Label>
+                            <Select value={newLead.assignedAgent} onValueChange={(value) => setNewLead({ ...newLead, assignedAgent: value })}>
+                              <SelectTrigger className="rounded-xl border-gray-300 focus:border-teal-400 focus:ring-teal-100">
+                                <SelectValue placeholder="Select agent" />
+                              </SelectTrigger>
+                              <SelectContent className="rounded-xl">
+                                {agents.map((agent: any) => (
+                                  <SelectItem key={agent._id} value={agent._id}>{agent.name}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </motion.div>
+                        </div>
+
+                        <motion.div
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: 0.9 }}
+                          className="space-y-2"
+                        >
+                          <Label className="text-gray-700 font-semibold flex items-center gap-2">
+                            <Edit className="h-4 w-4 text-teal-600" />
+                            Notes
+                          </Label>
+                          <Textarea
+                            value={newLead.notes}
+                            onChange={(e) => setNewLead({ ...newLead, notes: e.target.value })}
+                            placeholder="Additional notes about this prospect..."
+                            className="rounded-xl border-gray-300 focus:border-teal-400 focus:ring-teal-100 transition-all duration-300 min-h-[80px]"
+                          />
+                        </motion.div>
+
+                        <motion.div
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: 1.0 }}
+                          className="flex gap-3 pt-4"
+                        >
+                          <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="flex-1">
+                            <Button
+                              onClick={handleAddLead}
+                              disabled={!newLead.name || !newLead.email || createLeadMutation.isPending}
+                              className="w-full py-3 bg-gradient-to-r from-teal-600 to-teal-700 hover:from-teal-700 hover:to-teal-800 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 font-semibold"
+                            >
+                              <Plus className="h-4 w-4 mr-2" />
+                              {createLeadMutation.isPending ? "Creating..." : "Create Lead"}
+                            </Button>
+                          </motion.div>
+                          <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                            <Button
+                              variant="outline"
+                              onClick={handleCloseAddLead}
+                              className="px-6 py-3 border-gray-300 hover:bg-gray-50 rounded-xl transition-all duration-300"
+                            >
+                              Cancel
+                            </Button>
+                          </motion.div>
                         </motion.div>
                       </motion.div>
-                    </motion.div>
-                  </div>
-                </motion.div>
-              </DialogContent>
-            </Dialog>
-          </motion.div>
+                    </div>
+                  </motion.div>
+                </DialogContent>
+              </Dialog>
+            </motion.div>
           </div>
         </motion.div>
 
@@ -613,37 +649,37 @@ const AdminLeads = () => {
           className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"
         >
           {[
-            { 
-              label: "Total Leads", 
-              value: stats.total, 
-              icon: User, 
+            {
+              label: "Total Leads",
+              value: stats.total,
+              icon: User,
               gradient: "from-teal-500 to-teal-600",
               bg: "from-teal-50 to-teal-100",
               change: "+12%",
               changeType: "increase"
             },
-            { 
-              label: "New Leads", 
-              value: stats.new, 
-              icon: Plus, 
+            {
+              label: "New Leads",
+              value: stats.new,
+              icon: Plus,
               gradient: "from-blue-500 to-blue-600",
               bg: "from-blue-50 to-blue-100",
               change: "+5%",
               changeType: "increase"
             },
-            { 
-              label: "Converted", 
-              value: stats.converted, 
-              icon: CheckCircle, 
+            {
+              label: "Converted",
+              value: stats.converted,
+              icon: CheckCircle,
               gradient: "gradient-teal",
-              bg: "from-teal-50 to-teal-100", 
+              bg: "from-teal-50 to-teal-100",
               change: "+8%",
               changeType: "increase"
             },
-            { 
-              label: "Lost", 
-              value: stats.lost, 
-              icon: AlertTriangle, 
+            {
+              label: "Lost",
+              value: stats.lost,
+              icon: AlertTriangle,
               gradient: "from-red-500 to-red-600",
               bg: "from-red-50 to-red-100",
               change: "-3%",
@@ -654,13 +690,13 @@ const AdminLeads = () => {
               key={stat.label}
               initial={{ opacity: 0, y: 30, rotateX: -15 }}
               animate={{ opacity: 1, y: 0, rotateX: 0 }}
-              transition={{ 
+              transition={{
                 delay: 0.4 + index * 0.1,
                 type: "spring",
                 stiffness: 100,
                 damping: 15
               }}
-              whileHover={{ 
+              whileHover={{
                 y: -8,
                 rotateX: 5,
                 scale: 1.02,
@@ -687,19 +723,19 @@ const AdminLeads = () => {
                 {/* Floating Icon */}
                 <div className="flex items-center justify-between mb-4">
                   <motion.div
-                    animate={{ 
+                    animate={{
                       rotate: [0, 5, -5, 0],
-                      scale: [1, 1.05, 1] 
+                      scale: [1, 1.05, 1]
                     }}
-                    transition={{ 
-                      duration: 4, 
+                    transition={{
+                      duration: 4,
                       repeat: Infinity,
-                      delay: index * 0.5 
+                      delay: index * 0.5
                     }}
                     className={`relative p-3 rounded-xl bg-gradient-to-br ${stat.gradient} shadow-lg`}
                   >
                     <stat.icon className="h-6 w-6 text-white" />
-                    
+
                     {/* Glow Effect */}
                     <motion.div
                       className={`absolute inset-0 rounded-xl bg-gradient-to-br ${stat.gradient} blur-lg opacity-0 group-hover:opacity-50 transition-opacity duration-500`}
@@ -720,11 +756,10 @@ const AdminLeads = () => {
                     initial={{ opacity: 0, scale: 0 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ delay: 0.6 + index * 0.1 }}
-                    className={`text-xs font-semibold px-2 py-1 rounded-full ${
-                      stat.changeType === 'increase' 
-                        ? 'bg-emerald-100 text-emerald-700' 
-                        : 'bg-red-100 text-red-700'
-                    }`}
+                    className={`text-xs font-semibold px-2 py-1 rounded-full ${stat.changeType === 'increase'
+                      ? 'bg-emerald-100 text-emerald-700'
+                      : 'bg-red-100 text-red-700'
+                      }`}
                   >
                     {stat.change}
                   </motion.div>
@@ -741,15 +776,15 @@ const AdminLeads = () => {
                     <motion.span
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
-                      transition={{ 
+                      transition={{
                         delay: 0.7 + index * 0.1,
-                        duration: 0.8 
+                        duration: 0.8
                       }}
                     >
                       {stat.value}
                     </motion.span>
                   </motion.p>
-                  
+
                   <motion.p
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
@@ -787,7 +822,7 @@ const AdminLeads = () => {
           <div className="relative overflow-hidden rounded-3xl shadow-2xl">
             {/* Premium Gradient Background */}
             <div className="absolute inset-0 gradient-teal" />
-            
+
             {/* Enhanced Background Pattern */}
             <div className="absolute inset-0 opacity-20">
               <div className="absolute inset-0" style={{
@@ -798,9 +833,9 @@ const AdminLeads = () => {
                 backgroundSize: '300px 300px'
               }} />
             </div>
-            
+
             {/* Animated Overlay */}
-            <motion.div 
+            <motion.div
               className="absolute inset-0 bg-gradient-to-r from-teal-400/20 via-teal-500/30 to-teal-400/20"
               animate={{
                 backgroundPosition: ['0% 50%', '100% 50%']
@@ -826,7 +861,7 @@ const AdminLeads = () => {
                   <h3 className="text-2xl font-bold text-white mb-2 drop-shadow-sm">Sales Pipeline</h3>
                   <p className="text-white/90 drop-shadow-sm">Track leads through their journey to conversion</p>
                 </div>
-                
+
                 <motion.div
                   animate={{ rotate: [0, 360] }}
                   transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
@@ -841,46 +876,43 @@ const AdminLeads = () => {
                 {lifecycleSteps.map((step, index) => {
                   const stepLeads = leads.filter(l => l.status === step.key).length;
                   const percentage = stats.total > 0 ? Math.round((stepLeads / stats.total) * 100) : 0;
-                  
+
                   return (
                     <motion.div
                       key={step.key}
                       initial={{ opacity: 0, y: 30, scale: 0.9 }}
                       animate={{ opacity: 1, y: 0, scale: 1 }}
-                      transition={{ 
+                      transition={{
                         delay: 0.9 + index * 0.1,
                         type: "spring",
                         stiffness: 200,
                         damping: 20
                       }}
-                      whileHover={{ 
+                      whileHover={{
                         scale: 1.05,
                         rotateY: 5,
                         transition: { duration: 0.2 }
                       }}
                       className="group perspective-1000"
                     >
-                      <Card className={`relative overflow-hidden border-0 shadow-md hover:shadow-xl transition-all duration-500 transform-gpu ${
-                        stepLeads > 0 
-                          ? 'bg-white' 
-                          : 'bg-gradient-to-br from-gray-50 to-gray-100'
-                      }`}>
+                      <Card className={`relative overflow-hidden border-0 shadow-md hover:shadow-xl transition-all duration-500 transform-gpu ${stepLeads > 0
+                        ? 'bg-white'
+                        : 'bg-gradient-to-br from-gray-50 to-gray-100'
+                        }`}>
                         {/* Animated background effect */}
                         <div className="absolute inset-0 opacity-0 group-hover:opacity-20 transition-opacity duration-500">
-                          <div className={`absolute inset-0 ${
-                            stepLeads > 0 ? 'gradient-teal' : 'bg-gradient-to-br from-gray-400 to-gray-500'
-                          }`} />
+                          <div className={`absolute inset-0 ${stepLeads > 0 ? 'gradient-teal' : 'bg-gradient-to-br from-gray-400 to-gray-500'
+                            }`} />
                         </div>
-                        
+
                         {/* Progress indicator */}
                         <div className="absolute top-0 left-0 right-0 h-1">
                           <motion.div
                             initial={{ width: 0 }}
                             animate={{ width: `${percentage}%` }}
                             transition={{ delay: 1.5 + index * 0.2, duration: 1 }}
-                            className={`h-full ${
-                              stepLeads > 0 ? 'gradient-teal' : 'bg-gradient-to-r from-gray-300 to-gray-400'
-                            }`}
+                            className={`h-full ${stepLeads > 0 ? 'gradient-teal' : 'bg-gradient-to-r from-gray-300 to-gray-400'
+                              }`}
                           />
                         </div>
 
@@ -889,14 +921,14 @@ const AdminLeads = () => {
                           {stepLeads > 0 && (
                             <motion.div
                               className="absolute inset-0 bg-gradient-to-br from-teal-500/10 to-teal-600/10 rounded-2xl"
-                              animate={{ 
+                              animate={{
                                 scale: [1, 1.05, 1],
-                                opacity: [0.3, 0.6, 0.3] 
+                                opacity: [0.3, 0.6, 0.3]
                               }}
-                              transition={{ 
-                                duration: 2, 
+                              transition={{
+                                duration: 2,
                                 repeat: Infinity,
-                                delay: index * 0.2 
+                                delay: index * 0.2
                               }}
                             />
                           )}
@@ -904,20 +936,19 @@ const AdminLeads = () => {
                           <div className="flex items-center justify-between mb-4">
                             <motion.div
                               whileHover={{ scale: 1.1, rotate: 10 }}
-                              className={`p-3 bg-gradient-to-br ${
-                                stepLeads > 0 ? 'from-teal-500 to-emerald-600' : 'from-gray-400 to-gray-500'
-                              } rounded-xl shadow-lg`}
+                              className={`p-3 bg-gradient-to-br ${stepLeads > 0 ? 'from-teal-500 to-emerald-600' : 'from-gray-400 to-gray-500'
+                                } rounded-xl shadow-lg`}
                             >
                               <step.icon className="h-5 w-5 text-white" />
                             </motion.div>
-                            
+
                             <motion.div
                               initial={{ scale: 0, rotate: -180 }}
                               animate={{ scale: 1, rotate: 0 }}
                               transition={{ delay: 1.2 + index * 0.1, type: "spring" }}
                               className="text-right"
                             >
-                              <motion.div 
+                              <motion.div
                                 className="text-2xl font-bold text-gray-800"
                                 key={stepLeads}
                                 initial={{ y: 20, opacity: 0 }}
@@ -930,7 +961,7 @@ const AdminLeads = () => {
                               </div>
                             </motion.div>
                           </div>
-                          
+
                           <div className="space-y-2">
                             <h4 className="font-semibold text-gray-800 group-hover:text-gray-900 transition-colors">
                               {step.label}
@@ -998,7 +1029,7 @@ const AdminLeads = () => {
           <div className="relative overflow-hidden rounded-2xl bg-white border border-gray-200 shadow-lg p-6">
             {/* Background Gradient */}
             <div className="absolute inset-0 bg-gradient-to-r from-teal-25 via-white to-emerald-25 opacity-50" />
-            
+
             <div className="relative z-10">
               <motion.div
                 initial={{ opacity: 0, y: -10 }}
@@ -1029,20 +1060,20 @@ const AdminLeads = () => {
                 >
                   <div className="relative">
                     <motion.div
-                      animate={{ 
+                      animate={{
                         scale: [1, 1.02, 1],
-                        rotate: [0, 2, -2, 0] 
+                        rotate: [0, 2, -2, 0]
                       }}
-                      transition={{ 
-                        duration: 6, 
+                      transition={{
+                        duration: 6,
                         repeat: Infinity,
-                        ease: "easeInOut" 
+                        ease: "easeInOut"
                       }}
                       className="absolute left-3 top-1/2 transform -translate-y-1/2 z-10"
                     >
                       <Search className="h-5 w-5 text-teal-500 group-focus-within:text-teal-600 transition-colors" />
                     </motion.div>
-                    
+
                     <Input
                       placeholder="Search leads by name, email, or company..."
                       value={searchQuery}
@@ -1052,7 +1083,7 @@ const AdminLeads = () => {
                                transition-all duration-300 shadow-sm hover:shadow-md
                                group-hover:border-teal-200"
                     />
-                    
+
                     {/* Animated Border */}
                     <motion.div
                       className="absolute inset-0 rounded-xl border-2 border-teal-400 opacity-0 group-focus-within:opacity-100 transition-opacity duration-300"
@@ -1098,7 +1129,7 @@ const AdminLeads = () => {
                       </SelectItem>
                       {lifecycleSteps.map((step, index) => (
                         <SelectItem key={step.key} value={step.key} className="rounded-lg">
-                          <motion.div 
+                          <motion.div
                             whileHover={{ x: 2 }}
                             initial={{ opacity: 0, x: -10 }}
                             animate={{ opacity: 1, x: 0 }}
@@ -1144,7 +1175,7 @@ const AdminLeads = () => {
                       </SelectItem>
                       {["Website", "Referral", "LinkedIn", "Ads", "Cold Call"].map((source, index) => (
                         <SelectItem key={source} value={source} className="rounded-lg">
-                          <motion.div 
+                          <motion.div
                             whileHover={{ x: 2 }}
                             initial={{ opacity: 0, x: -10 }}
                             animate={{ opacity: 1, x: 0 }}
@@ -1210,21 +1241,21 @@ const AdminLeads = () => {
           <div className="relative overflow-hidden rounded-3xl bg-white border border-gray-200 shadow-xl">
             {/* Table Header Background */}
             <div className="absolute top-0 left-0 right-0 h-20 bg-gradient-to-r from-teal-50 via-white to-emerald-50 opacity-80" />
-            
+
             {/* Enhanced Mobile View - Premium Cards */}
             <div className="md:hidden space-y-4 p-4">
               {filteredLeads.map((lead, index) => (
                 <motion.div
-                  key={lead.id}
+                  key={lead._id}
                   initial={{ opacity: 0, y: 30, scale: 0.9 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
-                  transition={{ 
-                    duration: 0.4, 
+                  transition={{
+                    duration: 0.4,
                     delay: index * 0.1,
                     type: "spring",
                     stiffness: 200
                   }}
-                  whileHover={{ 
+                  whileHover={{
                     scale: 1.02,
                     y: -5,
                     transition: { duration: 0.2 }
@@ -1236,7 +1267,7 @@ const AdminLeads = () => {
                   <div className="absolute inset-0 opacity-0 group-hover:opacity-20 transition-opacity duration-500">
                     <div className="absolute inset-0 bg-gradient-to-br from-teal-400 to-emerald-600" />
                   </div>
-                  
+
                   {/* Progress bar at top */}
                   <div className="absolute top-0 left-0 right-0 h-1">
                     <motion.div
@@ -1246,7 +1277,7 @@ const AdminLeads = () => {
                       className="h-full bg-gradient-to-r from-teal-400 to-emerald-600"
                     />
                   </div>
-                  
+
                   <div className="relative z-10 flex justify-between items-start mb-6">
                     <div className="flex items-center gap-3">
                       <motion.div
@@ -1260,7 +1291,7 @@ const AdminLeads = () => {
                         <p className="text-sm text-gray-600">{lead.status.charAt(0).toUpperCase() + lead.status.slice(1)}</p>
                       </div>
                     </div>
-                    
+
                     <div className="flex gap-1">
                       <motion.button
                         whileHover={{ scale: 1.1, y: -2 }}
@@ -1283,9 +1314,9 @@ const AdminLeads = () => {
                       </motion.button>
                     </div>
                   </div>
-                  
+
                   <div className="relative z-10 space-y-4">
-                    <motion.div 
+                    <motion.div
                       initial={{ opacity: 0, x: -20 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: 0.6 + index * 0.1 }}
@@ -1296,7 +1327,7 @@ const AdminLeads = () => {
                         <span className="font-medium text-gray-900">{lead.email}</span>
                       </div>
                     </motion.div>
-                    
+
                     <div className="flex items-center justify-between">
                       <motion.div
                         initial={{ scale: 0 }}
@@ -1315,8 +1346,8 @@ const AdminLeads = () => {
                         <span className="text-xs text-gray-500 font-medium">{lead.date}</span>
                       </motion.div>
                     </div>
-                    
-                    <motion.div 
+
+                    <motion.div
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: 0.9 + index * 0.1 }}
@@ -1328,7 +1359,7 @@ const AdminLeads = () => {
                       </div>
                     </motion.div>
                   </div>
-                  
+
                   {/* Ripple effect on tap */}
                   <motion.div
                     className="absolute inset-0 bg-teal-400/20 rounded-2xl"
@@ -1345,7 +1376,7 @@ const AdminLeads = () => {
               <div className="relative">
                 {/* Premium gradient header */}
                 <div className="bg-gradient-to-r from-teal-600 via-emerald-700 to-cyan-600 rounded-t-xl p-4">
-                  <motion.h3 
+                  <motion.h3
                     initial={{ opacity: 0, y: -10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 1.9 }}
@@ -1355,7 +1386,7 @@ const AdminLeads = () => {
                     Lead Directory
                   </motion.h3>
                 </div>
-                
+
                 <Table>
                   <TableHeader>
                     <TableRow className="bg-gradient-to-r from-gray-50 to-gray-100 border-0">
@@ -1369,165 +1400,164 @@ const AdminLeads = () => {
                       <TableHead className="font-bold text-center min-w-[120px] text-gray-800">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
-                <TableBody>
-                  <AnimatePresence>
-                    {filteredLeads.map((lead, index) => (
-                      <motion.tr 
-                        key={lead.id} 
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: index * 0.1, duration: 0.3 }}
-                        whileHover={{ 
-                          backgroundColor: "rgba(20, 184, 166, 0.05)",
-                          scale: 1.01,
-                          transition: { duration: 0.2 }
-                        }}
-                        className="border-b border-gray-100 group cursor-pointer"
-                      >
-                        <TableCell className="py-4">
-                          <div className="flex items-center gap-3">
+                  <TableBody>
+                    <AnimatePresence>
+                      {filteredLeads.map((lead, index) => (
+                        <motion.tr
+                          key={lead._id}
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: index * 0.1, duration: 0.3 }}
+                          whileHover={{
+                            backgroundColor: "rgba(20, 184, 166, 0.05)",
+                            scale: 1.01,
+                            transition: { duration: 0.2 }
+                          }}
+                          className="border-b border-gray-100 group cursor-pointer"
+                        >
+                          <TableCell className="py-4">
+                            <div className="flex items-center gap-3">
+                              <motion.div
+                                whileHover={{ scale: 1.1, rotate: 5 }}
+                                className="w-10 h-10 bg-gradient-to-br from-teal-500 to-emerald-600 rounded-full flex items-center justify-center text-white font-bold shadow-md"
+                              >
+                                {lead.name.split(' ').map(n => n[0]).join('')}
+                              </motion.div>
+                              <div>
+                                <p className="font-bold text-gray-900 group-hover:text-teal-600 transition-colors">{lead.name}</p>
+                                <p className="text-sm text-gray-500">Lead</p>
+                              </div>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="space-y-1">
+                              <div className="flex items-center gap-2">
+                                <Mail className="h-3 w-3 text-gray-400" />
+                                <span className="text-sm text-gray-700 font-medium">{lead.email}</span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Phone className="h-3 w-3 text-gray-400" />
+                                <span className="text-xs text-gray-600">{lead.phone}</span>
+                              </div>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              <Building className="h-4 w-4 text-gray-400" />
+                              <span className="text-gray-700 font-medium">{lead.company || 'N/A'}</span>
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-center">
                             <motion.div
-                              whileHover={{ scale: 1.1, rotate: 5 }}
-                              className="w-10 h-10 bg-gradient-to-br from-teal-500 to-emerald-600 rounded-full flex items-center justify-center text-white font-bold shadow-md"
+                              whileHover={{ scale: 1.05 }}
+                              initial={{ scale: 0 }}
+                              animate={{ scale: 1 }}
+                              transition={{ delay: 0.1 + index * 0.05 }}
                             >
-                              {lead.name.split(' ').map(n => n[0]).join('')}
+                              <Badge className="bg-gradient-to-r from-purple-500 to-purple-600 text-white px-3 py-1 font-semibold shadow-sm">
+                                {lead.source}
+                              </Badge>
                             </motion.div>
-                            <div>
-                              <p className="font-bold text-gray-900 group-hover:text-teal-600 transition-colors">{lead.name}</p>
-                              <p className="text-sm text-gray-500">Lead</p>
-                            </div>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="space-y-1">
-                            <div className="flex items-center gap-2">
-                              <Mail className="h-3 w-3 text-gray-400" />
-                              <span className="text-sm text-gray-700 font-medium">{lead.email}</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <Phone className="h-3 w-3 text-gray-400" />
-                              <span className="text-xs text-gray-600">{lead.phone}</span>
-                            </div>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <Building className="h-4 w-4 text-gray-400" />
-                            <span className="text-gray-700 font-medium">{lead.company || 'N/A'}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-center">
-                          <motion.div
-                            whileHover={{ scale: 1.05 }}
-                            initial={{ scale: 0 }}
-                            animate={{ scale: 1 }}
-                            transition={{ delay: 0.1 + index * 0.05 }}
-                          >
-                            <Badge className="bg-gradient-to-r from-purple-500 to-purple-600 text-white px-3 py-1 font-semibold shadow-sm">
-                              {lead.source}
-                            </Badge>
-                          </motion.div>
-                        </TableCell>
-                        <TableCell className="text-center">
-                          <motion.div
-                            whileHover={{ scale: 1.05 }}
-                            initial={{ scale: 0, rotate: -180 }}
-                            animate={{ scale: 1, rotate: 0 }}
-                            transition={{ delay: 0.2 + index * 0.05, type: "spring" }}
-                          >
-                            <Badge className={`px-3 py-1 font-semibold shadow-sm ${
-                              lead.status === 'converted' 
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <motion.div
+                              whileHover={{ scale: 1.05 }}
+                              initial={{ scale: 0, rotate: -180 }}
+                              animate={{ scale: 1, rotate: 0 }}
+                              transition={{ delay: 0.2 + index * 0.05, type: "spring" }}
+                            >
+                              <Badge className={`px-3 py-1 font-semibold shadow-sm ${lead.status === 'converted'
                                 ? 'bg-gradient-to-r from-green-500 to-emerald-600 text-white'
                                 : lead.status === 'qualified'
-                                ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white'
-                                : lead.status === 'new'
-                                ? 'bg-gradient-to-r from-teal-500 to-teal-600 text-white'
-                                : lead.status === 'contacted'
-                                ? 'bg-gradient-to-r from-indigo-500 to-indigo-600 text-white'
-                                : lead.status === 'lost'
-                                ? 'bg-gradient-to-r from-red-500 to-red-600 text-white'
-                                : 'bg-gradient-to-r from-gray-500 to-gray-600 text-white'
-                            }`}>
-                              <motion.span
-                                animate={{ scale: [1, 1.2, 1] }}
-                                transition={{ duration: 2, repeat: Infinity }}
-                                className="inline-block mr-1"
-                              >
-                                ●
-                              </motion.span>
-                              {lead.status.charAt(0).toUpperCase() + lead.status.slice(1)}
-                            </Badge>
-                          </motion.div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <div className="w-6 h-6 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center text-white text-xs font-bold">
-                              {lead.assignedAgent.split(' ').map(n => n[0]).join('')}
+                                  ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white'
+                                  : lead.status === 'new'
+                                    ? 'bg-gradient-to-r from-teal-500 to-teal-600 text-white'
+                                    : lead.status === 'contacted'
+                                      ? 'bg-gradient-to-r from-indigo-500 to-indigo-600 text-white'
+                                      : lead.status === 'lost'
+                                        ? 'bg-gradient-to-r from-red-500 to-red-600 text-white'
+                                        : 'bg-gradient-to-r from-gray-500 to-gray-600 text-white'
+                                }`}>
+                                <motion.span
+                                  animate={{ scale: [1, 1.2, 1] }}
+                                  transition={{ duration: 2, repeat: Infinity }}
+                                  className="inline-block mr-1"
+                                >
+                                  ●
+                                </motion.span>
+                                {lead.status.charAt(0).toUpperCase() + lead.status.slice(1)}
+                              </Badge>
+                            </motion.div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              <div className="w-6 h-6 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center text-white text-xs font-bold">
+                                {(lead.assignedTo?.name || 'Unassigned').split(' ').map(n => n[0]).join('')}
+                              </div>
+                              <span className="text-gray-700 font-medium">{lead.assignedTo?.name || 'Unassigned'}</span>
                             </div>
-                            <span className="text-gray-700 font-medium">{lead.assignedAgent}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <span className="text-gray-600 font-medium">{lead.date}</span>
-                        </TableCell>
-                        <TableCell className="text-center">
-                          <div className="flex justify-center gap-1">
-                            <motion.button
-                              whileHover={{ scale: 1.2, y: -2 }}
-                              whileTap={{ scale: 0.9 }}
-                              className="p-2 rounded-lg bg-blue-100 hover:bg-blue-200 text-blue-600 transition-all duration-200 shadow-sm hover:shadow-md"
-                              onClick={() => {
-                                setSelectedLead(lead);
-                                setIsDetailOpen(true);
-                              }}
-                            >
-                              <Eye className="h-4 w-4" />
-                            </motion.button>
-                            <motion.button
-                              whileHover={{ scale: 1.2, y: -2 }}
-                              whileTap={{ scale: 0.9 }}
-                              className="p-2 rounded-lg bg-green-100 hover:bg-green-200 text-green-600 transition-all duration-200 shadow-sm hover:shadow-md"
-                              onClick={() => handleEditLead(lead)}
-                            >
-                              <Edit className="h-4 w-4" />
-                            </motion.button>
-                          </div>
-                        </TableCell>
-                      </motion.tr>
-                    ))}
-                  </AnimatePresence>
-                </TableBody>
-              </Table>
-            </div>
+                          </TableCell>
+                          <TableCell>
+                            <span className="text-gray-600 font-medium">{lead.date}</span>
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <div className="flex justify-center gap-1">
+                              <motion.button
+                                whileHover={{ scale: 1.2, y: -2 }}
+                                whileTap={{ scale: 0.9 }}
+                                className="p-2 rounded-lg bg-blue-100 hover:bg-blue-200 text-blue-600 transition-all duration-200 shadow-sm hover:shadow-md"
+                                onClick={() => {
+                                  setSelectedLead(lead);
+                                  setIsDetailOpen(true);
+                                }}
+                              >
+                                <Eye className="h-4 w-4" />
+                              </motion.button>
+                              <motion.button
+                                whileHover={{ scale: 1.2, y: -2 }}
+                                whileTap={{ scale: 0.9 }}
+                                className="p-2 rounded-lg bg-green-100 hover:bg-green-200 text-green-600 transition-all duration-200 shadow-sm hover:shadow-md"
+                                onClick={() => handleEditLead(lead)}
+                              >
+                                <Edit className="h-4 w-4" />
+                              </motion.button>
+                            </div>
+                          </TableCell>
+                        </motion.tr>
+                      ))}
+                    </AnimatePresence>
+                  </TableBody>
+                </Table>
+              </div>
 
-            {/* Empty State */}
-            {filteredLeads.length === 0 && (
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="flex flex-col items-center justify-center py-16"
-              >
+              {/* Empty State */}
+              {filteredLeads.length === 0 && (
                 <motion.div
-                  animate={{ 
-                    rotate: [0, 10, -10, 0],
-                    scale: [1, 1.05, 1]
-                  }}
-                  transition={{ duration: 3, repeat: Infinity }}
-                  className="p-6 bg-gray-100 rounded-full mb-4"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="flex flex-col items-center justify-center py-16"
                 >
-                  <Search className="h-8 w-8 text-gray-400" />
+                  <motion.div
+                    animate={{
+                      rotate: [0, 10, -10, 0],
+                      scale: [1, 1.05, 1]
+                    }}
+                    transition={{ duration: 3, repeat: Infinity }}
+                    className="p-6 bg-gray-100 rounded-full mb-4"
+                  >
+                    <Search className="h-8 w-8 text-gray-400" />
+                  </motion.div>
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">No leads found</h3>
+                  <p className="text-gray-600 text-center max-w-md">
+                    {searchQuery || statusFilter !== "all" || sourceFilter !== "all"
+                      ? "Try adjusting your filters to see more results."
+                      : "Start by adding your first lead to begin building your pipeline."
+                    }
+                  </p>
                 </motion.div>
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No leads found</h3>
-                <p className="text-gray-600 text-center max-w-md">
-                  {searchQuery || statusFilter !== "all" || sourceFilter !== "all" 
-                    ? "Try adjusting your filters to see more results."
-                    : "Start by adding your first lead to begin building your pipeline."
-                  }
-                </p>
-              </motion.div>
-            )}
+              )}
+            </div>
           </div>
-        </div>
         </motion.div>
 
         {/* Lead Detail Modal */}
@@ -1563,7 +1593,7 @@ const AdminLeads = () => {
                         </div>
                       </div>
                     </div>
-                    
+
                     <div className="space-y-4">
                       <div>
                         <h3 className="font-semibold text-gray-900 mb-2">Lead Details</h3>
@@ -1578,7 +1608,7 @@ const AdminLeads = () => {
                           </div>
                           <div>
                             <span className="text-gray-500">Assigned Agent: </span>
-                            <span className="text-gray-900">{selectedLead.assignedAgent}</span>
+                            <span className="text-gray-900">{selectedLead.assignedTo?.name || 'Unassigned'}</span>
                           </div>
                           <div>
                             <span className="text-gray-500">Date Added: </span>
@@ -1597,7 +1627,10 @@ const AdminLeads = () => {
                           key={step.key}
                           variant={selectedLead.status === step.key ? "default" : "outline"}
                           size="sm"
-                          onClick={() => updateLeadStatus(selectedLead.id, step.key as Lead["status"])}
+                          onClick={() => updateLeadMutation.mutate({
+                            id: selectedLead._id,
+                            data: { status: step.key as any }
+                          })}
                           className={selectedLead.status === step.key ? "bg-teal-600 hover:bg-teal-700" : "border-gray-300"}
                         >
                           <step.icon className="h-3 w-3 mr-1" />
@@ -1673,7 +1706,7 @@ const AdminLeads = () => {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="editLeadStatus" className="text-gray-700">Status</Label>
-                <Select value={editFormData.status} onValueChange={(value) => setEditFormData({ ...editFormData, status: value as Lead["status"] })}>
+                <Select value={editFormData.status} onValueChange={(value) => setEditFormData({ ...editFormData, status: value as ApiLead["status"] })}>
                   <SelectTrigger className="border-gray-300">
                     <SelectValue placeholder="Select status" />
                   </SelectTrigger>
@@ -1695,8 +1728,8 @@ const AdminLeads = () => {
                     <SelectValue placeholder="Select agent" />
                   </SelectTrigger>
                   <SelectContent>
-                    {mockUsers.filter(u => u.role === "Agent").map(agent => (
-                      <SelectItem key={agent.id} value={agent.name}>{agent.name}</SelectItem>
+                    {agents.map((agent: any) => (
+                      <SelectItem key={agent._id} value={agent._id}>{agent.name}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>

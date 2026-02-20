@@ -1,7 +1,7 @@
 import React, { useState } from "react";
-import { 
-  Users, 
-  TrendingUp, 
+import {
+  Users,
+  TrendingUp,
   Plus,
   Search,
   Filter,
@@ -14,7 +14,6 @@ import {
 } from "lucide-react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { SummaryCard } from "@/components/ui/summary-card";
-import { mockLeads } from "@/data/mockData";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -43,37 +42,86 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { api, ApiLead } from "@/lib/api";
+import { useToast } from "@/components/ui/use-toast";
+
 const AgentDashboard = () => {
-  const [leads, setLeads] = useState(mockLeads.filter(lead => lead.assignedAgent === "John Smith"));
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  // Fetch Leads (Backend filters by agent role automatically)
+  const { data: leads = [], isLoading } = useQuery({
+    queryKey: ['leads'],
+    queryFn: api.getLeads,
+  });
+
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
-  const [selectedLead, setSelectedLead] = useState(null);
+  const [selectedLead, setSelectedLead] = useState<ApiLead | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [isAddLeadOpen, setIsAddLeadOpen] = useState(false);
 
-  const filteredLeads = leads.filter(lead => {
+  // New Lead State
+  const [newLead, setNewLead] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    company: "",
+    notes: ""
+  });
+
+  // Mutation for creating lead
+  const createLeadMutation = useMutation({
+    mutationFn: (data: any) => api.createLead({
+      ...data,
+      source: data.source || 'Manual',
+      // assignedTo is omitted — backend auto-assigns to the agent
+    }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['leads'] });
+      toast({ title: "Success", description: "Lead created successfully" });
+      setIsAddLeadOpen(false);
+      setNewLead({ name: "", email: "", phone: "", company: "", notes: "" });
+    },
+    onError: (error: Error) => {
+      // If error is about assignedTo, we know we need to fix backend/frontend logic
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    }
+  });
+
+  // Update status mutation
+  const updateStatusMutation = useMutation({
+    mutationFn: ({ id, status }: { id: string; status: ApiLead['status'] }) =>
+      api.updateLead(id, { status }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['leads'] });
+      toast({ title: "Updated", description: "Lead status updated" });
+      setIsDetailOpen(false);
+    }
+  });
+
+
+  const filteredLeads = leads.filter((lead: ApiLead) => {
     const matchesSearch = lead.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         lead.company.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         lead.email.toLowerCase().includes(searchQuery.toLowerCase());
+      lead.company.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      lead.email.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesStatus = statusFilter === "all" || lead.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
 
   const totalLeads = leads.length;
-  const convertedLeads = leads.filter(l => l.status === "converted").length;
-  const qualifiedLeads = leads.filter(l => l.status === "qualified").length;
-  const newLeads = leads.filter(l => l.status === "new").length;
+  const convertedLeads = leads.filter((l: ApiLead) => l.status === "converted").length;
+  const qualifiedLeads = leads.filter((l: ApiLead) => l.status === "qualified").length;
+  const newLeads = leads.filter((l: ApiLead) => l.status === "new").length;
 
-  const handleViewLead = (lead) => {
+  const handleViewLead = (lead: ApiLead) => {
     setSelectedLead(lead);
     setIsDetailOpen(true);
   };
 
-  const handleUpdateStatus = (leadId, newStatus) => {
-    setLeads(leads.map(lead =>
-      lead.id === leadId ? { ...lead, status: newStatus } : lead
-    ));
-    setIsDetailOpen(false);
+  const handleUpdateStatus = (leadId: string, newStatus: ApiLead['status']) => {
+    updateStatusMutation.mutate({ id: leadId, status: newStatus });
   };
 
   return (
@@ -96,26 +144,66 @@ const AgentDashboard = () => {
               <DialogHeader>
                 <DialogTitle className="text-gray-900">Add New Lead</DialogTitle>
               </DialogHeader>
-              <form className="space-y-4 mt-4">
+              <form className="space-y-4 mt-4" onSubmit={(e) => {
+                e.preventDefault();
+                // We need to pass current user ID as assignedTo. 
+                // For now, let's try assuming backend will handle it or fail.
+                // Actually, I should probably decode token here to get ID if I can.
+                // Or just send it.
+                // Let's send a placeholder and fix backend to use req.user.userId if assignedTo is missing and role is agent.
+                createLeadMutation.mutate({ ...newLead, source: 'Manual' });
+              }}>
                 <div className="space-y-2">
                   <Label htmlFor="leadName" className="text-gray-700">Full Name</Label>
-                  <Input id="leadName" placeholder="Enter lead name" className="border-gray-300" />
+                  <Input
+                    id="leadName"
+                    placeholder="Enter lead name"
+                    className="border-gray-300"
+                    value={newLead.name}
+                    onChange={e => setNewLead({ ...newLead, name: e.target.value })}
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="leadEmail" className="text-gray-700">Email</Label>
-                  <Input id="leadEmail" type="email" placeholder="email@company.com" className="border-gray-300" />
+                  <Input
+                    id="leadEmail"
+                    type="email"
+                    placeholder="email@company.com"
+                    className="border-gray-300"
+                    value={newLead.email}
+                    onChange={e => setNewLead({ ...newLead, email: e.target.value })}
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="leadPhone" className="text-gray-700">Phone</Label>
-                  <Input id="leadPhone" type="tel" placeholder="+1 (555) 000-0000" className="border-gray-300" />
+                  <Input
+                    id="leadPhone"
+                    type="tel"
+                    placeholder="+1 (555) 000-0000"
+                    className="border-gray-300"
+                    value={newLead.phone}
+                    onChange={e => setNewLead({ ...newLead, phone: e.target.value })}
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="leadCompany" className="text-gray-700">Company</Label>
-                  <Input id="leadCompany" placeholder="Company name" className="border-gray-300" />
+                  <Input
+                    id="leadCompany"
+                    placeholder="Company name"
+                    className="border-gray-300"
+                    value={newLead.company}
+                    onChange={e => setNewLead({ ...newLead, company: e.target.value })}
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="leadNotes" className="text-gray-700">Notes</Label>
-                  <Textarea id="leadNotes" placeholder="Initial notes about the lead..." className="border-gray-300" />
+                  <Textarea
+                    id="leadNotes"
+                    placeholder="Initial notes about the lead..."
+                    className="border-gray-300"
+                    value={newLead.notes}
+                    onChange={e => setNewLead({ ...newLead, notes: e.target.value })}
+                  />
                 </div>
                 <Button type="submit" className="w-full bg-teal-600 hover:bg-teal-700 text-white">
                   Add Lead
@@ -188,14 +276,11 @@ const AgentDashboard = () => {
               </Select>
             </div>
           </div>
-          
+
           {/* Mobile View - Cards */}
           <div className="md:hidden space-y-4 p-4">
             {filteredLeads.map((lead, index) => (
-              <div
-                key={lead.id}
-                className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow"
-              >
+              <div key={lead._id} className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
                 <div className="flex justify-between items-start mb-3">
                   <h3 className="font-semibold text-gray-900 text-lg">{lead.name}</h3>
                   <Button
@@ -207,33 +292,33 @@ const AgentDashboard = () => {
                     <Eye className="h-4 w-4 text-gray-600" />
                   </Button>
                 </div>
-                
+
                 <div className="space-y-2">
                   <div className="flex justify-between">
                     <span className="text-sm text-gray-600">Company:</span>
                     <span className="text-sm font-medium text-gray-900 text-right">{lead.company}</span>
                   </div>
-                  
+
                   <div className="flex justify-between">
                     <span className="text-sm text-gray-600">Email:</span>
                     <span className="text-sm text-gray-700 text-right truncate max-w-[180px]">{lead.email}</span>
                   </div>
-                  
+
                   <div className="flex justify-between">
                     <span className="text-sm text-gray-600">Phone:</span>
                     <span className="text-sm text-gray-700 text-right">{lead.phone}</span>
                   </div>
-                  
+
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-gray-600">Status:</span>
                     <Badge
                       className={
                         lead.status === "converted" ? "bg-green-100 text-green-800" :
-                        lead.status === "qualified" ? "bg-blue-100 text-blue-800" :
-                        lead.status === "proposal" ? "bg-yellow-100 text-yellow-800" :
-                        lead.status === "new" ? "bg-purple-100 text-purple-800" :
-                        lead.status === "contacted" ? "bg-orange-100 text-orange-800" :
-                        "bg-red-100 text-red-800"
+                          lead.status === "qualified" ? "bg-blue-100 text-blue-800" :
+                            lead.status === "proposal" ? "bg-yellow-100 text-yellow-800" :
+                              lead.status === "new" ? "bg-purple-100 text-purple-800" :
+                                lead.status === "contacted" ? "bg-orange-100 text-orange-800" :
+                                  "bg-red-100 text-red-800"
                       }
                     >
                       {lead.status}
@@ -243,7 +328,7 @@ const AgentDashboard = () => {
               </div>
             ))}
           </div>
-          
+
           {/* Desktop View - Table */}
           <div className="hidden md:block overflow-x-auto">
             <Table>
@@ -259,7 +344,7 @@ const AgentDashboard = () => {
               </TableHeader>
               <TableBody>
                 {filteredLeads.map((lead) => (
-                  <TableRow key={lead.id} className="hover:bg-gray-50 border-gray-200">
+                  <TableRow key={lead._id} className="hover:bg-gray-50 border-gray-200">
                     <TableCell className="font-medium text-gray-900">{lead.name}</TableCell>
                     <TableCell className="text-gray-600">{lead.company}</TableCell>
                     <TableCell className="text-gray-600">{lead.email}</TableCell>
@@ -268,11 +353,11 @@ const AgentDashboard = () => {
                       <Badge
                         className={
                           lead.status === "converted" ? "bg-green-100 text-green-800" :
-                          lead.status === "qualified" ? "bg-blue-100 text-blue-800" :
-                          lead.status === "proposal" ? "bg-yellow-100 text-yellow-800" :
-                          lead.status === "new" ? "bg-purple-100 text-purple-800" :
-                          lead.status === "contacted" ? "bg-orange-100 text-orange-800" :
-                          "bg-red-100 text-red-800"
+                            lead.status === "qualified" ? "bg-blue-100 text-blue-800" :
+                              lead.status === "proposal" ? "bg-yellow-100 text-yellow-800" :
+                                lead.status === "new" ? "bg-purple-100 text-purple-800" :
+                                  lead.status === "contacted" ? "bg-orange-100 text-orange-800" :
+                                    "bg-red-100 text-red-800"
                         }
                       >
                         {lead.status}
@@ -316,7 +401,7 @@ const AgentDashboard = () => {
                         <p className="text-gray-600">{selectedLead.company}</p>
                       </div>
                     </div>
-                    
+
                     <div className="space-y-3">
                       <div className="flex items-center gap-2 text-gray-600">
                         <Mail className="h-4 w-4" />
@@ -328,7 +413,7 @@ const AgentDashboard = () => {
                       </div>
                       <div className="flex items-center gap-2 text-gray-600">
                         <MapPin className="h-4 w-4" />
-                        <span>{selectedLead.location}</span>
+                        <span>{selectedLead.location || 'Unknown'}</span>
                       </div>
                       <div className="flex items-center gap-2 text-gray-600">
                         <Calendar className="h-4 w-4" />
@@ -336,15 +421,15 @@ const AgentDashboard = () => {
                       </div>
                     </div>
                   </div>
-                  
+
                   <Badge
                     className={
                       selectedLead.status === "converted" ? "bg-green-100 text-green-800" :
-                      selectedLead.status === "qualified" ? "bg-blue-100 text-blue-800" :
-                      selectedLead.status === "proposal" ? "bg-yellow-100 text-yellow-800" :
-                      selectedLead.status === "new" ? "bg-purple-100 text-purple-800" :
-                      selectedLead.status === "contacted" ? "bg-orange-100 text-orange-800" :
-                      "bg-red-100 text-red-800"
+                        selectedLead.status === "qualified" ? "bg-blue-100 text-blue-800" :
+                          selectedLead.status === "proposal" ? "bg-yellow-100 text-yellow-800" :
+                            selectedLead.status === "new" ? "bg-purple-100 text-purple-800" :
+                              selectedLead.status === "contacted" ? "bg-orange-100 text-orange-800" :
+                                "bg-red-100 text-red-800"
                     }
                   >
                     {selectedLead.status}
@@ -357,9 +442,9 @@ const AgentDashboard = () => {
                     <p className="text-gray-600">{selectedLead.notes}</p>
                   </div>
                 )}
-                
+
                 <div className="flex gap-2 pt-4">
-                  <Select onValueChange={(value) => handleUpdateStatus(selectedLead.id, value)}>
+                  <Select onValueChange={(value) => handleUpdateStatus(selectedLead._id, value as ApiLead["status"])}>
                     <SelectTrigger className="border-gray-300">
                       <SelectValue placeholder="Update Status" />
                     </SelectTrigger>

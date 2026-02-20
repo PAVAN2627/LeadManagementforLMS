@@ -33,6 +33,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { api } from "@/lib/api";
+import { useToast } from "@/components/ui/use-toast";
 
 interface FormData {
   // Basic Information
@@ -79,6 +81,7 @@ const initialFormData: FormData = {
 
 const AddLeadPage = () => {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [formData, setFormData] = useState<FormData>(initialFormData);
   const [errors, setErrors] = useState<FormErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -137,28 +140,40 @@ const AddLeadPage = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!validateForm()) {
       return;
     }
 
     setIsSubmitting(true);
-    
-    // Simulate API call
-    setTimeout(() => {
-      console.log("New Lead Added:", {
-        ...formData,
-        createdAt: new Date().toISOString(),
-      });
-      
-      setIsSubmitting(false);
+
+    try {
+      await api.createLead({
+        name: `${formData.firstName.trim()} ${formData.lastName.trim()}`,
+        email: formData.email.trim(),
+        phone: formData.phone.trim(),
+        company: formData.company.trim(),
+        source: formData.source || 'Website',
+        notes: formData.notes.trim() || undefined,
+        location: formData.location.trim() || undefined,
+        // assignedTo is omitted — backend auto-assigns to the creating agent
+      } as any);
+
       setShowSuccess(true);
-      
+
       // Redirect after 2 seconds
       setTimeout(() => {
         navigate("/agent/leads");
       }, 2000);
-    }, 1000);
+    } catch (err: any) {
+      toast({
+        title: "Failed to create lead",
+        description: err?.message || "Internal Server Error. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleReset = () => {
@@ -267,11 +282,10 @@ const AddLeadPage = () => {
                   <button
                     key={section.id}
                     onClick={() => setActiveSection(section.id)}
-                    className={`flex items-center justify-center gap-2 px-4 py-2 rounded-lg transition-all text-sm font-medium w-full sm:w-auto ${
-                      activeSection === section.id
+                    className={`flex items-center justify-center gap-2 px-4 py-2 rounded-lg transition-all text-sm font-medium w-full sm:w-auto ${activeSection === section.id
                         ? "bg-gradient-to-r from-teal-500 to-cyan-500 text-white"
                         : "bg-muted text-muted-foreground hover:bg-muted/80"
-                    }`}
+                      }`}
                   >
                     <Icon className="h-4 w-4" />
                     {section.label}

@@ -8,7 +8,7 @@ import {
   Tooltip,
 } from "recharts";
 
-const data = [
+const mockData = [
   { name: "New", value: 45, color: "#1F8A98" },
   { name: "Contacted", value: 30, color: "#17A2B8" },
   { name: "Qualified", value: 20, color: "#20C997" },
@@ -16,7 +16,17 @@ const data = [
   { name: "Lost", value: 15, color: "#DC3545" },
 ];
 
-export function LeadsByStatusChart() {
+interface LeadsByStatusChartProps {
+  data?: {
+    name: string;
+    value: number;
+    color: string;
+  }[];
+}
+
+export function LeadsByStatusChart({ data }: LeadsByStatusChartProps) {
+  const chartData = data || mockData;
+
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.95 }}
@@ -32,7 +42,7 @@ export function LeadsByStatusChart() {
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
             <Pie
-              data={data}
+              data={chartData}
               cx="50%"
               cy="50%"
               innerRadius={60}
@@ -42,7 +52,7 @@ export function LeadsByStatusChart() {
               animationBegin={0}
               animationDuration={1000}
             >
-              {data.map((entry, index) => (
+              {chartData.map((entry, index) => (
                 <Cell key={`cell-${index}`} fill={entry.color} />
               ))}
             </Pie>

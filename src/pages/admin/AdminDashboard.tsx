@@ -1,14 +1,14 @@
 import React, { useState, useMemo } from "react";
-import { 
-  Users, 
-  TrendingUp, 
-  TrendingDown, 
-  UserCheck, 
-  Plus, 
-  Edit2, 
-  Ban, 
-  BarChart3, 
-  FileText, 
+import {
+  Users,
+  TrendingUp,
+  TrendingDown,
+  UserCheck,
+  Plus,
+  Edit2,
+  Ban,
+  BarChart3,
+  FileText,
   Settings,
   Search,
   Filter,
@@ -34,7 +34,7 @@ import { LeadsByStatusChart } from "@/components/charts/LeadsByStatusChart";
 import { MonthlyGrowthChart } from "@/components/charts/MonthlyGrowthChart";
 import { AgentPerformanceChart } from "@/components/charts/AgentPerformanceChart";
 import { LeadsTable } from "@/components/tables/LeadsTable";
-import { mockLeads, mockUsers } from "@/data/mockData";
+
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import {
@@ -71,26 +71,39 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
 
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { api, ApiLead } from "@/lib/api";
+
 const AdminDashboard = () => {
   const { toast } = useToast();
-  
-  // State for leads and users management
-  const [users, setUsers] = useState(mockUsers);
-  const [leads, setLeads] = useState(mockLeads);
-  const [selectedLead, setSelectedLead] = useState(null);
-  const [selectedUser, setSelectedUser] = useState(null);
+  const queryClient = useQueryClient();
+
+  // Fetch Leads
+  const { data: leads = [], isLoading: isLoadingLeads } = useQuery({
+    queryKey: ['leads'],
+    queryFn: api.getLeads,
+  });
+
+  // Fetch Users
+  const { data: users = [], isLoading: isLoadingUsers } = useQuery({
+    queryKey: ['users'],
+    queryFn: () => api.getUsers(),
+  });
+
+  const [selectedLead, setSelectedLead] = useState<ApiLead | null>(null);
+  const [selectedUser, setSelectedUser] = useState<any | null>(null);
   const [isLeadDetailOpen, setIsLeadDetailOpen] = useState(false);
   const [isUserDetailOpen, setIsUserDetailOpen] = useState(false);
-  
+
   // Search state
   const [userSearchQuery, setUserSearchQuery] = useState("");
-  
+
   // Edit modal states
   const [isEditLeadOpen, setIsEditLeadOpen] = useState(false);
   const [isEditUserOpen, setIsEditUserOpen] = useState(false);
-  const [editingLead, setEditingLead] = useState(null);
-  const [editingUser, setEditingUser] = useState(null);
-  
+  const [editingLead, setEditingLead] = useState<ApiLead | null>(null);
+  const [editingUser, setEditingUser] = useState<any | null>(null);
+
   // Edit form data states
   const [leadFormData, setLeadFormData] = useState({
     name: '',
@@ -98,28 +111,28 @@ const AdminDashboard = () => {
     phone: '',
     company: '',
     source: '',
-    status: 'new' as any,
+    status: 'new' as ApiLead['status'],
     assignedAgent: ''
   });
-  
+
   const [userFormData, setUserFormData] = useState({
     name: '',
     email: '',
     role: 'Agent' as any,
-    status: 'Active' as any
+    status: 'active' as any
   });
-  
-  const totalLeads = leads.length;
-  const convertedLeads = leads.filter((l) => l.status === "converted").length;
-  const lostLeads = leads.filter((l) => l.status === "lost").length;
-  const activeAgents = users.filter((u) => u.role === "Agent" && u.status === "Active").length;
 
-  const conversionRate = ((convertedLeads / totalLeads) * 100).toFixed(1);
-  
+  const totalLeads = leads.length;
+  const convertedLeads = leads.filter((l: ApiLead) => l.status === "converted").length;
+  const lostLeads = leads.filter((l: ApiLead) => l.status === "lost").length;
+  const activeAgents = users.filter((u: any) => u.role === "agent" && u.status === "active").length; // Assuming backend normalized status/role
+
+  const conversionRate = totalLeads > 0 ? ((convertedLeads / totalLeads) * 100).toFixed(1) : '0.0';
+
   // Filtered users based on search query
   const filteredUsers = useMemo(() => {
     if (!userSearchQuery) return users;
-    return users.filter(user => 
+    return users.filter((user: any) =>
       user.name.toLowerCase().includes(userSearchQuery.toLowerCase()) ||
       user.email.toLowerCase().includes(userSearchQuery.toLowerCase()) ||
       user.role.toLowerCase().includes(userSearchQuery.toLowerCase())
@@ -138,8 +151,8 @@ const AdminDashboard = () => {
       ['Average Deal Size', '$12,450', 'Average revenue per deal'],
       ['Response Time', '2.4h', 'Average response time to leads']
     ]
-    .map(row => row.map(field => `"${field}"`).join(','))
-    .join('\\n');
+      .map(row => row.map(field => `"${field}"`).join(','))
+      .join('\\n');
 
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
@@ -150,7 +163,7 @@ const AdminDashboard = () => {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    
+
     toast({
       title: "Export Successful",
       description: "Dashboard metrics have been exported to CSV successfully.",
@@ -161,18 +174,18 @@ const AdminDashboard = () => {
   const generateLeadReport = () => {
     const csvContent = [
       ['Lead Name', 'Email', 'Company', 'Status', 'Source', 'Agent', 'Date'],
-      ...mockLeads.map(lead => [
+      ...leads.map((lead: ApiLead) => [
         lead.name,
         lead.email,
         lead.company,
         lead.status,
         lead.source,
-        lead.assignedAgent || 'Unassigned',
+        lead.assignedTo?.name || 'Unassigned',
         lead.date
       ])
     ]
-    .map(row => row.map(field => `"${field}"`).join(','))
-    .join('\n');
+      .map(row => row.map(field => `"${field}"`).join(','))
+      .join('\n');
 
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
@@ -191,13 +204,13 @@ const AdminDashboard = () => {
   };
 
   const generateAgentPerformanceReport = () => {
-    const agentStats = mockUsers
-      .filter(user => user.role === "Agent")
-      .map(agent => {
-        const agentLeads = mockLeads.filter(lead => lead.assignedAgent === agent.name);
-        const converted = agentLeads.filter(lead => lead.status === "converted").length;
+    const agentStats = users
+      .filter((user: any) => user.role === "agent")
+      .map((agent: any) => {
+        const agentLeads = leads.filter((lead: ApiLead) => lead.assignedTo?._id === agent._id);
+        const converted = agentLeads.filter((lead: ApiLead) => lead.status === "converted").length;
         const total = agentLeads.length;
-        
+
         return {
           name: agent.name,
           email: agent.email,
@@ -219,8 +232,8 @@ const AdminDashboard = () => {
         agent.conversionRate
       ])
     ]
-    .map(row => row.map(field => `"${field}"`).join(','))
-    .join('\n');
+      .map(row => row.map(field => `"${field}"`).join(','))
+      .join('\n');
 
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
@@ -252,8 +265,8 @@ const AdminDashboard = () => {
       ['Lost Leads', lostLeads, 'Leads marked as lost'],
       ['Pipeline Value', '$156,780', 'Total pipeline value']
     ]
-    .map(row => row.map(field => `"${field}"`).join(','))
-    .join('\n');
+      .map(row => row.map(field => `"${field}"`).join(','))
+      .join('\n');
 
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
@@ -266,7 +279,7 @@ const AdminDashboard = () => {
     document.body.removeChild(link);
 
     toast({
-      title: "Sales Analytics Report Generated", 
+      title: "Sales Analytics Report Generated",
       description: "Sales analytics report has been downloaded as CSV.",
     });
   };
@@ -286,24 +299,46 @@ const AdminDashboard = () => {
       company: lead.company,
       source: lead.source,
       status: lead.status,
-      assignedAgent: lead.assignedAgent
+      assignedAgent: lead.assignedTo?._id || ''
     });
     setIsEditLeadOpen(true);
   };
 
+  // Mutations
+  const updateLeadMutation = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: Partial<ApiLead> }) => api.updateLead(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['leads'] });
+      toast({ title: "Lead Updated", description: "Lead updated successfully." });
+      setIsEditLeadOpen(false);
+      setEditingLead(null);
+    },
+    onError: (error: Error) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    }
+  });
+
+  const updateUserMutation = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: Partial<any> }) => api.updateUser(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['users'] });
+      toast({ title: "User Updated", description: "User updated successfully." });
+      setIsEditUserOpen(false);
+      setEditingUser(null);
+    },
+    onError: (error: Error) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    }
+  });
+
   const handleSaveLead = () => {
-    setLeads(leads.map(lead =>
-      lead.id === editingLead.id
-        ? { ...lead, ...leadFormData }
-        : lead
-    ));
-    
-    setIsEditLeadOpen(false);
-    setEditingLead(null);
-    
-    toast({
-      title: "Lead Updated",
-      description: `${leadFormData.name} has been updated successfully.`,
+    if (!editingLead) return;
+    updateLeadMutation.mutate({
+      id: editingLead._id,
+      data: {
+        ...leadFormData,
+        // map assignedAgent to assignedTo if needed, but simplistic update for now
+      }
     });
   };
 
@@ -325,39 +360,28 @@ const AdminDashboard = () => {
   };
 
   const handleSaveUser = () => {
-    setUsers(users.map(user =>
-      user.id === editingUser.id
-        ? { ...user, ...userFormData }
-        : user
-    ));
-    
-    setIsEditUserOpen(false);
-    setEditingUser(null);
-    
-    toast({
-      title: "User Updated",
-      description: `${userFormData.name} has been updated successfully.`,
+    if (!editingUser) return;
+    updateUserMutation.mutate({
+      id: editingUser._id,
+      data: userFormData
     });
   };
 
-  const handleToggleUserStatus = (userId) => {
-    setUsers(users.map(user =>
-      user.id === userId
-        ? { ...user, status: user.status === "Active" ? "Inactive" : "Active" }
-        : user
-    ));
-    
-    const updatedUser = users.find(u => u.id === userId);
-    const newStatus = updatedUser.status === "Active" ? "Inactive" : "Active";
-    
-    toast({
-      title: `User ${newStatus === "Active" ? "Activated" : "Deactivated"}`,
-      description: `${updatedUser.name} has been ${newStatus.toLowerCase()}`,
-    });
-    
-    // Update selectedUser if it's currently displayed
-    if (selectedUser && selectedUser.id === userId) {
-      setSelectedUser({ ...selectedUser, status: newStatus });
+  const handleToggleUserStatus = (userId: string) => {
+    // Ideally this would be an API call mutation
+    // setUsers(users.map(user =>
+    //   user._id === userId
+    //     ? { ...user, status: user.status === "Active" ? "Inactive" : "Active" }
+    //     : user
+    // ));
+
+    const updatedUser = users.find((u: any) => u._id === userId);
+    // ... rest of logic
+    if (updatedUser) {
+      toast({
+        title: "Info",
+        description: "User status toggle not implemented yet on backend."
+      });
     }
   };
 
@@ -390,9 +414,9 @@ const AdminDashboard = () => {
           className="relative overflow-hidden rounded-2xl gradient-teal p-6 md:p-8 shadow-2xl"
         >
           {/* Background Pattern */}
-          <motion.div 
+          <motion.div
             className="absolute inset-0 opacity-10"
-            animate={{ 
+            animate={{
               backgroundPosition: ["0% 0%", "100% 100%"],
             }}
             transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
@@ -400,20 +424,20 @@ const AdminDashboard = () => {
               backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.1'%3E%3Ccircle cx='30' cy='30' r='2'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
             }}
           />
-          
+
           <div className="relative flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
             <motion.div
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.2 }}
             >
-              <motion.h1 
+              <motion.h1
                 className="text-3xl md:text-4xl font-bold text-white mb-2"
                 whileHover={{ scale: 1.02 }}
               >
                 Admin Dashboard
               </motion.h1>
-              <motion.p 
+              <motion.p
                 className="text-teal-100 text-lg"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
@@ -421,16 +445,16 @@ const AdminDashboard = () => {
               >
                 Welcome back! Here's what's happening with your leads today.
               </motion.p>
-              
+
               {/* Live metrics ticker */}
-              <motion.div 
+              <motion.div
                 className="mt-4 flex items-center gap-4 text-teal-200"
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.6 }}
               >
                 <div className="flex items-center gap-2">
-                  <motion.div 
+                  <motion.div
                     className="w-2 h-2 rounded-full bg-green-400"
                     animate={{ scale: [1, 1.2, 1] }}
                     transition={{ duration: 2, repeat: Infinity }}
@@ -442,27 +466,27 @@ const AdminDashboard = () => {
                 </div>
               </motion.div>
             </motion.div>
-            
-            <motion.div 
+
+            <motion.div
               className="flex gap-3 flex-wrap"
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.3 }}
             >
               <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                <Button 
-                  variant="secondary" 
-                  size="sm" 
+                <Button
+                  variant="secondary"
+                  size="sm"
                   className="bg-white/10 backdrop-blur-sm border-white/20 text-white hover:bg-white/20 transition-all duration-300"
                 >
                   <RefreshCw className="h-4 w-4 mr-2" />
                   Refresh
                 </Button>
               </motion.div>
-              
+
               <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                <Button 
-                  size="sm" 
+                <Button
+                  size="sm"
                   onClick={handleExportData}
                   className="bg-white text-teal-700 hover:bg-white/90 shadow-lg transition-all duration-300"
                 >
@@ -475,7 +499,7 @@ const AdminDashboard = () => {
         </motion.div>
 
         {/* Enhanced 3D Summary Cards */}
-        <motion.div 
+        <motion.div
           className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8"
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
@@ -523,13 +547,13 @@ const AdminDashboard = () => {
               key={card.title}
               initial={{ opacity: 0, y: 30, scale: 0.9 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
-              transition={{ 
+              transition={{
                 delay: 0.4 + index * 0.1,
                 type: "spring",
                 stiffness: 200,
                 damping: 20
               }}
-              whileHover={{ 
+              whileHover={{
                 scale: 1.05,
                 rotateX: 5,
                 rotateY: 5,
@@ -541,7 +565,7 @@ const AdminDashboard = () => {
                 <div className="absolute inset-0 opacity-0 group-hover:opacity-20 transition-opacity duration-500">
                   <div className={`absolute inset-0 bg-gradient-to-br ${card.color}`} />
                 </div>
-                
+
                 <div className="absolute top-0 left-0 right-0 h-1">
                   <motion.div
                     initial={{ width: 0 }}
@@ -559,24 +583,23 @@ const AdminDashboard = () => {
                     >
                       <card.icon className="h-6 w-6 text-white" />
                     </motion.div>
-                    
+
                     <motion.div
                       initial={{ scale: 0 }}
                       animate={{ scale: 1 }}
                       transition={{ delay: 0.7 + index * 0.1, type: "spring" }}
-                      className={`px-2 py-1 text-xs font-semibold rounded-full ${
-                        card.trend.isPositive 
-                          ? 'bg-green-100 text-green-700' 
-                          : 'bg-red-100 text-red-700'
-                      }`}
+                      className={`px-2 py-1 text-xs font-semibold rounded-full ${card.trend.isPositive
+                        ? 'bg-green-100 text-green-700'
+                        : 'bg-red-100 text-red-700'
+                        }`}
                     >
                       {card.trend.isPositive ? '+' : ''}{card.trend.value}%
                     </motion.div>
                   </div>
-                  
+
                   <div className="space-y-2">
                     <h3 className="font-medium text-gray-600 text-sm">{card.title}</h3>
-                    <motion.p 
+                    <motion.p
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: 0.8 + index * 0.1 }}
@@ -586,7 +609,7 @@ const AdminDashboard = () => {
                     </motion.p>
                     <p className="text-xs text-gray-500 font-medium">{card.description}</p>
                   </div>
-                  
+
                   <div className="absolute inset-x-0 bottom-0 h-1 bg-gradient-to-r from-transparent via-gray-200 to-transparent transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-center" />
                 </div>
               </Card>
@@ -609,22 +632,22 @@ const AdminDashboard = () => {
                 transition={{ delay: 0.6 }}
               >
                 <TabsList className="grid w-full sm:w-auto grid-cols-3 bg-white shadow-sm border">
-                  <TabsTrigger 
-                    value="analytics" 
+                  <TabsTrigger
+                    value="analytics"
                     className="data-[state=active]:bg-teal-600 data-[state=active]:text-white transition-all duration-300"
                   >
                     <BarChart3 className="h-4 w-4 mr-2" />
                     Analytics
                   </TabsTrigger>
-                  <TabsTrigger 
-                    value="reports" 
+                  <TabsTrigger
+                    value="reports"
                     className="data-[state=active]:bg-teal-600 data-[state=active]:text-white transition-all duration-300"
                   >
                     <FileText className="h-4 w-4 mr-2" />
                     Reports
                   </TabsTrigger>
-                  <TabsTrigger 
-                    value="settings" 
+                  <TabsTrigger
+                    value="settings"
                     className="data-[state=active]:bg-teal-600 data-[state=active]:text-white transition-all duration-300"
                   >
                     <Settings className="h-4 w-4 mr-2" />
@@ -717,7 +740,7 @@ const AdminDashboard = () => {
                     initial={{ opacity: 0, y: 20, scale: 0.9 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     transition={{ delay: 0.5 + index * 0.1, type: "spring" }}
-                    whileHover={{ 
+                    whileHover={{
                       scale: 1.05,
                       rotateY: 5,
                       transition: { duration: 0.2 }
@@ -728,7 +751,7 @@ const AdminDashboard = () => {
                       <div className="absolute inset-0 opacity-0 group-hover:opacity-20 transition-opacity duration-500">
                         <div className={`absolute inset-0 bg-gradient-to-br ${metric.color}`} />
                       </div>
-                      
+
                       <div className="absolute top-0 left-0 right-0 h-1">
                         <motion.div
                           initial={{ width: 0 }}
@@ -750,19 +773,18 @@ const AdminDashboard = () => {
                             initial={{ scale: 0 }}
                             animate={{ scale: 1 }}
                             transition={{ delay: 0.7 + index * 0.1, type: "spring" }}
-                            className={`px-2 py-1 text-xs font-semibold rounded-full ${
-                              metric.trendPositive 
-                                ? 'bg-green-100 text-green-700' 
-                                : 'bg-red-100 text-red-700'
-                            }`}
+                            className={`px-2 py-1 text-xs font-semibold rounded-full ${metric.trendPositive
+                              ? 'bg-green-100 text-green-700'
+                              : 'bg-red-100 text-red-700'
+                              }`}
                           >
                             {metric.trendPositive ? '↗' : '↘'}
                           </motion.div>
                         </div>
-                        
+
                         <div className="space-y-1">
                           <p className="text-xs font-medium text-gray-600">{metric.title}</p>
-                          <motion.p 
+                          <motion.p
                             initial={{ opacity: 0, y: 10 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: 0.8 + index * 0.1 }}
@@ -770,17 +792,16 @@ const AdminDashboard = () => {
                           >
                             {metric.value}
                           </motion.p>
-                          <p className={`text-xs font-medium ${
-                            metric.trendPositive ? 'text-green-600' : 'text-red-600'
-                          }`}>
+                          <p className={`text-xs font-medium ${metric.trendPositive ? 'text-green-600' : 'text-red-600'
+                            }`}>
                             {metric.trend}
                           </p>
                         </div>
-                        
+
                         {metric.hasProgress && (
                           <div className="mt-3">
                             <div className="w-full bg-gray-200 rounded-full h-1.5">
-                              <motion.div 
+                              <motion.div
                                 initial={{ width: 0 }}
                                 animate={{ width: `${metric.progressValue}%` }}
                                 transition={{ delay: 1.2 + index * 0.1, duration: 1 }}
@@ -893,10 +914,10 @@ const AdminDashboard = () => {
                   <CardHeader className="bg-gradient-to-r from-indigo-700 via-purple-600 to-pink-600 text-white relative overflow-hidden">
                     <div className="absolute inset-0 bg-black/10" />
                     <motion.div
-                      animate={{ 
+                      animate={{
                         backgroundPosition: ['0% 0%', '100% 100%'],
                       }}
-                      transition={{ 
+                      transition={{
                         duration: 20,
                         repeat: Infinity,
                         repeatType: "reverse"
@@ -906,7 +927,7 @@ const AdminDashboard = () => {
                         backgroundImage: 'radial-gradient(circle at 20% 80%, rgba(120, 119, 198, 0.3) 0%, transparent 50%), radial-gradient(circle at 80% 20%, rgba(255, 119, 198, 0.3) 0%, transparent 50%)'
                       }}
                     />
-                    
+
                     <div className="relative z-10 flex items-center justify-between">
                       <div className="flex items-center gap-3">
                         <motion.div
@@ -921,7 +942,7 @@ const AdminDashboard = () => {
                           <p className="text-indigo-100 text-sm">Comprehensive lead analytics and tracking</p>
                         </div>
                       </div>
-                      
+
                       <div className="flex items-center gap-2">
                         <motion.button
                           whileHover={{ scale: 1.05 }}
@@ -969,7 +990,7 @@ const AdminDashboard = () => {
                           initial={{ opacity: 0, y: 20, scale: 0.9 }}
                           animate={{ opacity: 1, y: 0, scale: 1 }}
                           transition={{ delay: 0.5 + index * 0.1, type: "spring" }}
-                          whileHover={{ 
+                          whileHover={{
                             scale: 1.05,
                             rotateY: 5,
                             transition: { duration: 0.2 }
@@ -980,7 +1001,7 @@ const AdminDashboard = () => {
                             <div className="absolute inset-0 opacity-0 group-hover:opacity-20 transition-opacity duration-500">
                               <div className={`absolute inset-0 bg-gradient-to-br ${report.color}`} />
                             </div>
-                            
+
                             <div className="absolute top-0 left-0 right-0 h-1">
                               <motion.div
                                 initial={{ width: 0 }}
@@ -998,7 +1019,7 @@ const AdminDashboard = () => {
                                 >
                                   <report.icon className="h-6 w-6 text-white" />
                                 </motion.div>
-                                
+
                                 <motion.button
                                   whileHover={{ scale: 1.1 }}
                                   whileTap={{ scale: 0.9 }}
@@ -1008,7 +1029,7 @@ const AdminDashboard = () => {
                                   <Download className="h-4 w-4 text-gray-600" />
                                 </motion.button>
                               </div>
-                              
+
                               <div className="space-y-2">
                                 <h3 className="font-semibold text-gray-800 group-hover:text-gray-900 transition-colors">
                                   {report.title}
@@ -1017,7 +1038,7 @@ const AdminDashboard = () => {
                                   {report.description}
                                 </p>
                               </div>
-                              
+
                               <motion.div
                                 initial={{ opacity: 0 }}
                                 animate={{ opacity: 1 }}
@@ -1051,10 +1072,10 @@ const AdminDashboard = () => {
                 <Card className="border-0 shadow-xl overflow-hidden">
                   <CardHeader className="bg-gradient-to-r from-teal-600 to-cyan-600 text-white relative overflow-hidden">
                     <motion.div
-                      animate={{ 
+                      animate={{
                         backgroundPosition: ['0% 0%', '100% 100%'],
                       }}
-                      transition={{ 
+                      transition={{
                         duration: 15,
                         repeat: Infinity,
                         repeatType: "reverse"
@@ -1064,7 +1085,7 @@ const AdminDashboard = () => {
                         backgroundImage: 'radial-gradient(circle at 30% 70%, rgba(255, 255, 255, 0.3) 0%, transparent 50%)'
                       }}
                     />
-                    
+
                     <div className="relative z-10 flex items-center gap-3">
                       <motion.div
                         animate={{ rotate: [0, 360] }}
@@ -1079,7 +1100,7 @@ const AdminDashboard = () => {
                       </div>
                     </div>
                   </CardHeader>
-                  
+
                   <CardContent className="p-6 space-y-6">
                     {[
                       {
@@ -1120,7 +1141,7 @@ const AdminDashboard = () => {
                           </motion.div>
                           <label className="font-medium text-gray-700">{setting.label}</label>
                         </div>
-                        
+
                         {setting.type === 'select' ? (
                           <select className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none transition-all duration-200">
                             <option>{setting.value}</option>
@@ -1132,7 +1153,7 @@ const AdminDashboard = () => {
                             className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none transition-all duration-200"
                           />
                         )}
-                        
+
                         <p className="text-xs text-gray-500 mt-1 ml-11">{setting.description}</p>
                       </motion.div>
                     ))}
@@ -1143,10 +1164,10 @@ const AdminDashboard = () => {
                 <Card className="border-0 shadow-xl overflow-hidden">
                   <CardHeader className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white relative overflow-hidden">
                     <motion.div
-                      animate={{ 
+                      animate={{
                         backgroundPosition: ['0% 0%', '100% 100%'],
                       }}
-                      transition={{ 
+                      transition={{
                         duration: 12,
                         repeat: Infinity,
                         repeatType: "reverse"
@@ -1156,7 +1177,7 @@ const AdminDashboard = () => {
                         backgroundImage: 'radial-gradient(circle at 70% 30%, rgba(255, 255, 255, 0.3) 0%, transparent 50%)'
                       }}
                     />
-                    
+
                     <div className="relative z-10 flex items-center gap-3">
                       <motion.div
                         animate={{ rotate: [0, -360] }}
@@ -1171,7 +1192,7 @@ const AdminDashboard = () => {
                       </div>
                     </div>
                   </CardHeader>
-                  
+
                   <CardContent className="p-6 space-y-4">
                     <div>
                       <Label className="text-gray-700 font-medium">Assignment Method</Label>
@@ -1186,7 +1207,7 @@ const AdminDashboard = () => {
                         </SelectContent>
                       </Select>
                     </div>
-                    
+
                     <div>
                       <Label className="text-gray-700 font-medium">Email Notifications</Label>
                       <div className="mt-3 space-y-3">
@@ -1202,9 +1223,9 @@ const AdminDashboard = () => {
                             transition={{ delay: 0.4 + index * 0.1 }}
                             className="flex items-center space-x-3 p-2 rounded-lg hover:bg-indigo-50 transition-colors cursor-pointer"
                           >
-                            <input 
-                              type="checkbox" 
-                              className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500" 
+                            <input
+                              type="checkbox"
+                              className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
                               defaultChecked={notification.checked}
                             />
                             <span className="text-sm text-gray-600">{notification.label}</span>
@@ -1233,8 +1254,8 @@ const AdminDashboard = () => {
                 <Filter className="h-4 w-4 mr-2" />
                 Filter
               </Button>
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 size="sm"
                 className="border-teal-600 text-teal-600 hover:bg-teal-50"
               >
@@ -1243,7 +1264,7 @@ const AdminDashboard = () => {
               </Button>
             </div>
           </div>
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.6 }}
@@ -1251,10 +1272,10 @@ const AdminDashboard = () => {
           >
             {/* Premium gradient background for leads table */}
             <div className="absolute inset-0 bg-gradient-to-br from-teal-500/10 via-emerald-600/5 to-cyan-600/10" />
-            
+
             {/* Enhanced header */}
             <div className="relative z-10 bg-gradient-to-r from-teal-600 via-emerald-700 to-cyan-600 p-4">
-              <motion.h3 
+              <motion.h3
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.7 }}
@@ -1264,7 +1285,7 @@ const AdminDashboard = () => {
                 Recent Leads Overview
               </motion.h3>
             </div>
-            
+
             <div className="relative z-10 bg-white/95 backdrop-blur-sm">
               <div className="overflow-x-auto">
                 <motion.div
@@ -1272,8 +1293,8 @@ const AdminDashboard = () => {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.8 }}
                 >
-                  <LeadsTable 
-                    leads={leads.slice(0, 8)} 
+                  <LeadsTable
+                    leads={leads.slice(0, 8)}
                     onView={handleViewLead}
                     onUpdate={handleUpdateLead}
                   />
@@ -1298,8 +1319,8 @@ const AdminDashboard = () => {
             <div className="flex gap-2">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <Input 
-                  placeholder="Search users..." 
+                <Input
+                  placeholder="Search users..."
                   className="pl-9 w-full sm:w-64 border-gray-300"
                   value={userSearchQuery}
                   onChange={(e) => setUserSearchQuery(e.target.value)}
@@ -1351,16 +1372,16 @@ const AdminDashboard = () => {
             <div className="md:hidden space-y-4 p-4">
               {filteredUsers.map((user, index) => (
                 <motion.div
-                  key={user.id}
+                  key={user._id}
                   initial={{ opacity: 0, y: 30, scale: 0.9 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
-                  transition={{ 
-                    duration: 0.4, 
+                  transition={{
+                    duration: 0.4,
                     delay: index * 0.1,
                     type: "spring",
                     stiffness: 200
                   }}
-                  whileHover={{ 
+                  whileHover={{
                     scale: 1.02,
                     y: -5,
                     transition: { duration: 0.2 }
@@ -1370,20 +1391,18 @@ const AdminDashboard = () => {
                 >
                   {/* Animated background gradient */}
                   <div className="absolute inset-0 opacity-0 group-hover:opacity-20 transition-opacity duration-500">
-                    <div className={`absolute inset-0 bg-gradient-to-br ${
-                      user.status === 'Active' ? 'from-green-400 to-emerald-600' : 'from-gray-400 to-gray-600'
-                    }`} />
+                    <div className={`absolute inset-0 bg-gradient-to-br ${user.status === 'active' ? 'from-green-400 to-emerald-600' : 'from-gray-400 to-gray-600'
+                      }`} />
                   </div>
-                  
+
                   {/* Progress bar at top */}
                   <div className="absolute top-0 left-0 right-0 h-1">
                     <motion.div
                       initial={{ width: 0 }}
                       animate={{ width: "100%" }}
                       transition={{ delay: 0.5 + index * 0.1, duration: 1 }}
-                      className={`h-full bg-gradient-to-r ${
-                        user.status === 'Active' ? 'from-green-400 to-emerald-600' : 'from-gray-400 to-gray-500'
-                      }`}
+                      className={`h-full bg-gradient-to-r ${user.status === 'active' ? 'from-green-400 to-emerald-600' : 'from-gray-400 to-gray-500'
+                        }`}
                     />
                   </div>
                   <div className="relative z-10 flex justify-between items-start mb-6">
@@ -1399,7 +1418,7 @@ const AdminDashboard = () => {
                         <p className="text-sm text-gray-600">{user.role}</p>
                       </div>
                     </div>
-                    
+
                     <div className="flex gap-1">
                       <motion.button
                         whileHover={{ scale: 1.1, y: -2 }}
@@ -1421,15 +1440,15 @@ const AdminDashboard = () => {
                         whileHover={{ scale: 1.1, y: -2 }}
                         whileTap={{ scale: 0.9 }}
                         className="p-2 rounded-lg bg-red-100 hover:bg-red-200 text-red-600 transition-all duration-200 shadow-sm"
-                        onClick={() => handleToggleUserStatus(user.id)}
+                        onClick={() => handleToggleUserStatus(user._id)}
                       >
                         <Ban className="h-4 w-4" />
                       </motion.button>
                     </div>
                   </div>
-                  
+
                   <div className="relative z-10 space-y-4">
-                    <motion.div 
+                    <motion.div
                       initial={{ opacity: 0, x: -20 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: 0.6 + index * 0.1 }}
@@ -1440,35 +1459,33 @@ const AdminDashboard = () => {
                         <span className="font-medium text-gray-900">{user.email}</span>
                       </div>
                     </motion.div>
-                    
+
                     <div className="flex items-center justify-between">
                       <motion.div
                         initial={{ scale: 0 }}
                         animate={{ scale: 1 }}
                         transition={{ delay: 0.7 + index * 0.1, type: "spring" }}
                       >
-                        <Badge 
-                          className={`px-3 py-1 font-semibold shadow-sm ${
-                            user.role === 'Admin' ? 'bg-gradient-to-r from-teal-500 to-teal-600 text-white' : 
-                            user.role === 'Manager' ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white' : 
-                            'bg-gradient-to-r from-gray-500 to-gray-600 text-white'
-                          }`}
+                        <Badge
+                          className={`px-3 py-1 font-semibold shadow-sm ${user.role === 'Admin' ? 'bg-gradient-to-r from-teal-500 to-teal-600 text-white' :
+                            user.role === 'Manager' ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white' :
+                              'bg-gradient-to-r from-gray-500 to-gray-600 text-white'
+                            }`}
                         >
                           {user.role}
                         </Badge>
                       </motion.div>
-                      
+
                       <motion.div
                         initial={{ scale: 0, rotate: -180 }}
                         animate={{ scale: 1, rotate: 0 }}
                         transition={{ delay: 0.8 + index * 0.1, type: "spring" }}
                       >
                         <Badge
-                          className={`px-3 py-1 font-semibold shadow-sm ${
-                            user.status === "Active"
-                              ? "bg-gradient-to-r from-green-500 to-emerald-600 text-white"
-                              : "bg-gradient-to-r from-red-500 to-red-600 text-white"
-                          }`}
+                          className={`px-3 py-1 font-semibold shadow-sm ${user.status === "active"
+                            ? "bg-gradient-to-r from-green-500 to-emerald-600 text-white"
+                            : "bg-gradient-to-r from-red-500 to-red-600 text-white"
+                            }`}
                         >
                           ● {user.status}
                         </Badge>
@@ -1484,7 +1501,7 @@ const AdminDashboard = () => {
               <div className="relative">
                 {/* Premium gradient header */}
                 <div className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 rounded-t-xl p-4">
-                  <motion.h3 
+                  <motion.h3
                     initial={{ opacity: 0, y: -10 }}
                     animate={{ opacity: 1, y: 0 }}
                     className="text-white font-bold text-lg flex items-center gap-2"
@@ -1493,7 +1510,7 @@ const AdminDashboard = () => {
                     User Directory
                   </motion.h3>
                 </div>
-                
+
                 <Table>
                   <TableHeader>
                     <TableRow className="bg-gradient-to-r from-gray-50 to-gray-100 border-0">
@@ -1506,12 +1523,12 @@ const AdminDashboard = () => {
                   </TableHeader>
                   <TableBody>
                     {filteredUsers.map((user, index) => (
-                      <motion.tr 
-                        key={user.id} 
+                      <motion.tr
+                        key={user._id}
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: index * 0.1, duration: 0.3 }}
-                        whileHover={{ 
+                        whileHover={{
                           backgroundColor: "rgba(99, 102, 241, 0.05)",
                           scale: 1.01,
                           transition: { duration: 0.2 }
@@ -1545,12 +1562,11 @@ const AdminDashboard = () => {
                             animate={{ scale: 1 }}
                             transition={{ delay: 0.1 + index * 0.05 }}
                           >
-                            <Badge 
-                              className={`px-3 py-1 font-semibold shadow-sm ${
-                                user.role === 'Admin' ? 'bg-gradient-to-r from-teal-500 to-teal-600 text-white' : 
-                                user.role === 'Manager' ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white' : 
-                                'bg-gradient-to-r from-gray-500 to-gray-600 text-white'
-                              }`}
+                            <Badge
+                              className={`px-3 py-1 font-semibold shadow-sm ${user.role === 'Admin' ? 'bg-gradient-to-r from-teal-500 to-teal-600 text-white' :
+                                user.role === 'Manager' ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white' :
+                                  'bg-gradient-to-r from-gray-500 to-gray-600 text-white'
+                                }`}
                             >
                               {user.role}
                             </Badge>
@@ -1564,11 +1580,10 @@ const AdminDashboard = () => {
                             transition={{ delay: 0.2 + index * 0.05, type: "spring" }}
                           >
                             <Badge
-                              className={`px-3 py-1 font-semibold shadow-sm ${
-                                user.status === "Active"
-                                  ? "bg-gradient-to-r from-green-500 to-emerald-600 text-white"
-                                  : "bg-gradient-to-r from-red-500 to-red-600 text-white"
-                              }`}
+                              className={`px-3 py-1 font-semibold shadow-sm ${user.status === "active"
+                                ? "bg-gradient-to-r from-green-500 to-emerald-600 text-white"
+                                : "bg-gradient-to-r from-red-500 to-red-600 text-white"
+                                }`}
                             >
                               <motion.span
                                 animate={{ scale: [1, 1.2, 1] }}
@@ -1603,7 +1618,7 @@ const AdminDashboard = () => {
                               whileHover={{ scale: 1.2, y: -2 }}
                               whileTap={{ scale: 0.9 }}
                               className="p-2 rounded-lg bg-red-100 hover:bg-red-200 text-red-600 transition-all duration-200 shadow-sm hover:shadow-md"
-                              onClick={() => handleToggleUserStatus(user.id)}
+                              onClick={() => handleToggleUserStatus(user._id)}
                             >
                               <Ban className="h-4 w-4" />
                             </motion.button>
@@ -1652,7 +1667,7 @@ const AdminDashboard = () => {
                       </div>
                     </div>
                   </div>
-                  
+
                   <div className="space-y-4">
                     <div>
                       <h3 className="font-semibold text-gray-900 mb-2">Lead Details</h3>
@@ -1667,7 +1682,7 @@ const AdminDashboard = () => {
                         </div>
                         <div>
                           <span className="text-gray-500">Assigned Agent: </span>
-                          <span className="text-gray-900">{selectedLead.assignedAgent}</span>
+                          <span className="text-gray-900">{selectedLead.assignedTo ? selectedLead.assignedTo.name : 'Unassigned'}</span>
                         </div>
                         <div>
                           <span className="text-gray-500">Date Added: </span>
@@ -1677,10 +1692,10 @@ const AdminDashboard = () => {
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="flex gap-2 pt-4">
                   <Button
-                    variant="outline" 
+                    variant="outline"
                     className="flex-1 border-gray-300"
                     onClick={() => handleUpdateLead(selectedLead)}
                   >
@@ -1715,13 +1730,12 @@ const AdminDashboard = () => {
                     <h2 className="text-xl font-bold text-gray-900">{selectedUser.name}</h2>
                     <p className="text-gray-600">{selectedUser.email}</p>
                     <div className="flex gap-2 mt-2">
-                      <Badge 
-                        variant="secondary" 
-                        className={`${
-                          selectedUser.role === 'Admin' ? 'bg-teal-100 text-teal-800' : 
-                          selectedUser.role === 'Manager' ? 'bg-blue-100 text-blue-800' : 
-                          'bg-gray-100 text-gray-800'
-                        }`}
+                      <Badge
+                        variant="secondary"
+                        className={`${selectedUser.role === 'Admin' ? 'bg-teal-100 text-teal-800' :
+                          selectedUser.role === 'Manager' ? 'bg-blue-100 text-blue-800' :
+                            'bg-gray-100 text-gray-800'
+                          }`}
                       >
                         {selectedUser.role}
                       </Badge>
@@ -1737,7 +1751,7 @@ const AdminDashboard = () => {
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="grid grid-cols-2 gap-6">
                   <div className="space-y-4">
                     <div>
@@ -1754,7 +1768,7 @@ const AdminDashboard = () => {
                       </div>
                     </div>
                   </div>
-                  
+
                   <div className="space-y-4">
                     <div>
                       <h3 className="font-semibold text-gray-900 mb-2">Account Information</h3>
@@ -1792,7 +1806,7 @@ const AdminDashboard = () => {
                   <Button
                     variant={selectedUser.status === "Active" ? "destructive" : "default"}
                     className="flex-1"
-                    onClick={() => handleToggleUserStatus(selectedUser.id)}
+                    onClick={() => handleToggleUserStatus(selectedUser._id)}
                   >
                     <Ban className="h-4 w-4 mr-2" />
                     {selectedUser.status === "Active" ? "Deactivate" : "Activate"}
@@ -1887,8 +1901,8 @@ const AdminDashboard = () => {
                   <SelectValue placeholder="Select agent" />
                 </SelectTrigger>
                 <SelectContent>
-                  {users.filter(u => u.role === "Agent").map(agent => (
-                    <SelectItem key={agent.id} value={agent.name}>{agent.name}</SelectItem>
+                  {users.filter(u => u.role.toLowerCase() === "agent").map(agent => (
+                    <SelectItem key={agent._id} value={agent._id}>{agent.name}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -1938,9 +1952,9 @@ const AdminDashboard = () => {
                   <SelectValue placeholder="Select role" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Admin">Admin</SelectItem>
-                  <SelectItem value="Manager">Manager</SelectItem>
-                  <SelectItem value="Agent">Agent</SelectItem>
+                  <SelectItem value="admin">Admin</SelectItem>
+                  <SelectItem value="manager">Manager</SelectItem>
+                  <SelectItem value="agent">Agent</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -1951,8 +1965,8 @@ const AdminDashboard = () => {
                   <SelectValue placeholder="Select status" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Active">Active</SelectItem>
-                  <SelectItem value="Inactive">Inactive</SelectItem>
+                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="inactive">Inactive</SelectItem>
                 </SelectContent>
               </Select>
             </div>

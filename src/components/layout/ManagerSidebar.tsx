@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { NavLink, useLocation } from "react-router-dom";
+import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   LayoutDashboard,
@@ -16,6 +16,7 @@ import {
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useAuth } from "@/context/AuthContext";
 
 interface SidebarItem {
   icon: React.ElementType;
@@ -40,9 +41,20 @@ const managerItems: SidebarItem[] = [
 export function ManagerSidebar({ isOpen, setIsOpen }: ManagerSidebarProps) {
   const [collapsed, setCollapsed] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
+  const { logout } = useAuth();
   const isMobile = useIsMobile();
 
   const handleNavClick = () => {
+    if (isMobile) {
+      setIsOpen(false);
+    }
+  };
+
+  const handleLogout = (e: React.MouseEvent) => {
+    e.preventDefault();
+    logout();
+    navigate("/");
     if (isMobile) {
       setIsOpen(false);
     }
@@ -52,23 +64,23 @@ export function ManagerSidebar({ isOpen, setIsOpen }: ManagerSidebarProps) {
     "fixed left-0 top-0 z-40 h-screen gradient-teal transition-all duration-300 flex flex-col",
     isMobile
       ? cn(
-          "w-64",
-          isOpen ? "translate-x-0" : "-translate-x-full"
-        )
+        "w-64",
+        isOpen ? "translate-x-0" : "-translate-x-full"
+      )
       : cn(
-          collapsed ? "w-20" : "w-64"
-        )
+        collapsed ? "w-20" : "w-64"
+      )
   );
 
   return (
     <motion.aside
       id="manager-sidebar"
       initial={{ x: isMobile ? -264 : -20, opacity: 0 }}
-      animate={{ 
-        x: isMobile 
+      animate={{
+        x: isMobile
           ? (isOpen ? 0 : -264)
-          : 0, 
-        opacity: 1 
+          : 0,
+        opacity: 1
       }}
       transition={{ duration: 0.3 }}
       className={sidebarClassNames}
@@ -87,20 +99,19 @@ export function ManagerSidebar({ isOpen, setIsOpen }: ManagerSidebarProps) {
             </motion.div>
           )}
         </AnimatePresence>
-        
+
         <div className="flex items-center gap-2">
           {/* Mobile logout button */}
           {isMobile && (
-            <NavLink
-              to="/"
-              onClick={handleNavClick}
+            <button
+              onClick={handleLogout}
               className="flex items-center justify-center h-8 w-8 rounded-lg text-sidebar-foreground/80 hover:bg-destructive/20 hover:text-destructive-foreground transition-all duration-200"
               title="Logout"
             >
               <LogOut className="h-4 w-4" />
-            </NavLink>
+            </button>
           )}
-          
+
           {/* Desktop collapse button */}
           {!isMobile && (
             <Button
@@ -112,7 +123,7 @@ export function ManagerSidebar({ isOpen, setIsOpen }: ManagerSidebarProps) {
               {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
             </Button>
           )}
-          
+
           {/* Mobile close button */}
           {isMobile && (
             <Button
@@ -132,7 +143,7 @@ export function ManagerSidebar({ isOpen, setIsOpen }: ManagerSidebarProps) {
         {managerItems.map((item, index) => {
           const isActive = location.pathname === item.path;
           const showLabel = !collapsed || isMobile;
-          
+
           return (
             <motion.div
               key={item.path}
@@ -197,17 +208,16 @@ export function ManagerSidebar({ isOpen, setIsOpen }: ManagerSidebarProps) {
         </div>
         {/* Desktop logout */}
         {!isMobile && (
-          <NavLink
-            to="/"
-            onClick={handleNavClick}
+          <button
+            onClick={handleLogout}
             className={cn(
-              "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200",
+              "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200 w-full",
               "text-sidebar-foreground/80 hover:bg-destructive/20 hover:text-destructive-foreground"
             )}
           >
             <LogOut className={cn("h-5 w-5 shrink-0", (!collapsed || isMobile) ? "" : "mx-auto")} />
             {(!collapsed || isMobile) && <span>Logout</span>}
-          </NavLink>
+          </button>
         )}
       </div>
     </motion.aside>

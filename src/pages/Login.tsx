@@ -1,51 +1,128 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
+main
+import { useNavigate, Navigate } from "react-router-dom";
+import { Mail, Lock, ArrowLeft, Shield, Users, BarChart3, Eye, EyeOff } from "lucide-react";
+
 import { useNavigate } from "react-router-dom";
 import { Mail, Lock, ArrowLeft, Shield, Users, BarChart3, Eye, EyeOff, CheckCircle2 } from "lucide-react";
+ main
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { useAuth } from "@/context/AuthContext";
+import { useToast } from "@/components/ui/use-toast";
 
 const Login = () => {
   const navigate = useNavigate();
+  const { login, user, isAuthenticated, isLoading } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { toast } = useToast();
 
-  const handleLogin = (e: React.FormEvent) => {
+  // If session is still loading, show nothing (ProtectedRoute handles spinner)
+  if (isLoading) return null;
+
+  // Already authenticated — send user to their own dashboard
+  if (isAuthenticated && user) {
+    const dashboardMap: Record<string, string> = {
+      admin: '/admin',
+      manager: '/manager',
+      agent: '/agent',
+    };
+    return <Navigate to={dashboardMap[user.role] || '/'} replace />;
+  }
+
+
+
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
+    setIsSubmitting(true);
 
-    // Simulate login - In production, this will check credentials and route based on user role
-    setTimeout(() => {
-      setIsLoading(false);
-      // For demo, default to admin
-      navigate("/admin");
-    }, 1000);
-  };
+    try {
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      });
 
-  const handleDemoLogin = (role: "admin" | "manager" | "agent") => {
-    setIsLoading(true);
-    setTimeout(() => {
-      setIsLoading(false);
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Login failed');
+      }
+
+      login(data.token, data.user);
+
+      const role = data.user.role;
       navigate(`/${role}`);
-    }, 800);
+    } catch (error: any) {
+      console.error('Login error:', error);
+      toast({
+        variant: "destructive",
+        title: "Login Failed",
+        description: error.message || "Invalid credentials",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
+
 
   return (
+ main
+    <div className="min-h-screen flex items-center justify-center p-3 md:p-4 relative overflow-hidden">
+      {/* Background Image */}
+      <div
+        className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+        style={{
+          backgroundImage: 'url(/leadmgtback.png)',
+        }}
+      />
+
+      {/* Overlay for better readability */}
+      <div className="absolute inset-0 bg-gradient-to-br from-black/40 via-black/30 to-black/40 backdrop-blur-[2px]" />
+
+      {/* Centered Login Form */}
+
     <div className="min-h-screen flex relative overflow-hidden">
       {/* Full Gradient Background - Teal Theme */}
       <div className="absolute inset-0 bg-gradient-to-br from-teal-500 via-cyan-500 to-blue-500" />
       
       {/* Left Side - Information */}
+main
       <motion.div
         initial={{ opacity: 0, x: -50 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ duration: 0.6 }}
         className="hidden lg:flex lg:w-1/2 relative z-10 flex-col justify-start pt-20 p-12 xl:p-20"
       >
+main
+        {/* Decorative Background */}
+        <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-teal-50 to-cyan-50 opacity-50" />
+
+        <div className="relative z-10">
+          {/* Back Button */}
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+          >
+            <Button
+              variant="ghost"
+              onClick={() => navigate("/")}
+              className="mb-3 md:mb-6 -ml-2 text-gray-600 hover:text-teal-600 transition-colors text-sm"
+            >
+              <ArrowLeft className="mr-2 h-3 md:h-4 w-3 md:w-4" />
+              Back to Home
+            </Button>
+          </motion.div>
+
         <Button
           variant="ghost"
           onClick={() => navigate("/")}
@@ -54,6 +131,7 @@ const Login = () => {
           <ArrowLeft className="mr-2 h-4 w-4" />
           Back to Home
         </Button>
+ main
 
         <div className="max-w-xl">
           <motion.div
@@ -62,11 +140,44 @@ const Login = () => {
             transition={{ delay: 0.2 }}
             className="mb-1"
           >
+main
+            <motion.div
+              animate={{
+                rotate: [0, 5, -5, 0],
+                scale: [1, 1.05, 1]
+              }}
+              transition={{
+                duration: 4,
+                repeat: Infinity,
+                ease: "easeInOut"
+              }}
+              className="relative"
+            >
+              <img
+                src="/athenuraroundlogo.png"
+                alt="Athenura"
+                className="h-16 md:h-24 w-16 md:w-24 rounded-full shadow-xl"
+              />
+              <motion.div
+                className="absolute inset-0 rounded-full bg-gradient-to-r from-teal-500 to-cyan-500 opacity-20 blur-xl"
+                animate={{
+                  scale: [1, 1.2, 1],
+                  opacity: [0.2, 0.3, 0.2]
+                }}
+                transition={{
+                  duration: 3,
+                  repeat: Infinity,
+                  ease: "easeInOut"
+                }}
+              />
+            </motion.div>
+
             <img 
               src="/athenurawhitelogo.png" 
               alt="Athenura" 
               className="h-36"
             />
+ main
           </motion.div>
 
           <motion.h1
@@ -117,6 +228,30 @@ const Login = () => {
           </motion.div>
         </div>
       </motion.div>
+
+ main
+            {/* Submit Button */}
+            <Button
+              type="submit"
+              className="w-full gradient-teal text-white h-10 md:h-12 text-sm md:text-base font-semibold shadow-lg hover:shadow-xl transition-all hover:scale-[1.02]"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? (
+                <motion.div
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                  className="h-4 md:h-5 w-4 md:w-5 border-2 border-white border-t-transparent rounded-full"
+                />
+              ) : (
+                <>
+                  <Lock className="mr-2 h-4 md:h-5 w-4 md:w-5" />
+                  Sign In Securely
+                </>
+              )}
+            </Button>
+          </motion.form>
+
+          {/* Demo Access Section Removed */}
 
       {/* Right Side - Login Form */}
       <motion.div
@@ -261,6 +396,7 @@ const Login = () => {
                 </Button>
               </div>
             </div>
+main
 
             {/* Security Notice */}
             <div className="mt-6 text-center">
