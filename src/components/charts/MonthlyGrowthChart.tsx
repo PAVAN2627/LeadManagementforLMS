@@ -26,53 +26,42 @@ const data = [
 
 export function MonthlyGrowthChart() {
   return (
-    <motion.div
-      initial={{ opacity: 0, scale: 0.95 }}
-      animate={{ opacity: 1, scale: 1 }}
-      transition={{ duration: 0.5, delay: 0.3 }}
-      className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm hover:shadow-md transition-shadow duration-300"
-      style={{ backgroundColor: '#FFFFFF' }}
-    >
-      <h3 className="mb-4 text-lg font-semibold text-gray-900">
-        Monthly Lead Growth
-      </h3>
-      <div className="h-[300px]">
-        <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={data}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
-            <XAxis
-              dataKey="month"
-              stroke="#6B7280"
-              fontSize={12}
-              tickLine={false}
-            />
-            <YAxis
-              stroke="#6B7280"
-              fontSize={12}
-              tickLine={false}
-              axisLine={false}
-            />
-            <Tooltip
-              contentStyle={{
-                backgroundColor: "#FFFFFF",
-                border: "1px solid #E5E7EB",
-                borderRadius: "8px",
-                boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
-                color: "#374151"
-              }}
-            />
-            <Line
-              type="monotone"
-              dataKey="leads"
-              stroke="#1F8A98"
-              strokeWidth={3}
-              dot={{ fill: "#1F8A98", strokeWidth: 0, r: 4 }}
-              activeDot={{ r: 6, fill: "#1F8A98" }}
-              animationDuration={1500}
-            />
-          </LineChart>
-        </ResponsiveContainer>
-      </div>
-    </motion.div>
+    <div className="h-[300px]">
+      <ResponsiveContainer width="100%" height="100%">
+        <LineChart data={data}>
+          <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+          <XAxis
+            dataKey="month"
+            stroke="#6B7280"
+            fontSize={12}
+            tickLine={false}
+          />
+          <YAxis
+            stroke="#6B7280"
+            fontSize={12}
+            tickLine={false}
+            axisLine={false}
+          />
+          <Tooltip
+            contentStyle={{
+              backgroundColor: "#FFFFFF",
+              border: "1px solid #E5E7EB",
+              borderRadius: "8px",
+              boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
+              color: "#374151"
+            }}
+          />
+          <Line
+            type="monotone"
+            dataKey="leads"
+            stroke="#1F8A98"
+            strokeWidth={3}
+            dot={{ fill: "#1F8A98", strokeWidth: 0, r: 4 }}
+            activeDot={{ r: 6, fill: "#1F8A98" }}
+            animationDuration={1500}
+          />
+        </LineChart>
+      </ResponsiveContainer>
+    </div>
   );
 }
