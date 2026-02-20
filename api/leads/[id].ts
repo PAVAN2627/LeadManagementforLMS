@@ -12,13 +12,22 @@ const updateLeadSchema = z.object({
     phone: z.string().optional(),
     company: z.string().optional(),
     source: z.string().optional(),
-    status: z.enum(["new", "contacted", "qualified", "proposal", "negotiation", "converted", "lost"]).optional(),
-    assignedTo: z.string().optional(),
+    // Allow case insensitive status
+    status: z.string().transform(val => val.toLowerCase()).pipe(z.enum(["new", "contacted", "qualified", "proposal", "negotiation", "converted", "lost"])).optional(),
+    assignedTo: z.string().optional().nullable(),
     nextFollowUp: z.string().optional().nullable(),
 });
 
+function setCorsHeaders(res: VercelResponse) {
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
+    res.setHeader('Access-Control-Allow-Headers', 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization');
+}
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+    setCorsHeaders(res);
+
     // Handle CORS preflight
     if (req.method === 'OPTIONS') {
         return res.status(200).end();
@@ -83,9 +92,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 return res.status(403).json({ message: 'Forbidden: You can only update your assigned leads' });
             }
 
+            console.log('Update Lead Body:', req.body); // Debug log
+
             const validation = updateLeadSchema.safeParse(req.body);
 
             if (!validation.success) {
+                console.error('Validation Error:', JSON.stringify(validation.error.errors)); // Debug log
                 return res.status(400).json({
                     message: 'Validation Error',
                     errors: validation.error.errors,
@@ -141,4 +153,3 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     return res.status(405).json({ message: 'Method Not Allowed' });
 }
-

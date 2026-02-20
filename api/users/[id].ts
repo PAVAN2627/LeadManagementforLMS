@@ -5,6 +5,7 @@ import User from '../../src/models/User.js';
 import { verifyToken } from '../../src/lib/jwt.js';
 import { z } from 'zod';
 
+
 const updateUserSchema = z.object({
     name: z.string().optional(),
     email: z.string().email().optional(),
@@ -15,12 +16,22 @@ const updateUserSchema = z.object({
     department: z.string().optional(),
     location: z.string().optional(),
     settings: z.any().optional(),
-    role: z.enum(['admin', 'manager', 'agent']).optional(),
-    status: z.enum(['active', 'inactive']).optional(),
+    // Allow case-insensitive role
+    role: z.string().transform(val => val.toLowerCase()).pipe(z.enum(['admin', 'manager', 'agent'])).optional(),
+    // Allow case-insensitive status
+    status: z.string().transform(val => val.toLowerCase()).pipe(z.enum(['active', 'inactive'])).optional(),
 });
 
+function setCorsHeaders(res: VercelResponse) {
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
+    res.setHeader('Access-Control-Allow-Headers', 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization');
+}
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+    setCorsHeaders(res);
+
     // Handle CORS preflight
     if (req.method === 'OPTIONS') {
         return res.status(200).end();
@@ -46,7 +57,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
         // Support both Vercel (req.query.id) and Express (req.params.id) routing
         let id = req.query.id || (req as any).params?.id;
-        
+
         // Handle array case for id (Vercel specific)
         if (Array.isArray(id)) {
             id = id[0];
@@ -70,9 +81,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         if (req.method === 'PUT' || req.method === 'PATCH') {
             // Validate body
             const body = req.body;
+            console.log('Update User Body:', body); // Debug log
+
             const validation = updateUserSchema.safeParse(body);
 
             if (!validation.success) {
+                console.error('Validation Error:', JSON.stringify(validation.error.format())); // Debug log
                 return res.status(400).json({ message: 'Validation Error', errors: validation.error.format() });
             }
 
@@ -110,4 +124,5 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(500).json({ message: error.message || 'Internal Server Error' });
     }
 }
+
 
