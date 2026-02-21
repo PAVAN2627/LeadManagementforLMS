@@ -22,6 +22,7 @@ export interface IUser extends Document {
     avatar?: string;
     location?: string;
     settings?: any;
+      adminSecretKey?: string;
     createdAt: Date;
     updatedAt: Date;
 }
@@ -66,6 +67,10 @@ const UserSchema: Schema<IUser> = new Schema(
         avatar: String,
         location: String,
         settings: Object,
+         adminSecretKey: {
+            type: String,
+            select: false, 
+        },
     },
     {
         timestamps: true,
