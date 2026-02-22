@@ -4,6 +4,7 @@ import { verifyToken } from '../../src/lib/jwt.js';
 import User from '../../src/models/User.js';
 import { z } from 'zod';
 import bcrypt from 'bcryptjs';
+import { notifyAdmins } from '../../src/lib/notifyAdmins.js';
 
 const createUserSchema = z.object({
     name: z.string().min(1, "Name is required"),
@@ -94,6 +95,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             // Return user without password
             const userObj = newUser.toObject();
             delete (userObj as any).passwordHash;
+
+            // Notify admins about the new user
+            await notifyAdmins(`New user "${name}" was added to the platform`, decoded.userId);
 
             return res.status(201).json(userObj);
 

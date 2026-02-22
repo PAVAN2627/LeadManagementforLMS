@@ -37,14 +37,16 @@ const wrapHandler = (handler: any) => async (req: express.Request, res: express.
     }
 };
 
-// Import Handlers
 import authLogin from './api/auth/login';
 import authMe from './api/auth/me';
 import adminSignup from './api/auth/admin-signup';
 import leadsIndex from './api/leads/index';
 import leadsId from './api/leads/[id]';
+import leadsNotes from './api/leads/[id]/notes';
 import usersIndex from './api/users/index';
 import usersId from './api/users/[id]';
+import analyticsIndex from './api/analytics/index';
+import notificationsIndex from './api/notifications/index';
 
 // Define Routes
 // Auth
@@ -55,10 +57,17 @@ app.all('/api/auth/admin-signup', wrapHandler(adminSignup));
 // Leads
 app.all('/api/leads', wrapHandler(leadsIndex));
 app.all('/api/leads/:id', wrapHandler(leadsId));
+app.all('/api/leads/:id/notes', wrapHandler(leadsNotes));
 
 // Users
 app.all('/api/users', wrapHandler(usersIndex));
 app.all('/api/users/:id', wrapHandler(usersId));
+
+// Analytics
+app.all('/api/analytics', wrapHandler(analyticsIndex));
+
+// Notifications
+app.all('/api/notifications', wrapHandler(notificationsIndex));
 
 // Health check
 app.get('/api/health', (req: express.Request, res: express.Response) => {

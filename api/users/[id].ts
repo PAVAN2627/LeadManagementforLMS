@@ -4,6 +4,7 @@ import dbConnect from '../../src/lib/db.js';
 import User from '../../src/models/User.js';
 import { verifyToken } from '../../src/lib/jwt.js';
 import { z } from 'zod';
+import { notifyAdmins } from '../../src/lib/notifyAdmins.js';
 
 
 const updateUserSchema = z.object({
@@ -101,6 +102,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 if (!updatedUser) {
                     return res.status(404).json({ message: 'User not found' });
                 }
+
+                // Call notifyAdmins on User Modification
+                await notifyAdmins(`User profile for "${updatedUser.name}" was updated`, decoded.userId);
 
                 return res.status(200).json(updatedUser);
 

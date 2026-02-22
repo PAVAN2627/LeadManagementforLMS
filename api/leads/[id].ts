@@ -4,7 +4,9 @@ import dbConnect from '../../src/lib/db.js';
 import { verifyToken } from '../../src/lib/jwt.js';
 import { Lead } from '../../src/models/Lead.js';
 import { Note } from '../../src/models/Note.js';
+import { Notification } from '../../src/models/Notification.js';
 import User from '../../src/models/User.js';
+import { notifyAdmins } from '../../src/lib/notifyAdmins.js';
 
 import { z } from 'zod';
 
@@ -136,6 +138,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 const updatedLead = await Lead.findByIdAndUpdate(id, updateData, { new: true })
                     .populate('assignedTo', 'name email role');
 
+                // Send notification if assignedTo was updated to a new user
+                if (
+                    updateData.assignedTo &&
+                    updateData.assignedTo.toString() !== existingLead.assignedTo?.toString() &&
+                    updateData.assignedTo.toString() !== userId.toString()
+                ) {
+                    await Notification.create({
+                        userId: updateData.assignedTo,
+                        type: 'assignment',
+                        message: `You have been assigned to lead: ${updatedLead?.name}`,
+                    });
+                }
+
+                // Call notifyAdmins on Lead Modification
+                await notifyAdmins(`Lead "${updatedLead?.name}" was updated`, userId);
 
                 return res.status(200).json(updatedLead);
 

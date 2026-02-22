@@ -110,10 +110,16 @@ const AgentDashboard = () => {
     return matchesSearch && matchesStatus;
   });
 
-  const totalLeads = leads.length;
-  const convertedLeads = leads.filter((l: ApiLead) => l.status === "converted").length;
-  const qualifiedLeads = leads.filter((l: ApiLead) => l.status === "qualified").length;
-  const newLeads = leads.filter((l: ApiLead) => l.status === "new").length;
+  // Fetch Analytics
+  const { data: analytics } = useQuery({
+    queryKey: ['analytics'],
+    queryFn: api.getAnalytics,
+  });
+
+  const totalLeads = analytics?.totalLeads || 0;
+  const convertedLeads = analytics?.convertedLeads || 0;
+  const qualifiedLeads = analytics?.qualifiedLeads || 0;
+  const newLeads = analytics?.newLeads || 0;
 
   const handleViewLead = (lead: ApiLead) => {
     setSelectedLead(lead);

@@ -122,12 +122,17 @@ const AdminDashboard = () => {
     status: 'active' as any
   });
 
-  const totalLeads = leads.length;
-  const convertedLeads = leads.filter((l: ApiLead) => l.status === "converted").length;
-  const lostLeads = leads.filter((l: ApiLead) => l.status === "lost").length;
-  const activeAgents = users.filter((u: any) => u.role === "agent" && u.status === "active").length; // Assuming backend normalized status/role
+  // Fetch Analytics
+  const { data: analytics, isLoading: isLoadingAnalytics } = useQuery({
+    queryKey: ['analytics'],
+    queryFn: api.getAnalytics,
+  });
 
-  const conversionRate = totalLeads > 0 ? ((convertedLeads / totalLeads) * 100).toFixed(1) : '0.0';
+  const totalLeads = analytics?.totalLeads || 0;
+  const convertedLeads = analytics?.convertedLeads || 0;
+  const lostLeads = analytics?.lostLeads || 0;
+  const activeAgents = analytics?.activeAgents || 0;
+  const conversionRate = analytics?.conversionRate || '0.0';
 
   // Filtered users based on search query
   const filteredUsers = useMemo(() => {
