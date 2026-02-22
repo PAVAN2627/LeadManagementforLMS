@@ -40,6 +40,7 @@ const wrapHandler = (handler: any) => async (req: express.Request, res: express.
 // Import Handlers
 import authLogin from './api/auth/login';
 import authMe from './api/auth/me';
+import adminSignup from './api/auth/admin-signup';
 import leadsIndex from './api/leads/index';
 import leadsId from './api/leads/[id]';
 import usersIndex from './api/users/index';
@@ -49,6 +50,7 @@ import usersId from './api/users/[id]';
 // Auth
 app.all('/api/auth/login', wrapHandler(authLogin));
 app.all('/api/auth/me', wrapHandler(authMe));
+app.all('/api/auth/admin-signup', wrapHandler(adminSignup));
 
 // Leads
 app.all('/api/leads', wrapHandler(leadsIndex));
