@@ -11,7 +11,7 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
-    "server": "tsx --tsconfig tsconfig.json -r tsconfig-paths/register -r dotenv/config server.ts"
+    "server": "tsx watch --tsconfig tsconfig.json -r tsconfig-paths/register -r dotenv/config server.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",

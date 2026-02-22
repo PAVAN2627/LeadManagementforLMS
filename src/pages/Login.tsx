@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { useNavigate, Navigate } from "react-router-dom";
-import { Mail, Lock, ArrowLeft, Shield, Eye, EyeOff, CheckCircle2 } from "lucide-react";
+import { Mail, Lock, ArrowLeft, Shield, Eye, EyeOff, CheckCircle2, Key, UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,6 +13,8 @@ const Login = () => {
   const { login, user, isAuthenticated, isLoading } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [secret, setSecret] = useState("");
+  const [isLogin, setIsLogin] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
@@ -30,35 +32,59 @@ const Login = () => {
     return <Navigate to={dashboardMap[user.role] || '/'} replace />;
   }
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
 
     try {
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password }),
-      });
+      if (isLogin) {
+        const response = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ email, password }),
+        });
 
-      const data = await response.json();
+        const data = await response.json();
 
-      if (!response.ok) {
-        throw new Error(data.message || 'Login failed');
+        if (!response.ok) {
+          throw new Error(data.message || 'Login failed');
+        }
+
+        login(data.token, data.user);
+
+        const role = data.user.role;
+        navigate(`/${role}`);
+      } else {
+        const response = await fetch('/api/auth/admin-signup', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ email, password, secret }),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.message || 'Admin signup failed');
+        }
+
+        toast({
+          title: "Admin Account Created",
+          description: "Please sign in with your new credentials.",
+        });
+        setIsLogin(true);
+        setPassword("");
+        setSecret("");
       }
-
-      login(data.token, data.user);
-
-      const role = data.user.role;
-      navigate(`/${role}`);
     } catch (error: any) {
-      console.error('Login error:', error);
+      console.error('Auth error:', error);
       toast({
         variant: "destructive",
-        title: "Login Failed",
-        description: error.message || "Invalid credentials",
+        title: isLogin ? "Login Failed" : "Signup Failed",
+        description: error.message || (isLogin ? "Invalid credentials" : "An error occurred"),
       });
     } finally {
       setIsSubmitting(false);
@@ -69,7 +95,7 @@ const Login = () => {
     <div className="min-h-screen flex relative overflow-hidden">
       {/* Full Gradient Background - Teal Theme */}
       <div className="absolute inset-0 bg-gradient-to-br from-teal-500 via-cyan-500 to-blue-500" />
-      
+
       {/* Left Side - Information */}
       <motion.div
         initial={{ opacity: 0, y: -50 }}
@@ -93,9 +119,9 @@ const Login = () => {
             transition={{ delay: 0.2 }}
             className="mb-4"
           >
-            <img 
-              src="/athenurawhitelogo.png" 
-              alt="Athenura" 
+            <img
+              src="/athenurawhitelogo.png"
+              alt="Athenura"
               className="h-36"
             />
           </motion.div>
@@ -171,9 +197,9 @@ const Login = () => {
           <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl p-8 md:p-10 scale-110">
             {/* Logo for all screens */}
             <div className="flex justify-center mb-6">
-              <img 
-                src="/athenuraroundlogo.png" 
-                alt="Athenura" 
+              <img
+                src="/athenuraroundlogo.png"
+                alt="Athenura"
                 className="h-28 w-28 rounded-full shadow-lg"
               />
             </div>
@@ -181,15 +207,15 @@ const Login = () => {
             {/* Header */}
             <div className="mb-8 text-center lg:text-left">
               <h2 className="text-3xl font-bold text-gray-900 mb-2">
-                Welcome Back
+                {isLogin ? "Welcome Back" : "Admin Sign Up"}
               </h2>
               <p className="text-gray-600 text-base">
-                Sign in to access your dashboard
+                {isLogin ? "Sign in to access your dashboard" : "Create a new admin account"}
               </p>
             </div>
 
             {/* Form */}
-            <form onSubmit={handleLogin} className="space-y-5">
+            <form onSubmit={handleAuth} className="space-y-5">
               {/* Email */}
               <div className="space-y-2">
                 <Label htmlFor="email" className="text-gray-700 font-semibold text-base">Email Address</Label>
@@ -231,6 +257,25 @@ const Login = () => {
                 </div>
               </div>
 
+              {/* Security Key for Admin Signup */}
+              {!isLogin && (
+                <div className="space-y-2">
+                  <Label htmlFor="secret" className="text-gray-700 font-semibold text-base">Admin Secret</Label>
+                  <div className="relative group">
+                    <Key className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 group-focus-within:text-teal-600 transition-colors" />
+                    <Input
+                      id="secret"
+                      type="password"
+                      placeholder="Enter admin secret key"
+                      value={secret}
+                      onChange={(e) => setSecret(e.target.value)}
+                      className="pl-11 h-12 border-gray-300 focus:border-teal-600 focus:ring-2 focus:ring-teal-600/20 transition-all text-base"
+                      required
+                    />
+                  </div>
+                </div>
+              )}
+
               {/* Submit Button */}
               <Button
                 type="submit"
@@ -245,12 +290,23 @@ const Login = () => {
                   />
                 ) : (
                   <>
-                    <Lock className="mr-2 h-5 w-5" />
-                    Sign In Securely
+                    {isLogin ? <Lock className="mr-2 h-5 w-5" /> : <UserPlus className="mr-2 h-5 w-5" />}
+                    {isLogin ? "Sign In Securely" : "Create Admin Account"}
                   </>
                 )}
               </Button>
             </form>
+
+            {/* Toggle Login/Signup */}
+            <div className="mt-6 text-center">
+              <button
+                type="button"
+                onClick={() => setIsLogin(!isLogin)}
+                className="text-sm text-teal-600 hover:text-teal-800 font-semibold transition-colors"
+              >
+                {isLogin ? "Need an admin account? Sign up" : "Already have an account? Sign in"}
+              </button>
+            </div>
 
             {/* Security Notice */}
             <div className="mt-6 text-center">
