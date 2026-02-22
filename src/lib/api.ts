@@ -177,4 +177,26 @@ export const api = {
         });
         if (!response.ok) throw new Error('Failed to delete lead');
     },
+
+    getLeadNotes: async (id: string): Promise<any[]> => {
+        const response = await fetch(`${API_URL}/leads/${id}/notes`, {
+            method: 'GET',
+            headers: getHeaders(),
+        });
+        if (!response.ok) throw new Error('Failed to fetch lead notes');
+        return response.json();
+    },
+
+    addLeadNote: async (id: string, content: string): Promise<any> => {
+        const response = await fetch(`${API_URL}/leads/${id}/notes`, {
+            method: 'POST',
+            headers: getHeaders(),
+            body: JSON.stringify({ content }),
+        });
+        if (!response.ok) {
+            const error = await response.json().catch(() => ({}));
+            throw new Error(error.message || 'Failed to add note');
+        }
+        return response.json();
+    },
 };

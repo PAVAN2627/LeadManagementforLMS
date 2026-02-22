@@ -53,9 +53,11 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api, ApiLead, ApiUser } from "@/lib/api";
+import { useToast } from "@/components/ui/use-toast";
 
 const LeadManagementPage = () => {
   const queryClient = useQueryClient();
+  const { toast } = useToast();
 
   const { data: rawLeads = [] } = useQuery({
     queryKey: ["leads"],
@@ -75,6 +77,26 @@ const LeadManagementPage = () => {
   const [selectedLead, setSelectedLead] = useState<ApiLead | null>(null);
   const [isAddLeadOpen, setIsAddLeadOpen] = useState(false);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
+  const [newNoteContent, setNewNoteContent] = useState('');
+
+  // Fetch Notes for selected lead
+  const { data: leadNotes = [], isLoading: isLoadingNotes } = useQuery({
+    queryKey: ["leadNotes", selectedLead?._id],
+    queryFn: () => api.getLeadNotes(selectedLead!._id),
+    enabled: !!selectedLead?._id
+  });
+
+  const addNoteMutation = useMutation({
+    mutationFn: ({ id, content }: { id: string, content: string }) => api.addLeadNote(id, content),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["leadNotes", selectedLead?._id] });
+      setNewNoteContent('');
+      toast({ title: "Success", description: "Note added successfully" });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    }
+  });
 
   // New lead form state
   const [newLead, setNewLead] = useState({
@@ -778,6 +800,43 @@ const LeadManagementPage = () => {
                           {step.label}
                         </Button>
                       ))}
+                    </div>
+                  </div>
+
+                  <div className="border-t pt-6">
+                    <h3 className="font-semibold text-gray-900 mb-4">Notes & History</h3>
+                    <div className="space-y-4 mb-4 max-h-48 overflow-y-auto pr-2">
+                      {isLoadingNotes ? (
+                        <div className="text-sm text-gray-500 text-center">Loading notes...</div>
+                      ) : leadNotes.length === 0 ? (
+                        <div className="text-sm text-gray-500 text-center bg-gray-50 py-4 rounded-xl border border-gray-100 italic">No notes or history recorded yet.</div>
+                      ) : (
+                        leadNotes.map((note: any) => (
+                          <div key={note._id} className="bg-gray-50 p-4 rounded-xl border border-gray-100">
+                            <div className="flex justify-between items-start mb-2">
+                              <span className="text-sm font-semibold text-gray-900">{note.author?.name || 'System'}</span>
+                              <span className="text-xs text-gray-500">{new Date(note.createdAt).toLocaleString()}</span>
+                            </div>
+                            <p className="text-sm text-gray-700 whitespace-pre-wrap">{note.content}</p>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                    <div className="flex gap-2">
+                      <Textarea
+                        placeholder="Type a new note or update..."
+                        className="rounded-xl border-gray-300 resize-none"
+                        rows={2}
+                        value={newNoteContent}
+                        onChange={(e) => setNewNoteContent(e.target.value)}
+                      />
+                      <Button
+                        disabled={!newNoteContent.trim() || addNoteMutation.isPending}
+                        onClick={() => addNoteMutation.mutate({ id: selectedLead._id, content: newNoteContent.trim() })}
+                        className="bg-teal-600 hover:bg-teal-700 h-auto"
+                      >
+                        {addNoteMutation.isPending ? "..." : "Add"}
+                      </Button>
                     </div>
                   </div>
                 </div>

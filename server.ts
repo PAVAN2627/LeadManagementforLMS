@@ -42,6 +42,7 @@ import authMe from './api/auth/me';
 import adminSignup from './api/auth/admin-signup';
 import leadsIndex from './api/leads/index';
 import leadsId from './api/leads/[id]';
+import leadsNotes from './api/leads/[id]/notes';
 import usersIndex from './api/users/index';
 import usersId from './api/users/[id]';
 import analyticsIndex from './api/analytics/index';
@@ -56,6 +57,7 @@ app.all('/api/auth/admin-signup', wrapHandler(adminSignup));
 // Leads
 app.all('/api/leads', wrapHandler(leadsIndex));
 app.all('/api/leads/:id', wrapHandler(leadsId));
+app.all('/api/leads/:id/notes', wrapHandler(leadsNotes));
 
 // Users
 app.all('/api/users', wrapHandler(usersIndex));
