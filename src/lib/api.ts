@@ -59,6 +59,35 @@ export const api = {
         return response.json();
     },
 
+    // Analytics
+    getAnalytics: async (): Promise<any> => {
+        const response = await fetch(`${API_URL}/analytics`, {
+            method: 'GET',
+            headers: getHeaders(),
+        });
+        if (!response.ok) throw new Error('Failed to fetch analytics');
+        return response.json();
+    },
+
+    // Notifications
+    getNotifications: async (): Promise<{ notifications: any[], unreadCount: number }> => {
+        const response = await fetch(`${API_URL}/notifications`, {
+            method: 'GET',
+            headers: getHeaders(),
+        });
+        if (!response.ok) throw new Error('Failed to fetch notifications');
+        return response.json();
+    },
+
+    markNotificationsRead: async (notificationId?: string): Promise<void> => {
+        const response = await fetch(`${API_URL}/notifications`, {
+            method: 'PATCH',
+            headers: getHeaders(),
+            body: JSON.stringify({ notificationId }),
+        });
+        if (!response.ok) throw new Error('Failed to mark notifications as read');
+    },
+
     getLead: async (id: string): Promise<ApiLead> => {
         const response = await fetch(`${API_URL}/leads/${id}`, {
             method: 'GET',

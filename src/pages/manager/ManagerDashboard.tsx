@@ -78,19 +78,16 @@ const ManagerDashboard = () => {
 
   const agents = useMemo(() => users.filter((u: ApiUser) => u.role === 'agent'), [users]);
 
-  const totalAssigned = leads.length;
-  const pendingFollowUp = leads.filter(
-    (l: ApiLead) => l.nextFollowUp && new Date(l.nextFollowUp) <= new Date()
-  ).length;
+  // Fetch Analytics
+  const { data: analytics } = useQuery({
+    queryKey: ['analytics'],
+    queryFn: api.getAnalytics,
+  });
 
-  const convertedThisMonth = leads.filter((l: ApiLead) => {
-    if (l.status !== 'converted') return false;
-    const d = new Date(l.updatedAt || l.date);
-    const now = new Date();
-    return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
-  }).length;
-
-  const agentsUnder = agents.length;
+  const totalAssigned = analytics?.totalAssigned || 0;
+  const pendingFollowUp = analytics?.pendingFollowUp || 0;
+  const convertedThisMonth = analytics?.convertedThisMonth || 0;
+  const agentsUnder = analytics?.agentsUnder || 0;
 
   const filteredLeads = useMemo(() => {
     return leads.filter((lead: ApiLead) => {

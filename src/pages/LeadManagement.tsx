@@ -1,15 +1,15 @@
 import React, { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { 
-  Plus, 
-  Search, 
-  Filter, 
-  Download, 
-  Eye, 
-  Edit2, 
-  Phone, 
-  Mail, 
-  Building, 
+import {
+  Plus,
+  Search,
+  Filter,
+  Download,
+  Eye,
+  Edit2,
+  Phone,
+  Mail,
+  Building,
   Calendar,
   User,
   ArrowRight,
@@ -27,13 +27,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow
 } from "@/components/ui/table";
 import {
   Dialog,
@@ -51,15 +51,28 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { mockLeads, mockUsers } from "@/data/mockData";
-import { Lead } from "@/components/tables/LeadsTable";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { api, ApiLead, ApiUser } from "@/lib/api";
 
 const LeadManagementPage = () => {
-  const [leads, setLeads] = useState<Lead[]>(mockLeads);
+  const queryClient = useQueryClient();
+
+  const { data: rawLeads = [] } = useQuery({
+    queryKey: ["leads"],
+    queryFn: api.getLeads,
+  });
+
+  const { data: users = [] } = useQuery({
+    queryKey: ["users"],
+    queryFn: () => api.getUsers(),
+  });
+
+  const agents = Array.isArray(users) ? users.filter((u: ApiUser) => u.role === "agent") : [];
+
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [sourceFilter, setSourceFilter] = useState("all");
-  const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
+  const [selectedLead, setSelectedLead] = useState<ApiLead | null>(null);
   const [isAddLeadOpen, setIsAddLeadOpen] = useState(false);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
 
@@ -87,39 +100,52 @@ const LeadManagementPage = () => {
 
   // Filter leads based on search and filters
   const filteredLeads = useMemo(() => {
-    return leads.filter(lead => {
-      const matchesSearch = 
+    return rawLeads.filter((lead: ApiLead) => {
+      const matchesSearch =
         lead.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         lead.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
         lead.company.toLowerCase().includes(searchQuery.toLowerCase());
-      
+
       const matchesStatus = statusFilter === "all" || lead.status === statusFilter;
       const matchesSource = sourceFilter === "all" || lead.source === sourceFilter;
-      
+
       return matchesSearch && matchesStatus && matchesSource;
     });
-  }, [leads, searchQuery, statusFilter, sourceFilter]);
+  }, [rawLeads, searchQuery, statusFilter, sourceFilter]);
+
+  const createLeadMutation = useMutation({
+    mutationFn: (data: any) => api.createLead(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["leads"] });
+      queryClient.invalidateQueries({ queryKey: ["analytics"] });
+      handleCloseAddLead();
+    }
+  });
+
+  const updateLeadMutation = useMutation({
+    mutationFn: ({ id, data }: { id: string, data: any }) => api.updateLead(id, data),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["leads"] });
+      queryClient.invalidateQueries({ queryKey: ["analytics"] });
+      if (selectedLead && selectedLead._id === data._id) {
+        setSelectedLead(data);
+      }
+    }
+  });
 
   const handleAddLead = () => {
-    const lead: Lead = {
-      id: (leads.length + 1).toString(),
-      ...newLead,
-      status: "new" as const,
-      date: new Date().toISOString().split('T')[0],
-      nextFollowUp: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
-    };
-    
-    setLeads([lead, ...leads]);
-    setNewLead({
-      name: "",
-      email: "",
-      phone: "",
-      company: "",
-      source: "Website",
-      assignedAgent: "",
-      notes: ""
+    const assignedUserId = agents.find((a: ApiUser) => a.name === newLead.assignedAgent)?._id;
+
+    createLeadMutation.mutate({
+      name: newLead.name,
+      email: newLead.email,
+      phone: newLead.phone,
+      company: newLead.company,
+      source: newLead.source as any,
+      status: "new",
+      notes: newLead.notes,
+      assignedTo: assignedUserId
     });
-    setIsAddLeadOpen(false);
   };
 
   // Close handler to reset form
@@ -136,13 +162,11 @@ const LeadManagementPage = () => {
     setIsAddLeadOpen(false);
   };
 
-  const updateLeadStatus = (leadId: string, newStatus: Lead["status"]) => {
-    setLeads(leads.map(lead => 
-      lead.id === leadId ? { ...lead, status: newStatus } : lead
-    ));
+  const updateLeadStatus = (leadId: string, newStatus: string) => {
+    updateLeadMutation.mutate({ id: leadId, data: { status: newStatus as any } });
   };
 
-  const getStatusBadge = (status: Lead["status"]) => {
+  const getStatusBadge = (status: ApiLead["status"]) => {
     return (
       <motion.div
         whileHover={{ scale: 1.05 }}
@@ -150,23 +174,22 @@ const LeadManagementPage = () => {
         animate={{ scale: 1, rotate: 0 }}
         transition={{ delay: 0.2, type: "spring" }}
       >
-        <Badge className={`px-3 py-1 font-semibold shadow-sm ${
-          status === 'converted' 
-            ? 'bg-gradient-to-r from-green-500 to-emerald-600 text-white'
-            : status === 'qualified'
+        <Badge className={`px-3 py-1 font-semibold shadow-sm ${status === 'converted'
+          ? 'bg-gradient-to-r from-green-500 to-emerald-600 text-white'
+          : status === 'qualified'
             ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white'
             : status === 'new'
-            ? 'bg-gradient-to-r from-teal-500 to-teal-600 text-white'
-            : status === 'contacted'
-            ? 'bg-gradient-to-r from-indigo-500 to-indigo-600 text-white'
-            : status === 'proposal'
-            ? 'bg-gradient-to-r from-purple-500 to-purple-600 text-white'
-            : status === 'negotiation'
-            ? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white'
-            : status === 'lost'
-            ? 'bg-gradient-to-r from-red-500 to-red-600 text-white'
-            : 'bg-gradient-to-r from-gray-500 to-gray-600 text-white'
-        }`}>
+              ? 'bg-gradient-to-r from-teal-500 to-teal-600 text-white'
+              : status === 'contacted'
+                ? 'bg-gradient-to-r from-indigo-500 to-indigo-600 text-white'
+                : status === 'proposal'
+                  ? 'bg-gradient-to-r from-purple-500 to-purple-600 text-white'
+                  : status === 'negotiation'
+                    ? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white'
+                    : status === 'lost'
+                      ? 'bg-gradient-to-r from-red-500 to-red-600 text-white'
+                      : 'bg-gradient-to-r from-gray-500 to-gray-600 text-white'
+          }`}>
           <motion.span
             animate={{ scale: [1, 1.2, 1] }}
             transition={{ duration: 2, repeat: Infinity }}
@@ -182,10 +205,10 @@ const LeadManagementPage = () => {
 
   // Stats calculation
   const stats = {
-    total: leads.length,
-    new: leads.filter(l => l.status === "new").length,
-    converted: leads.filter(l => l.status === "converted").length,
-    lost: leads.filter(l => l.status === "lost").length
+    total: rawLeads.length,
+    new: rawLeads.filter((l: ApiLead) => l.status === "new").length,
+    converted: rawLeads.filter((l: ApiLead) => l.status === "converted").length,
+    lost: rawLeads.filter((l: ApiLead) => l.status === "lost").length
   };
 
   return (
@@ -217,8 +240,8 @@ const LeadManagementPage = () => {
                 <DialogHeader className="relative">
                   {/* Custom Close Button */}
                   <DialogClose className="absolute right-0 top-0">
-                    <Button 
-                      variant="ghost" 
+                    <Button
+                      variant="ghost"
                       size="icon"
                       className="h-8 w-8 rounded-full hover:bg-gray-100 transition-colors"
                       onClick={handleCloseAddLead}
@@ -226,46 +249,46 @@ const LeadManagementPage = () => {
                       <X className="h-4 w-4" />
                     </Button>
                   </DialogClose>
-                  
+
                   <DialogTitle className="text-gray-900">Add New Lead</DialogTitle>
                 </DialogHeader>
                 <div className="space-y-4 mt-4">
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label className="text-gray-700">Name</Label>
-                      <Input 
+                      <Input
                         value={newLead.name}
-                        onChange={(e) => setNewLead({...newLead, name: e.target.value})}
+                        onChange={(e) => setNewLead({ ...newLead, name: e.target.value })}
                         placeholder="Full name"
                         className="border-gray-300"
                       />
                     </div>
                     <div className="space-y-2">
                       <Label className="text-gray-700">Email</Label>
-                      <Input 
+                      <Input
                         value={newLead.email}
-                        onChange={(e) => setNewLead({...newLead, email: e.target.value})}
+                        onChange={(e) => setNewLead({ ...newLead, email: e.target.value })}
                         placeholder="email@company.com"
                         className="border-gray-300"
                       />
                     </div>
                   </div>
-                  
+
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label className="text-gray-700">Phone</Label>
-                      <Input 
+                      <Input
                         value={newLead.phone}
-                        onChange={(e) => setNewLead({...newLead, phone: e.target.value})}
+                        onChange={(e) => setNewLead({ ...newLead, phone: e.target.value })}
                         placeholder="+1 234 567 8900"
                         className="border-gray-300"
                       />
                     </div>
                     <div className="space-y-2">
                       <Label className="text-gray-700">Company</Label>
-                      <Input 
+                      <Input
                         value={newLead.company}
-                        onChange={(e) => setNewLead({...newLead, company: e.target.value})}
+                        onChange={(e) => setNewLead({ ...newLead, company: e.target.value })}
                         placeholder="Company name"
                         className="border-gray-300"
                       />
@@ -275,7 +298,7 @@ const LeadManagementPage = () => {
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label className="text-gray-700">Source</Label>
-                      <Select value={newLead.source} onValueChange={(value) => setNewLead({...newLead, source: value})}>
+                      <Select value={newLead.source} onValueChange={(value) => setNewLead({ ...newLead, source: value })}>
                         <SelectTrigger className="border-gray-300">
                           <SelectValue />
                         </SelectTrigger>
@@ -290,13 +313,13 @@ const LeadManagementPage = () => {
                     </div>
                     <div className="space-y-2">
                       <Label className="text-gray-700">Assign to Agent</Label>
-                      <Select value={newLead.assignedAgent} onValueChange={(value) => setNewLead({...newLead, assignedAgent: value})}>
+                      <Select value={newLead.assignedAgent} onValueChange={(value) => setNewLead({ ...newLead, assignedAgent: value })}>
                         <SelectTrigger className="border-gray-300">
                           <SelectValue placeholder="Select agent" />
                         </SelectTrigger>
                         <SelectContent>
-                          {mockUsers.filter(u => u.role === "Agent").map(agent => (
-                            <SelectItem key={agent.id} value={agent.name}>{agent.name}</SelectItem>
+                          {agents.map((agent: ApiUser) => (
+                            <SelectItem key={agent._id} value={agent.name}>{agent.name}</SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
@@ -305,9 +328,9 @@ const LeadManagementPage = () => {
 
                   <div className="space-y-2">
                     <Label className="text-gray-700">Notes</Label>
-                    <Textarea 
+                    <Textarea
                       value={newLead.notes}
-                      onChange={(e) => setNewLead({...newLead, notes: e.target.value})}
+                      onChange={(e) => setNewLead({ ...newLead, notes: e.target.value })}
                       placeholder="Additional notes about this lead..."
                       className="border-gray-300"
                       rows={3}
@@ -315,15 +338,15 @@ const LeadManagementPage = () => {
                   </div>
 
                   <div className="flex gap-2 pt-4">
-                    <Button 
+                    <Button
                       onClick={handleAddLead}
                       className="flex-1 bg-teal-600 hover:bg-teal-700 text-white"
                       disabled={!newLead.name || !newLead.email}
                     >
                       Add Lead
                     </Button>
-                    <Button 
-                      variant="outline" 
+                    <Button
+                      variant="outline"
                       onClick={handleCloseAddLead}
                       className="border-gray-300"
                     >
@@ -455,18 +478,18 @@ const LeadManagementPage = () => {
         >
           {/* Enhanced Mobile View - Premium Cards */}
           <div className="md:hidden space-y-4 p-4">
-            {filteredLeads.map((lead, index) => (
+            {filteredLeads.map((lead: ApiLead, index: number) => (
               <motion.div
-                key={lead.id}
+                key={lead._id}
                 initial={{ opacity: 0, y: 30, scale: 0.9 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
-                transition={{ 
-                  duration: 0.4, 
+                transition={{
+                  duration: 0.4,
                   delay: index * 0.1,
                   type: "spring",
                   stiffness: 200
                 }}
-                whileHover={{ 
+                whileHover={{
                   scale: 1.02,
                   y: -5,
                   transition: { duration: 0.2 }
@@ -478,7 +501,7 @@ const LeadManagementPage = () => {
                 <div className="absolute inset-0 opacity-0 group-hover:opacity-20 transition-opacity duration-500">
                   <div className="absolute inset-0 bg-gradient-to-br from-teal-400 to-emerald-600" />
                 </div>
-                
+
                 {/* Progress bar at top */}
                 <div className="absolute top-0 left-0 right-0 h-1">
                   <motion.div
@@ -488,21 +511,21 @@ const LeadManagementPage = () => {
                     className="h-full bg-gradient-to-r from-teal-400 to-emerald-600"
                   />
                 </div>
-                
+
                 <div className="relative z-10 flex justify-between items-start mb-6">
                   <div className="flex items-center gap-3">
                     <motion.div
                       whileHover={{ scale: 1.1, rotate: 10 }}
                       className="w-12 h-12 bg-gradient-to-br from-teal-500 to-emerald-600 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-lg"
                     >
-                      {lead.name.split(' ').map(n => n[0]).join('')}
+                      {lead.name.split(' ').map((n: string) => n[0]).join('')}
                     </motion.div>
                     <div>
                       <h3 className="font-bold text-gray-900 text-lg">{lead.name}</h3>
                       <p className="text-sm text-gray-600">{lead.status.charAt(0).toUpperCase() + lead.status.slice(1)}</p>
                     </div>
                   </div>
-                  
+
                   <div className="flex gap-1">
                     <motion.button
                       whileHover={{ scale: 1.1, y: -2 }}
@@ -515,18 +538,11 @@ const LeadManagementPage = () => {
                     >
                       <Eye className="h-4 w-4" />
                     </motion.button>
-                    <motion.button
-                      whileHover={{ scale: 1.1, y: -2 }}
-                      whileTap={{ scale: 0.9 }}
-                      className="p-2 rounded-lg bg-green-100 hover:bg-green-200 text-green-600 transition-all duration-200 shadow-sm"
-                    >
-                      <Edit2 className="h-4 w-4" />
-                    </motion.button>
                   </div>
                 </div>
-                
+
                 <div className="relative z-10 space-y-4">
-                  <motion.div 
+                  <motion.div
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: 0.6 + index * 0.1 }}
@@ -537,7 +553,7 @@ const LeadManagementPage = () => {
                       <span className="font-medium text-gray-900">{lead.email}</span>
                     </div>
                   </motion.div>
-                  
+
                   <div className="flex items-center justify-between">
                     <motion.div
                       initial={{ scale: 0 }}
@@ -553,11 +569,11 @@ const LeadManagementPage = () => {
                       animate={{ scale: 1 }}
                       transition={{ delay: 0.8 + index * 0.1, type: "spring" }}
                     >
-                      <span className="text-xs text-gray-500 font-medium">{lead.date}</span>
+                      <span className="text-xs text-gray-500 font-medium">{new Date(lead.createdAt || '').toLocaleDateString()}</span>
                     </motion.div>
                   </div>
-                  
-                  <motion.div 
+
+                  <motion.div
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.9 + index * 0.1 }}
@@ -569,7 +585,7 @@ const LeadManagementPage = () => {
                     </div>
                   </motion.div>
                 </div>
-                
+
                 {/* Ripple effect on tap */}
                 <motion.div
                   className="absolute inset-0 bg-teal-400/20 rounded-2xl"
@@ -597,13 +613,13 @@ const LeadManagementPage = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredLeads.map((lead, index) => (
+                {filteredLeads.map((lead: ApiLead, index: number) => (
                   <motion.tr
-                    key={lead.id}
+                    key={lead._id}
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: index * 0.1, duration: 0.3 }}
-                    whileHover={{ 
+                    whileHover={{
                       backgroundColor: "rgba(20, 184, 166, 0.05)",
                       scale: 1.01,
                       transition: { duration: 0.2 }
@@ -616,7 +632,7 @@ const LeadManagementPage = () => {
                           whileHover={{ scale: 1.1, rotate: 5 }}
                           className="w-10 h-10 bg-gradient-to-br from-teal-500 to-emerald-600 rounded-full flex items-center justify-center text-white font-bold shadow-md"
                         >
-                          {lead.name.split(' ').map(n => n[0]).join('')}
+                          {lead.name.split(' ').map((n: string) => n[0]).join('')}
                         </motion.div>
                         <div>
                           <p className="font-bold text-gray-900 group-hover:text-teal-600 transition-colors">{lead.name}</p>
@@ -654,17 +670,17 @@ const LeadManagementPage = () => {
                         </Badge>
                       </motion.div>
                     </TableCell>
-                    <TableCell className="text-center">{getStatusBadge(lead.status)}</TableCell>
+                    <TableCell className="text-center">{getStatusBadge(lead.status as any)}</TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
                         <div className="w-6 h-6 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center text-white text-xs font-bold">
-                          {lead.assignedAgent.split(' ').map(n => n[0]).join('')}
+                          {lead.assignedTo?.name?.split(' ').map((n: string) => n[0]).join('') || '?'}
                         </div>
-                        <span className="text-gray-700 font-medium">{lead.assignedAgent}</span>
+                        <span className="text-gray-700 font-medium">{lead.assignedTo?.name || 'Unassigned'}</span>
                       </div>
                     </TableCell>
                     <TableCell>
-                      <span className="text-gray-600 font-medium">{lead.date}</span>
+                      <span className="text-gray-600 font-medium">{new Date(lead.createdAt || '').toLocaleDateString()}</span>
                     </TableCell>
                     <TableCell className="text-center">
                       <div className="flex justify-center gap-1">
@@ -678,13 +694,6 @@ const LeadManagementPage = () => {
                           }}
                         >
                           <Eye className="h-4 w-4" />
-                        </motion.button>
-                        <motion.button
-                          whileHover={{ scale: 1.2, y: -2 }}
-                          whileTap={{ scale: 0.9 }}
-                          className="p-2 rounded-lg bg-green-100 hover:bg-green-200 text-green-600 transition-all duration-200 shadow-sm hover:shadow-md"
-                        >
-                          <Edit2 className="h-4 w-4" />
                         </motion.button>
                       </div>
                     </TableCell>
@@ -728,14 +737,14 @@ const LeadManagementPage = () => {
                         </div>
                       </div>
                     </div>
-                    
+
                     <div className="space-y-4">
                       <div>
                         <h3 className="font-semibold text-gray-900 mb-2">Lead Details</h3>
                         <div className="space-y-2 text-sm">
                           <div>
                             <span className="text-gray-500">Status: </span>
-                            {getStatusBadge(selectedLead.status)}
+                            {getStatusBadge(selectedLead.status as any)}
                           </div>
                           <div>
                             <span className="text-gray-500">Source: </span>
@@ -743,11 +752,11 @@ const LeadManagementPage = () => {
                           </div>
                           <div>
                             <span className="text-gray-500">Assigned Agent: </span>
-                            <span className="text-gray-900">{selectedLead.assignedAgent}</span>
+                            <span className="text-gray-900">{selectedLead.assignedTo?.name || 'Unassigned'}</span>
                           </div>
                           <div>
                             <span className="text-gray-500">Date Added: </span>
-                            <span className="text-gray-900">{selectedLead.date}</span>
+                            <span className="text-gray-900">{new Date(selectedLead.createdAt || '').toLocaleDateString()}</span>
                           </div>
                         </div>
                       </div>
@@ -762,7 +771,7 @@ const LeadManagementPage = () => {
                           key={step.key}
                           variant={selectedLead.status === step.key ? "default" : "outline"}
                           size="sm"
-                          onClick={() => updateLeadStatus(selectedLead.id, step.key as Lead["status"])}
+                          onClick={() => updateLeadStatus(selectedLead._id, step.key)}
                           className={selectedLead.status === step.key ? "bg-teal-600 hover:bg-teal-700" : "border-gray-300"}
                         >
                           <step.icon className="h-3 w-3 mr-1" />

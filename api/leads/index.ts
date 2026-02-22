@@ -4,7 +4,9 @@ import dbConnect from '../../src/lib/db.js';
 import { verifyToken } from '../../src/lib/jwt.js';
 import { Lead } from '../../src/models/Lead.js';
 import { Note } from '../../src/models/Note.js';
+import { Notification } from '../../src/models/Notification.js';
 import User from '../../src/models/User.js';
+import { notifyAdmins } from '../../src/lib/notifyAdmins.js';
 import { z } from 'zod';
 
 // Validation schema for creating a lead
@@ -117,6 +119,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
             // Populate response
             const populatedLead = await newLead.populate('assignedTo', 'name email role');
+
+            // Send notification to assigned agent if it wasn't them creating it
+            if (resolvedAssignedTo && resolvedAssignedTo.toString() !== userId.toString()) {
+                await Notification.create({
+                    userId: resolvedAssignedTo,
+                    type: 'assignment',
+                    message: `You have been assigned a new lead: ${name}`
+                });
+            }
+
+            // Notify admins about the new lead
+            await notifyAdmins(`New lead created: ${name}`, userId);
 
             return res.status(201).json(populatedLead);
         } catch (error) {

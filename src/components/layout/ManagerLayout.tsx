@@ -1,6 +1,8 @@
 import { ReactNode, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { api } from "@/lib/api";
 import { motion, AnimatePresence } from "framer-motion";
 import { Bell, Search, Menu, X, User, LogOut } from "lucide-react";
 import { ManagerSidebar } from "./ManagerSidebar";
@@ -26,9 +28,22 @@ export function ManagerLayout({ children, title }: ManagerLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const isMobile = useIsMobile();
-  const unreadCount = mockNotifications.filter((n) => !n.read).length;
   const { logout } = useAuth();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const { data: notificationsData } = useQuery({
+    queryKey: ['notifications'],
+    queryFn: api.getNotifications,
+    refetchInterval: 15000,
+  });
+
+  const markAsReadMutation = useMutation({
+    mutationFn: api.markNotificationsRead,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["notifications"] })
+  });
+
+  const notifications = notificationsData?.notifications || [];
+  const unreadCount = notificationsData?.unreadCount || 0;
 
   const handleLogout = () => {
     logout();
@@ -114,24 +129,36 @@ export function ManagerLayout({ children, title }: ManagerLayoutProps) {
                     )}
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-80">
-                  <div className="px-3 py-2 border-b border-border">
+                <DropdownMenuContent align="end" className="w-80 max-h-[80vh] overflow-y-auto">
+                  <div className="px-3 py-2 border-b border-border flex justify-between items-center">
                     <h3 className="font-semibold">Notifications</h3>
+                    {unreadCount > 0 && (
+                      <Button variant="ghost" size="sm" onClick={() => markAsReadMutation.mutate(undefined)} className="h-auto p-0 text-xs text-primary">
+                        Mark all as read
+                      </Button>
+                    )}
                   </div>
-                  {mockNotifications.map((notification) => (
-                    <DropdownMenuItem
-                      key={notification.id}
-                      className={cn(
-                        "flex flex-col items-start gap-1 py-3",
-                        !notification.read && "bg-accent/50"
-                      )}
-                    >
-                      <span className="text-sm">{notification.message}</span>
-                      <span className="text-xs text-muted-foreground">
-                        {notification.time}
-                      </span>
-                    </DropdownMenuItem>
-                  ))}
+                  {notifications.length === 0 ? (
+                    <div className="p-4 text-center text-muted-foreground text-sm">No notifications</div>
+                  ) : (
+                    notifications.map((notification: any) => (
+                      <DropdownMenuItem
+                        key={notification._id}
+                        className={cn(
+                          "flex flex-col items-start gap-1 py-3 cursor-pointer",
+                          !notification.isRead && "bg-accent/50"
+                        )}
+                        onClick={() => {
+                          if (!notification.isRead) markAsReadMutation.mutate(notification._id);
+                        }}
+                      >
+                        <span className="text-sm font-medium">{notification.message}</span>
+                        <span className="text-xs text-muted-foreground">
+                          {new Date(notification.createdAt).toLocaleString()}
+                        </span>
+                      </DropdownMenuItem>
+                    ))
+                  )}
                 </DropdownMenuContent>
               </DropdownMenu>
 
