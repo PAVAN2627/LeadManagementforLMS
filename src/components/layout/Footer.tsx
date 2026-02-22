@@ -72,29 +72,40 @@ export default function Footer() {
           </div>
 
           <div>
+            <h3 className="text-sm font-bold text-white mb-4 uppercase tracking-wider">Platform</h3>
+            <ul className="space-y-3 text-white/90">
+              <li><Link to="/features" className="hover:text-white transition-colors">Features</Link></li>
+              <li><Link to="/pricing" className="hover:text-white transition-colors">Pricing</Link></li>
+              <li><Link to="/integrations" className="hover:text-white transition-colors">Integrations</Link></li>
+              <li><Link to="/security" className="hover:text-white transition-colors">Security</Link></li>
+              <li><Link to="/api-docs" className="hover:text-white transition-colors">API Documentation</Link></li>
+            </ul>
+          </div>
+
+          <div>
+            <h3 className="text-sm font-bold text-white mb-4 uppercase tracking-wider">Resources</h3>
+            <ul className="space-y-3 text-white/90">
+              <li><Link to="/help-center" className="hover:text-white transition-colors">Help Center</Link></li>
+              <li><Link to="/tutorials" className="hover:text-white transition-colors">Tutorials</Link></li>
+              <li><Link to="/blog" className="hover:text-white transition-colors">Blog</Link></li>
+              <li><Link to="/case-studies" className="hover:text-white transition-colors">Case Studies</Link></li>
+              <li><Link to="/community" className="hover:text-white transition-colors">Community</Link></li>
+            </ul>
+          </div>
+
+          <div>
             <h3 className="text-sm font-bold text-white mb-4 uppercase tracking-wider">Company</h3>
             <ul className="space-y-3 text-white/90">
               <li><Link to="/about" className="hover:text-white transition-colors">About Us</Link></li>
-              <li><Link to="/career" className="hover:text-white transition-colors">Career</Link></li>
-              <li><Link to="/internship" className="hover:text-white transition-colors">Internship Program</Link></li>
-              <li><Link to="/internship-policy" className="hover:text-white transition-colors">Internship Policy</Link></li>
-              <li><Link to="/faqs" className="hover:text-white transition-colors">FAQs</Link></li>
+              <li><Link to="/careers" className="hover:text-white transition-colors">Careers</Link></li>
+              <li><Link to="/contact" className="hover:text-white transition-colors">Contact Sales</Link></li>
+              <li><Link to="/partners" className="hover:text-white transition-colors">Partners</Link></li>
+              <li><Link to="/press" className="hover:text-white transition-colors">Press Kit</Link></li>
             </ul>
           </div>
 
           <div>
-            <h3 className="text-sm font-bold text-white mb-4 uppercase tracking-wider">Services</h3>
-            <ul className="space-y-3 text-white/90">
-              <li><Link to="/services/custom-software" className="hover:text-white transition-colors">Custom Software Development</Link></li>
-              <li><Link to="/services/web-apps" className="hover:text-white transition-colors">Web Application Development</Link></li>
-              <li><Link to="/services/maintenance" className="hover:text-white transition-colors">Website Maintenance</Link></li>
-              <li><Link to="/services/testing" className="hover:text-white transition-colors">Software Testing and QA</Link></li>
-              <li><Link to="/services/automation" className="hover:text-white transition-colors">Business Automation Solutions</Link></li>
-            </ul>
-          </div>
-
-          <div>
-            <h3 className="text-sm font-bold text-white mb-4 uppercase tracking-wider">Contact Us</h3>
+            <h3 className="text-sm font-bold text-white mb-4 uppercase tracking-wider">Support</h3>
             <ul className="space-y-4 text-white/90">
               <li>
                 <div className="flex items-center gap-3">
@@ -102,9 +113,9 @@ export default function Footer() {
                     <Mail className="h-5 w-5" />
                   </div>
                   <div>
-                    <p className="text-xs text-white/70">Email</p>
-                    <a href="mailto:official@athenura.in" className="text-sm hover:text-white transition-colors">
-                      official@athenura.in
+                    <p className="text-xs text-white/70">Email Support</p>
+                    <a href="mailto:support@athenura.in" className="text-sm hover:text-white transition-colors">
+                      support@athenura.in
                     </a>
                   </div>
                 </div>
@@ -115,7 +126,7 @@ export default function Footer() {
                     <Phone className="h-5 w-5" />
                   </div>
                   <div>
-                    <p className="text-xs text-white/70">Phone</p>
+                    <p className="text-xs text-white/70">Sales Inquiry</p>
                     <a href="tel:+919835051934" className="text-sm hover:text-white transition-colors">
                       +91 98350 51934
                     </a>
@@ -124,31 +135,17 @@ export default function Footer() {
               </li>
             </ul>
           </div>
-
-          <div>
-            <h3 className="text-sm font-bold text-white mb-4 uppercase tracking-wider">Location</h3>
-            <div className="rounded-lg overflow-hidden border border-white/20 shadow-sm">
-              <iframe
-                title="Athenura location"
-                src="https://www.google.com/maps/embed?pb=!1m14!1m12!1m3!1d14689.457017026245!2d72.5716!3d23.0225!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!5e0!3m2!1sen!2sin!4v1700000000000"
-                className="h-28 w-full"
-                loading="lazy"
-              />
-            </div>
-            <p className="text-sm text-white/90 mt-3">
-              Sector 62, Noida, Uttar Pradesh
-            </p>
-          </div>
         </div>
 
         <div className="pt-6 md:pt-8 border-t border-white/20">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4 text-white/80">
             <p className="text-xs md:text-sm text-center md:text-left">
-              © 2026 Athenura Solutions Inc. All rights reserved.
+              © 2026 Athenura - Lead Management Platform. All rights reserved.
             </p>
             <div className="flex items-center gap-6 text-xs md:text-sm">
               <Link to="/privacy-policy" className="hover:text-white transition-colors">Privacy Policy</Link>
               <Link to="/terms-of-service" className="hover:text-white transition-colors">Terms of Service</Link>
+              <Link to="/cookie-policy" className="hover:text-white transition-colors">Cookie Policy</Link>
             </div>
           </div>
         </div>

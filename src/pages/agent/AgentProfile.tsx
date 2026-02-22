@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
 import { User, Mail, Phone, Building, Save, Edit2, Target, Award } from "lucide-react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
@@ -10,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/components/ui/use-toast";
 import { Badge } from "@/components/ui/badge";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { api, ApiUser } from "@/lib/api";
+import { api, ApiUser, ApiLead } from "@/lib/api";
 
 const AgentProfile = () => {
   const { toast } = useToast();
@@ -29,6 +29,39 @@ const AgentProfile = () => {
     queryKey: ['profile'],
     queryFn: api.getProfile,
   });
+
+  const { data: leads = [] } = useQuery({
+    queryKey: ['leads'],
+    queryFn: api.getLeads
+  });
+
+  // Calculate real-time performance stats
+  const performanceStats = useMemo(() => {
+    if (!user) return { thisMonth: 0, converted: 0, conversionRate: "0" };
+
+    const now = new Date();
+    const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+
+    // Filter leads assigned to this agent
+    const myLeads = leads.filter((lead: ApiLead) => lead.assignedTo?._id === user._id);
+    
+    // Filter leads from this month
+    const thisMonthLeads = myLeads.filter((lead: ApiLead) => {
+      const leadDate = new Date(lead.createdAt);
+      return leadDate >= thisMonthStart;
+    });
+
+    const converted = thisMonthLeads.filter((lead: ApiLead) => lead.status === 'converted').length;
+    const conversionRate = thisMonthLeads.length > 0 
+      ? ((converted / thisMonthLeads.length) * 100).toFixed(0)
+      : "0";
+
+    return {
+      thisMonth: thisMonthLeads.length,
+      converted,
+      conversionRate
+    };
+  }, [user, leads]);
 
   useEffect(() => {
     if (user) {
@@ -230,15 +263,15 @@ const AgentProfile = () => {
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="text-center p-4 border border-gray-200 rounded-lg">
-                  <div className="text-2xl font-bold text-gray-900">24</div>
+                  <div className="text-2xl font-bold text-gray-900">{performanceStats.thisMonth}</div>
                   <div className="text-sm text-gray-600">Leads This Month</div>
                 </div>
                 <div className="text-center p-4 border border-gray-200 rounded-lg">
-                  <div className="text-2xl font-bold text-green-600">8</div>
+                  <div className="text-2xl font-bold text-green-600">{performanceStats.converted}</div>
                   <div className="text-sm text-gray-600">Converted</div>
                 </div>
                 <div className="text-center p-4 border border-gray-200 rounded-lg">
-                  <div className="text-2xl font-bold text-teal-600">33%</div>
+                  <div className="text-2xl font-bold text-teal-600">{performanceStats.conversionRate}%</div>
                   <div className="text-sm text-gray-600">Conversion Rate</div>
                 </div>
               </div>

@@ -168,13 +168,13 @@ const Login = () => {
           </Button>
 
           {/* Login Card */}
-          <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl p-8 md:p-10">
+          <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl p-8 md:p-10 scale-110">
             {/* Logo for all screens */}
             <div className="flex justify-center mb-6">
               <img 
                 src="/athenuraroundlogo.png" 
                 alt="Athenura" 
-                className="h-24 w-24 rounded-full shadow-lg"
+                className="h-28 w-28 rounded-full shadow-lg"
               />
             </div>
 
@@ -183,7 +183,7 @@ const Login = () => {
               <h2 className="text-3xl font-bold text-gray-900 mb-2">
                 Welcome Back
               </h2>
-              <p className="text-gray-600">
+              <p className="text-gray-600 text-base">
                 Sign in to access your dashboard
               </p>
             </div>
@@ -192,7 +192,7 @@ const Login = () => {
             <form onSubmit={handleLogin} className="space-y-5">
               {/* Email */}
               <div className="space-y-2">
-                <Label htmlFor="email" className="text-gray-700 font-semibold">Email Address</Label>
+                <Label htmlFor="email" className="text-gray-700 font-semibold text-base">Email Address</Label>
                 <div className="relative group">
                   <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 group-focus-within:text-teal-600 transition-colors" />
                   <Input
@@ -201,7 +201,7 @@ const Login = () => {
                     placeholder="name@company.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="pl-11 h-12 border-gray-300 focus:border-teal-600 focus:ring-2 focus:ring-teal-600/20 transition-all"
+                    className="pl-11 h-12 border-gray-300 focus:border-teal-600 focus:ring-2 focus:ring-teal-600/20 transition-all text-base"
                     required
                   />
                 </div>
@@ -209,7 +209,7 @@ const Login = () => {
 
               {/* Password */}
               <div className="space-y-2">
-                <Label htmlFor="password" className="text-gray-700 font-semibold">Password</Label>
+                <Label htmlFor="password" className="text-gray-700 font-semibold text-base">Password</Label>
                 <div className="relative group">
                   <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 group-focus-within:text-teal-600 transition-colors" />
                   <Input
@@ -218,7 +218,7 @@ const Login = () => {
                     placeholder="Enter your password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="pl-11 pr-11 h-12 border-gray-300 focus:border-teal-600 focus:ring-2 focus:ring-teal-600/20 transition-all"
+                    className="pl-11 pr-11 h-12 border-gray-300 focus:border-teal-600 focus:ring-2 focus:ring-teal-600/20 transition-all text-base"
                     required
                   />
                   <button
@@ -234,7 +234,7 @@ const Login = () => {
               {/* Submit Button */}
               <Button
                 type="submit"
-                className="w-full gradient-teal text-white h-12 font-semibold shadow-lg hover:shadow-xl transition-all hover:scale-[1.02]"
+                className="w-full gradient-teal text-white h-12 font-semibold shadow-lg hover:shadow-xl transition-all hover:scale-[1.02] text-base"
                 disabled={isSubmitting}
               >
                 {isSubmitting ? (

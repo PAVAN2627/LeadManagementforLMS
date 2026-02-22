@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { User, Mail, Phone, Building, Save, Edit2, Shield, Key, Clock, Eye, Camera } from "lucide-react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
@@ -8,31 +8,77 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/components/ui/use-toast";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { api, ApiUser } from "@/lib/api";
+import { Badge } from "@/components/ui/badge";
 
 const AdminProfile = () => {
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [isEditing, setIsEditing] = useState(false);
-  const [formData, setFormData] = useState({
-    name: "Admin User",
-    email: "admin@athenuru.com",
-    phone: "+1 (555) 123-4567",
-    company: "Athenuru",
-    department: "Administration",
-    bio: "System administrator with full access to manage users, leads, and system settings."
+  const [formData, setFormData] = useState<Partial<ApiUser>>({
+    name: "",
+    email: "",
+    phone: "",
+    company: "",
+    department: "",
+    bio: ""
+  });
+
+  const { data: user, isLoading } = useQuery({
+    queryKey: ['profile'],
+    queryFn: api.getProfile,
+  });
+
+  useEffect(() => {
+    if (user) {
+      setFormData({
+        name: user.name || "",
+        email: user.email || "",
+        phone: user.phone || "",
+        company: user.company || "",
+        department: user.department || "",
+        bio: user.bio || ""
+      });
+    }
+  }, [user]);
+
+  const updateProfileMutation = useMutation({
+    mutationFn: (data: Partial<ApiUser>) => {
+      if (!user?._id) throw new Error("User ID not found");
+      return api.updateUser(user._id, data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['profile'] });
+      setIsEditing(false);
+      toast({
+        title: "Profile Updated",
+        description: "Your profile information has been saved successfully.",
+        duration: 3000,
+      });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    }
   });
 
   const handleSave = () => {
-    setIsEditing(false);
-    toast({
-      title: "Profile Updated",
-      description: "Your profile information has been saved successfully.",
-      duration: 3000,
-    });
+    updateProfileMutation.mutate(formData);
   };
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
+
+  if (isLoading) {
+    return (
+      <DashboardLayout role="admin" title="Admin Profile">
+        <div className="flex items-center justify-center h-full min-h-[50vh]">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-600"></div>
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout role="admin" title="Admin Profile">
@@ -154,7 +200,9 @@ const AdminProfile = () => {
                     whileHover={{ scale: 1.05 }}
                     className="h-24 w-24 rounded-2xl bg-gradient-to-br from-teal-500 to-emerald-600 flex items-center justify-center shadow-lg"
                   >
-                    <span className="text-3xl font-bold text-white">A</span>
+                    <span className="text-3xl font-bold text-white">
+                      {formData.name?.charAt(0).toUpperCase() || 'A'}
+                    </span>
                   </motion.div>
                   <motion.button
                     whileHover={{ scale: 1.1 }}
@@ -185,10 +233,11 @@ const AdminProfile = () => {
                     initial={{ opacity: 0, x: -10 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: 0.9 }}
-                    className="inline-flex items-center gap-2 px-3 py-1 bg-teal-100 text-teal-700 rounded-full text-sm font-semibold"
                   >
-                    <Shield className="h-3 w-3" />
-                    Administrator
+                    <Badge className="bg-teal-100 text-teal-700 hover:bg-teal-100">
+                      <Shield className="h-3 w-3 mr-1" />
+                      {user?.role ? user.role.charAt(0).toUpperCase() + user.role.slice(1) : 'Administrator'}
+                    </Badge>
                   </motion.div>
                 </div>
               </motion.div>

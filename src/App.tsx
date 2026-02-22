@@ -10,6 +10,8 @@ import LandingPage from "./pages/LandingPage";
 import Login from "./pages/Login";
 import Benefits from "./pages/Benefits";
 import Features from "./pages/Features";
+import Pricing from "./pages/Pricing";
+import GenericPage from "./pages/GenericPage";
 import Roles from "./pages/Roles";
 import Lifecycle from "./pages/Lifecycle";
 import AdminDashboard from "./pages/admin/AdminDashboard";
@@ -53,8 +55,33 @@ const App = () => {
               <Route path="/login" element={<Login />} />
               <Route path="/benefits" element={<Benefits />} />
               <Route path="/features" element={<Features />} />
+              <Route path="/pricing" element={<Pricing />} />
               <Route path="/roles" element={<Roles />} />
               <Route path="/lifecycle" element={<Lifecycle />} />
+              
+              {/* Footer Links - Platform */}
+              <Route path="/integrations" element={<GenericPage />} />
+              <Route path="/security" element={<GenericPage />} />
+              <Route path="/api-docs" element={<GenericPage />} />
+              
+              {/* Footer Links - Resources */}
+              <Route path="/help-center" element={<GenericPage />} />
+              <Route path="/tutorials" element={<GenericPage />} />
+              <Route path="/blog" element={<GenericPage />} />
+              <Route path="/case-studies" element={<GenericPage />} />
+              <Route path="/community" element={<GenericPage />} />
+              
+              {/* Footer Links - Company */}
+              <Route path="/about" element={<GenericPage />} />
+              <Route path="/careers" element={<GenericPage />} />
+              <Route path="/contact" element={<GenericPage />} />
+              <Route path="/partners" element={<GenericPage />} />
+              <Route path="/press" element={<GenericPage />} />
+              
+              {/* Footer Links - Legal */}
+              <Route path="/privacy-policy" element={<GenericPage />} />
+              <Route path="/terms-of-service" element={<GenericPage />} />
+              <Route path="/cookie-policy" element={<GenericPage />} />
 
               {/* Admin Routes */}
               <Route path="/admin" element={

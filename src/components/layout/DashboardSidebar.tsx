@@ -54,7 +54,6 @@ const managerItems: SidebarItem[] = [
 const agentItems: SidebarItem[] = [
   { icon: LayoutDashboard, label: "Dashboard", path: "/agent" },
   { icon: ClipboardList, label: "My Leads", path: "/agent/leads" },
-  { icon: UserPlus, label: "Add Lead", path: "/agent/add-lead" },
   { icon: User, label: "Profile", path: "/agent/profile" },
   { icon: Settings, label: "Settings", path: "/agent/settings" },
 ];

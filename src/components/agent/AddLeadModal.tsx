@@ -256,14 +256,11 @@ export const AddLeadModal = ({
           {/* Action Buttons */}
           <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t border-border">
             <Button
-              className="flex-1 bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600 text-white"
+              className="w-full bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600 text-white"
               onClick={handleSubmit}
               disabled={isSubmitting}
             >
               {isSubmitting ? "Adding Lead..." : "Add Lead"}
-            </Button>
-            <Button variant="outline" onClick={handleClose} className="flex-1">
-              Cancel
             </Button>
           </div>
 

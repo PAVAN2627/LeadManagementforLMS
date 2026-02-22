@@ -220,7 +220,7 @@ const LandingPage = () => {
             className="mx-auto max-w-5xl text-center"
           >
             <motion.h1 
-              className="mb-6 md:mb-8 text-4xl md:text-6xl lg:text-7xl xl:text-8xl font-bold leading-tight tracking-tight text-white"
+              className="mb-6 md:mb-8 text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold leading-tight tracking-tight text-white"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3, duration: 0.8 }}
