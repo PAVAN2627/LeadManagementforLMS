@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
 import {
   DollarSign,
@@ -23,76 +23,140 @@ import {
 import { LeadsByStatusChart } from "@/components/charts/LeadsByStatusChart";
 import { MonthlyGrowthChart } from "@/components/charts/MonthlyGrowthChart";
 import { AgentPerformanceChart } from "@/components/charts/AgentPerformanceChart";
+import { useQuery } from "@tanstack/react-query";
+import { api, ApiLead } from "@/lib/api";
+import { useToast } from "@/components/ui/use-toast";
 
 const ManagerReports = () => {
+  const { toast } = useToast();
   const [timeRange, setTimeRange] = useState("month");
   const [reportType, setReportType] = useState("all");
 
+  // Fetch real data
+  const { data: leads = [] } = useQuery({
+    queryKey: ['leads'],
+    queryFn: api.getLeads,
+  });
+
+  const { data: users = [] } = useQuery({
+    queryKey: ['users'],
+    queryFn: () => api.getUsers(),
+  });
+
+  const agents = useMemo(() => users.filter((u: any) => u.role === 'agent'), [users]);
+
+  // Calculate real-time chart data
+  const leadsByStatusData = useMemo(() => {
+    const statusCounts = {
+      new: 0,
+      contacted: 0,
+      qualified: 0,
+      proposal: 0,
+      negotiation: 0,
+      converted: 0,
+      lost: 0
+    };
+
+    leads.forEach((lead: ApiLead) => {
+      if (statusCounts.hasOwnProperty(lead.status)) {
+        statusCounts[lead.status]++;
+      }
+    });
+
+    return [
+      { name: "New", value: statusCounts.new, color: "#1F8A98" },
+      { name: "Contacted", value: statusCounts.contacted, color: "#17A2B8" },
+      { name: "Qualified", value: statusCounts.qualified, color: "#20C997" },
+      { name: "Proposal", value: statusCounts.proposal, color: "#FFC107" },
+      { name: "Negotiation", value: statusCounts.negotiation, color: "#FF9800" },
+      { name: "Converted", value: statusCounts.converted, color: "#28A745" },
+      { name: "Lost", value: statusCounts.lost, color: "#DC3545" },
+    ].filter(item => item.value > 0);
+  }, [leads]);
+
+  // Calculate monthly growth data
+  const monthlyGrowthData = useMemo(() => {
+    const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    const currentYear = new Date().getFullYear();
+    const monthlyCounts: { [key: string]: number } = {};
+
+    monthNames.forEach(month => {
+      monthlyCounts[month] = 0;
+    });
+
+    leads.forEach((lead: ApiLead) => {
+      const leadDate = new Date(lead.date);
+      if (leadDate.getFullYear() === currentYear) {
+        const monthName = monthNames[leadDate.getMonth()];
+        monthlyCounts[monthName]++;
+      }
+    });
+
+    return monthNames.map(month => ({
+      month,
+      leads: monthlyCounts[month]
+    }));
+  }, [leads]);
+
+  // Calculate agent performance data
+  const agentPerformanceData = useMemo(() => {
+    return agents.map((agent: any) => {
+      const agentLeads = leads.filter((l: ApiLead) => l.assignedTo?._id === agent._id);
+      const converted = agentLeads.filter((l: ApiLead) => l.status === 'converted').length;
+      const lost = agentLeads.filter((l: ApiLead) => l.status === 'lost').length;
+      const pending = agentLeads.filter((l: ApiLead) => 
+        !["converted", "lost"].includes(l.status)
+      ).length;
+
+      return {
+        name: agent.name,
+        converted,
+        pending,
+        lost
+      };
+    }).slice(0, 5);
+  }, [leads, agents]);
+
+  // Export functionality
+  const handleExport = () => {
+    const csvContent = [
+      ['Report Type', 'Manager Reports'],
+      ['Generated Date', new Date().toLocaleDateString()],
+      ['Time Range', timeRange],
+      [''],
+      ['Lead Summary'],
+      ['Status', 'Count'],
+      ...leadsByStatusData.map(item => [item.name, item.value]),
+      [''],
+      ['Monthly Growth'],
+      ['Month', 'Leads'],
+      ...monthlyGrowthData.map(item => [item.month, item.leads]),
+      [''],
+      ['Agent Performance'],
+      ['Agent', 'Converted', 'Pending', 'Lost'],
+      ...agentPerformanceData.map(agent => [agent.name, agent.converted, agent.pending, agent.lost]),
+    ]
+      .map(row => row.map(field => `"${field}"`).join(','))
+      .join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `manager-report-${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    toast({
+      title: "Export Successful",
+      description: "Manager report has been downloaded as CSV.",
+    });
+  };
+
   return (
     <ManagerLayout title="Reports & Analytics">
-      {/* Summary Cards with Enhanced Animations */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-6 md:mb-8">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.8, rotate: -5 }}
-          animate={{ opacity: 1, scale: 1, rotate: 0 }}
-          transition={{ delay: 0, duration: 0.6, type: "spring", bounce: 0.5 }}
-          className="card-hover-effect hover-glow"
-        >
-          <SummaryCard
-            title="Total Revenue"
-            value="$124,500"
-            icon={DollarSign}
-            variant="success"
-            trend={{ value: 15, isPositive: true }}
-            delay={0}
-          />
-        </motion.div>
-        <motion.div
-          initial={{ opacity: 0, scale: 0.8, rotate: 5 }}
-          animate={{ opacity: 1, scale: 1, rotate: 0 }}
-          transition={{ delay: 0.1, duration: 0.6, type: "spring", bounce: 0.5 }}
-          className="card-hover-effect hover-glow"
-        >
-          <SummaryCard
-            title="Conversion Rate"
-            value="42%"
-            icon={Target}
-            variant="primary"
-            trend={{ value: 5, isPositive: true }}
-            delay={0.1}
-          />
-        </motion.div>
-        <motion.div
-          initial={{ opacity: 0, scale: 0.8, rotate: -5 }}
-          animate={{ opacity: 1, scale: 1, rotate: 0 }}
-          transition={{ delay: 0.2, duration: 0.6, type: "spring", bounce: 0.5 }}
-          className="card-hover-effect hover-glow"
-        >
-          <SummaryCard
-            title="Avg. Deal Size"
-            value="$8,300"
-            icon={TrendingUp}
-            trend={{ value: 3, isPositive: false }}
-            delay={0.2}
-          />
-        </motion.div>
-        <motion.div
-          initial={{ opacity: 0, scale: 0.8, rotate: 5 }}
-          animate={{ opacity: 1, scale: 1, rotate: 0 }}
-          transition={{ delay: 0.3, duration: 0.6, type: "spring", bounce: 0.5 }}
-          className="card-hover-effect hover-glow"
-        >
-          <SummaryCard
-            title="Team Performance"
-            value="87%"
-            icon={BarChart3}
-            variant="primary"
-            trend={{ value: 12, isPositive: true }}
-            delay={0.3}
-          />
-        </motion.div>
-      </div>
-
       {/* Filters with Enhanced Animations */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -135,7 +199,10 @@ const ManagerReports = () => {
           whileTap={{ scale: 0.95 }}
           className="ml-auto"
         >
-          <Button className="gradient-bg-animated text-primary-foreground button-ripple shadow-lg icon-bounce">
+          <Button 
+            onClick={handleExport}
+            className="gradient-bg-animated text-primary-foreground button-ripple shadow-lg icon-bounce"
+          >
             <Download className="h-4 w-4 mr-2" />
             Export Report
           </Button>
@@ -155,7 +222,7 @@ const ManagerReports = () => {
           className="card-hover-effect hover-glow rounded-xl overflow-hidden animated-border"
         >
           <div className="animated-border-content">
-            <MonthlyGrowthChart />
+            <MonthlyGrowthChart data={monthlyGrowthData} />
           </div>
         </motion.div>
         <motion.div
@@ -164,7 +231,7 @@ const ManagerReports = () => {
           className="card-hover-effect hover-glow rounded-xl overflow-hidden animated-border"
         >
           <div className="animated-border-content">
-            <LeadsByStatusChart />
+            <LeadsByStatusChart data={leadsByStatusData.length > 0 ? leadsByStatusData : undefined} />
           </div>
         </motion.div>
       </motion.div>
@@ -181,116 +248,9 @@ const ManagerReports = () => {
           className="card-hover-effect hover-glow rounded-xl overflow-hidden animated-border"
         >
           <div className="animated-border-content">
-            <AgentPerformanceChart />
+            <AgentPerformanceChart data={agentPerformanceData.length > 0 ? agentPerformanceData : undefined} />
           </div>
         </motion.div>
-      </motion.div>
-
-      {/* Key Metrics with Enhanced Animations */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.7, type: "spring", stiffness: 100 }}
-        className="mt-6"
-      >
-        <Card className="p-6 card-hover-effect glass-card hover-glow animated-border">
-          <div className="animated-border-content p-6">
-            <div className="flex items-center gap-3 mb-4">
-              <motion.div
-                animate={{ scale: [1, 1.2, 1] }}
-                transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
-              >
-                <BarChart3 className="h-6 w-6 text-primary" />
-              </motion.div>
-              <h3 className="text-lg font-semibold gradient-text-animated">Key Performance Indicators</h3>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              <motion.div
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                whileHover={{ x: 5 }}
-                transition={{ delay: 0.8, type: "spring", stiffness: 300 }}
-                className="space-y-2 p-4 rounded-lg hover:bg-primary/5 transition-colors"
-              >
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">Lead Response Time</span>
-                  <motion.span
-                    initial={{ opacity: 0, scale: 0 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: 0.9 }}
-                    className="text-sm font-medium"
-                  >
-                    2.3 hrs
-                  </motion.span>
-                </div>
-                <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
-                  <motion.div
-                    initial={{ width: 0 }}
-                    animate={{ width: "85%" }}
-                    transition={{ delay: 1.0, duration: 1, ease: "easeOut" }}
-                    className="h-full bg-gradient-bg-animated rounded-full"
-                  />
-                </div>
-              </motion.div>
-
-              <motion.div
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                whileHover={{ x: 5 }}
-                transition={{ delay: 0.9, type: "spring", stiffness: 300 }}
-                className="space-y-2 p-4 rounded-lg hover:bg-primary/5 transition-colors"
-              >
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">Follow-up Rate</span>
-                  <motion.span
-                    initial={{ opacity: 0, scale: 0 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: 1.0 }}
-                    className="text-sm font-medium"
-                  >
-                    94%
-                  </motion.span>
-                </div>
-                <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
-                  <motion.div
-                    initial={{ width: 0 }}
-                    animate={{ width: "94%" }}
-                    transition={{ delay: 1.1, duration: 1, ease: "easeOut" }}
-                    className="h-full bg-success rounded-full"
-                  />
-                </div>
-              </motion.div>
-
-              <motion.div
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                whileHover={{ x: 5 }}
-                transition={{ delay: 1.0, type: "spring", stiffness: 300 }}
-                className="space-y-2 p-4 rounded-lg hover:bg-primary/5 transition-colors"
-              >
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">Customer Satisfaction</span>
-                  <motion.span
-                    initial={{ opacity: 0, scale: 0 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: 1.1 }}
-                    className="text-sm font-medium"
-                  >
-                    4.8/5
-                  </motion.span>
-                </div>
-                <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
-                  <motion.div
-                    initial={{ width: 0 }}
-                    animate={{ width: "96%" }}
-                    transition={{ delay: 1.2, duration: 1, ease: "easeOut" }}
-                    className="h-full bg-gradient-bg-animated rounded-full"
-                  />
-                </div>
-              </motion.div>
-            </div>
-          </div>
-        </Card>
       </motion.div>
     </ManagerLayout>
   );

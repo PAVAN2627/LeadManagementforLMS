@@ -634,14 +634,6 @@ const ManagerDashboard = () => {
                   >
                     <div className="flex justify-between items-start mb-4">
                       <div className="flex items-center gap-3">
-                        <motion.div
-                          whileHover={{ scale: 1.1, rotate: 5 }}
-                          className="h-12 w-12 rounded-full gradient-bg-animated flex items-center justify-center ring-2 ring-primary/20 shadow-md shrink-0"
-                        >
-                          <span className="text-lg font-bold text-white">
-                            {agent.name.split(" ").map(n => n[0]).join("")}
-                          </span>
-                        </motion.div>
                         <div className="min-w-0">
                           <h3 className="font-bold text-gray-900 text-base truncate">{agent.name}</h3>
                           <p className="text-xs text-gray-500">Sales Agent</p>
