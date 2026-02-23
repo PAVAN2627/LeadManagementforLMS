@@ -3,8 +3,9 @@ import { IUser } from './User.js';
 
 export interface INotification extends Document {
     userId: mongoose.Types.ObjectId | IUser;
-    type: 'assignment' | 'note' | 'system';
+    type: string;
     message: string;
+    link?: string;
     isRead: boolean;
     createdAt: Date;
     updatedAt: Date;
@@ -16,15 +17,18 @@ const NotificationSchema: Schema<INotification> = new Schema(
             type: Schema.Types.ObjectId,
             ref: 'User',
             required: true,
+            index: true,
         },
         type: {
             type: String,
-            enum: ['assignment', 'note', 'system'],
-            default: 'system',
+            required: true,
         },
         message: {
             type: String,
             required: true,
+        },
+        link: {
+            type: String,
         },
         isRead: {
             type: Boolean,
@@ -35,5 +39,8 @@ const NotificationSchema: Schema<INotification> = new Schema(
         timestamps: true,
     }
 );
+
+// Newest first sorting could be defined as index if helpful but mostly we sort at query time
+// NotificationSchema.index({ createdAt: -1 });
 
 export const Notification = mongoose.models.Notification || mongoose.model<INotification>('Notification', NotificationSchema);
