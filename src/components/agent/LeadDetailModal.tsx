@@ -114,17 +114,9 @@ export const LeadDetailModal = ({
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="w-[95vw] max-w-3xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader className="flex flex-row items-start justify-between">
-          <div className="flex-1">
-            <DialogTitle className="text-2xl">{lead.name}</DialogTitle>
-            <p className="text-sm text-muted-foreground mt-1">{lead.company}</p>
-          </div>
-          <button
-            onClick={onClose}
-            className="text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <X className="h-5 w-5" />
-          </button>
+        <DialogHeader>
+          <DialogTitle className="text-2xl">{lead.name}</DialogTitle>
+          <p className="text-sm text-muted-foreground mt-1">{lead.company}</p>
         </DialogHeader>
 
         <motion.div
@@ -188,7 +180,7 @@ export const LeadDetailModal = ({
             <h3 className="text-sm font-semibold text-foreground mb-4">
               Lead Information
             </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               <div>
                 <Label className="text-xs text-muted-foreground mb-2 block">
                   Current Status
@@ -205,14 +197,25 @@ export const LeadDetailModal = ({
                 </Label>
                 <p className="text-sm font-medium">{lead.date}</p>
               </div>
+              {lead.nextFollowUp && (
+                <div>
+                  <Label className="text-xs text-muted-foreground mb-2 block">
+                    Current Follow-up Date
+                  </Label>
+                  <p className="text-sm font-medium flex items-center gap-1">
+                    <Calendar className="h-3 w-3 text-teal-600" />
+                    {new Date(lead.nextFollowUp).toLocaleString()}
+                  </p>
+                </div>
+              )}
             </div>
           </div>
 
-          {/* Previous Notes History */}
+          {/* Previous Notes & Follow-up History */}
           {lead.notes && lead.notes.length > 0 && (
             <div className="space-y-3">
-              <h3 className="text-sm font-semibold text-foreground">Previous Notes</h3>
-              <div className="max-h-48 overflow-y-auto space-y-3 bg-muted/30 p-4 rounded-lg border border-border">
+              <h3 className="text-sm font-semibold text-foreground">Previous Notes & Follow-up History</h3>
+              <div className="max-h-64 overflow-y-auto space-y-3 bg-muted/30 p-4 rounded-lg border border-border">
                 {lead.notes.map((note: any, index: number) => (
                   <motion.div
                     key={index}
