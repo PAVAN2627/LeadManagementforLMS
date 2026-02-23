@@ -1509,6 +1509,12 @@ const AdminDashboard = () => {
                           <span className="text-gray-500">Date Added: </span>
                           <span className="text-gray-900">{selectedLead.date}</span>
                         </div>
+                        {selectedLead.nextFollowUp && (
+                          <div>
+                            <span className="text-gray-500">Current Follow-up: </span>
+                            <span className="text-gray-900">{new Date(selectedLead.nextFollowUp).toLocaleString()}</span>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
