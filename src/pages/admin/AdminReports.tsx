@@ -309,6 +309,48 @@ const AdminReports = () => {
     return ((converted / leads.length) * 100).toFixed(1) + "%";
   }, [leads]);
 
+  // Download all agent performance
+  const downloadAllAgentPerformance = () => {
+    const agents = allUsers.filter((u: any) => u.role.toLowerCase() === 'agent');
+    
+    const performanceData = agents.map((agent: any) => {
+      const agentLeads = leads.filter((l: ApiLead) => l.assignedTo?._id === agent._id);
+      const converted = agentLeads.filter((l: ApiLead) => l.status === 'converted').length;
+      const total = agentLeads.length;
+      const conversionRate = total > 0 ? ((converted / total) * 100).toFixed(1) : "0";
+      
+      return [
+        agent.name,
+        agent.email,
+        total,
+        converted,
+        conversionRate + '%'
+      ];
+    });
+
+    const csvContent = [
+      ['Agent Name', 'Email', 'Total Leads', 'Converted', 'Conversion Rate'],
+      ...performanceData
+    ]
+      .map(row => row.map(field => `"${field}"`).join(','))
+      .join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `all-agent-performance-${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    toast({
+      title: "Download Complete",
+      description: "All agent performance data has been downloaded.",
+    });
+  };
+
   return (
     <DashboardLayout role="admin" title="Reports & Analytics">
       <div className="space-y-8">
@@ -654,20 +696,33 @@ const AdminReports = () => {
                       >
                         <Card className="border-gray-200 shadow-lg hover:shadow-xl transition-all duration-500 rounded-2xl overflow-hidden bg-white">
                           <CardHeader className="bg-gradient-to-r from-yellow-50 to-orange-50 border-b border-gray-100">
-                            <CardTitle className="flex items-center gap-3 text-gray-900">
-                              <motion.div
-                                animate={{ scale: [1, 1.1, 1] }}
-                                transition={{ duration: 2, repeat: Infinity }}
-                                className="p-2 bg-gradient-to-br from-yellow-500 to-orange-500 rounded-lg shadow-md"
-                              >
-                                <Award className="h-5 w-5 text-white" />
+                            <div className="flex items-center justify-between">
+                              <CardTitle className="flex items-center gap-3 text-gray-900">
+                                <motion.div
+                                  animate={{ scale: [1, 1.1, 1] }}
+                                  transition={{ duration: 2, repeat: Infinity }}
+                                  className="p-2 bg-gradient-to-br from-yellow-500 to-orange-500 rounded-lg shadow-md"
+                                >
+                                  <Award className="h-5 w-5 text-white" />
+                                </motion.div>
+                                Top 3 Performers
+                              </CardTitle>
+                              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="text-xs"
+                                  onClick={downloadAllAgentPerformance}
+                                >
+                                  <Download className="h-3 w-3 mr-1" />
+                                  Download All
+                                </Button>
                               </motion.div>
-                              Top Performers
-                            </CardTitle>
+                            </div>
                           </CardHeader>
                           <CardContent className="p-6 bg-white">
                             <div className="space-y-4">
-                              {topPerformers.slice(0, 5).map((performer, index) => (
+                              {topPerformers.slice(0, 3).map((performer, index) => (
                                 <motion.div
                                   key={performer.name}
                                   initial={{ opacity: 0, x: -20 }}
