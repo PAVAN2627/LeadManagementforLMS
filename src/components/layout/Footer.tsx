@@ -5,29 +5,6 @@ export default function Footer() {
   return (
     <footer className="border-t border-teal-700 gradient-teal py-12 md:py-16 relative">
       <div className="w-full px-4 md:px-6 lg:px-12">
-        {/* Location Section - Desktop Only */}
-        <div className="hidden lg:flex items-start justify-between mb-12 bg-white/10 backdrop-blur-sm rounded-2xl p-8 border border-white/20">
-          <div className="flex-1">
-            <h2 className="text-4xl font-bold text-white mb-6 tracking-wide">LOCATION</h2>
-          </div>
-          <div className="flex-shrink-0 flex flex-col items-center">
-            <div className="rounded-xl overflow-hidden border-4 border-white/40 shadow-2xl w-[400px] h-[300px] mb-4">
-              <iframe
-                title="Athenura location"
-                src="https://www.google.com/maps/embed?pb=!1m14!1m8!1m3!1d12677.8782200604!2d77.364122!3d28.618435!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x2cb70326146a27db%3A0x39227c4340f97501!2sAthenura!5e1!3m2!1sen!2sin!4v1771829016145!5m2!1sen!2sin"
-                className="w-full h-full"
-                loading="lazy"
-                style={{ border: 0 }}
-                allowFullScreen
-                referrerPolicy="no-referrer-when-downgrade"
-              />
-            </div>
-            <p className="text-xl text-white/95 font-medium text-center">
-              Sector 62, Noida, Uttar Pradesh
-            </p>
-          </div>
-        </div>
-
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-8 md:gap-12 mb-8 md:mb-12">
           <div>
             <div className="flex items-center justify-start gap-4 mb-4 md:mb-6 -ml-[7.25rem] md:-ml-[9rem]">
@@ -148,10 +125,9 @@ export default function Footer() {
 
           <div>
             <h3 className="text-sm font-bold text-white mb-4 uppercase tracking-wider">Location</h3>
-            {/* Mobile map */}
-            <div className="rounded-lg overflow-hidden border border-white/20 shadow-sm mb-3 w-40 h-40 lg:hidden">
+            <div className="rounded-lg overflow-hidden border-2 border-white/30 shadow-lg w-full max-w-[200px] h-[160px] relative">
               <iframe
-                title="Athenura location mobile"
+                title="Athenura location"
                 src="https://www.google.com/maps/embed?pb=!1m14!1m8!1m3!1d12677.8782200604!2d77.364122!3d28.618435!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x2cb70326146a27db%3A0x39227c4340f97501!2sAthenura!5e1!3m2!1sen!2sin!4v1771829016145!5m2!1sen!2sin"
                 className="w-full h-full"
                 loading="lazy"
@@ -159,10 +135,12 @@ export default function Footer() {
                 allowFullScreen
                 referrerPolicy="no-referrer-when-downgrade"
               />
+              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 to-transparent p-2">
+                <p className="text-[10px] text-white font-medium text-center leading-tight">
+                  Sector 62, Noida, Uttar Pradesh
+                </p>
+              </div>
             </div>
-            <p className="text-sm text-white/90 max-w-[160px]">
-              Sector 62, Noida, Uttar Pradesh
-            </p>
           </div>
         </div>
 
