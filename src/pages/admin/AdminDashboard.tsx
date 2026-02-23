@@ -134,6 +134,35 @@ const AdminDashboard = () => {
   const activeAgents = analytics?.activeAgents || 0;
   const conversionRate = analytics?.conversionRate || '0.0';
 
+  // Calculate real-time chart data
+  const leadsByStatusData = useMemo(() => {
+    const statusCounts = {
+      new: 0,
+      contacted: 0,
+      qualified: 0,
+      proposal: 0,
+      negotiation: 0,
+      converted: 0,
+      lost: 0
+    };
+
+    leads.forEach((lead: ApiLead) => {
+      if (statusCounts.hasOwnProperty(lead.status)) {
+        statusCounts[lead.status]++;
+      }
+    });
+
+    return [
+      { name: "New", value: statusCounts.new, color: "#1F8A98" },
+      { name: "Contacted", value: statusCounts.contacted, color: "#17A2B8" },
+      { name: "Qualified", value: statusCounts.qualified, color: "#20C997" },
+      { name: "Proposal", value: statusCounts.proposal, color: "#FFC107" },
+      { name: "Negotiation", value: statusCounts.negotiation, color: "#FF9800" },
+      { name: "Converted", value: statusCounts.converted, color: "#28A745" },
+      { name: "Lost", value: statusCounts.lost, color: "#DC3545" },
+    ].filter(item => item.value > 0); // Only show statuses with leads
+  }, [leads]);
+
   // Filtered users based on search query
   const filteredUsers = useMemo(() => {
     if (!userSearchQuery) return users;
@@ -675,7 +704,7 @@ const AdminDashboard = () => {
                   className="relative"
                 >
                   <div className="absolute inset-0 bg-gradient-to-br from-blue-400/10 to-indigo-600/10 rounded-2xl -z-10" />
-                  <LeadsByStatusChart />
+                  <LeadsByStatusChart data={leadsByStatusData.length > 0 ? leadsByStatusData : undefined} />
                 </motion.div>
                 <motion.div
                   whileHover={{ scale: 1.02, y: -5 }}
@@ -693,91 +722,6 @@ const AdminDashboard = () => {
                 </motion.div>
               </motion.div>
 
-              {/* Advanced Analytics Tables */}
-              <motion.div
-                initial={{ opacity: 0, y: 30 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.6 }}
-                className="grid grid-cols-1 lg:grid-cols-2 gap-6"
-              >
-                {/* Lead Source Analytics */}
-                <Card className="border-0 shadow-lg">
-                  <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-100 border-b">
-                    <CardTitle className="flex items-center gap-2 text-blue-800">
-                      <BarChart3 className="h-5 w-5" />
-                      Lead Source Performance
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="p-0">
-                    <div className="overflow-x-auto">
-                      <Table>
-                        <TableBody>
-                          {[
-                            { source: "Website", leads: 45, conv: "24.4%", revenue: "$89.2K" },
-                            { source: "LinkedIn", leads: 32, conv: "18.7%", revenue: "$52.3K" },
-                            { source: "Referral", leads: 28, conv: "35.7%", revenue: "$68.1K" },
-                            { source: "Cold Email", leads: 19, conv: "12.6%", revenue: "$24.7K" }
-                          ].map((item, index) => (
-                            <motion.tr
-                              key={item.source}
-                              initial={{ opacity: 0, x: -20 }}
-                              animate={{ opacity: 1, x: 0 }}
-                              transition={{ delay: 0.8 + index * 0.1 }}
-                              className="hover:bg-blue-50/50 transition-colors"
-                            >
-                              <TableCell className="font-medium py-3">{item.source}</TableCell>
-                              <TableCell className="text-center">
-                                <Badge className="bg-blue-100 text-blue-800">{item.leads}</Badge>
-                              </TableCell>
-                              <TableCell className="text-center text-green-600 font-medium">{item.conv}</TableCell>
-                              <TableCell className="text-right font-semibold">{item.revenue}</TableCell>
-                            </motion.tr>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* Agent Performance Analytics */}
-                <Card className="border-0 shadow-lg">
-                  <CardHeader className="bg-gradient-to-r from-green-50 to-emerald-100 border-b">
-                    <CardTitle className="flex items-center gap-2 text-green-800">
-                      <Users className="h-5 w-5" />
-                      Top Agent Performance
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="p-0">
-                    <div className="overflow-x-auto">
-                      <Table>
-                        <TableBody>
-                          {[
-                            { name: "Sarah Johnson", deals: 12, value: "$156.2K", rate: "28.5%" },
-                            { name: "Mike Chen", deals: 10, value: "$134.8K", rate: "25.0%" },
-                            { name: "Emily Davis", deals: 8, value: "$98.4K", rate: "22.2%" },
-                            { name: "John Smith", deals: 6, value: "$76.1K", rate: "18.7%" }
-                          ].map((agent, index) => (
-                            <motion.tr
-                              key={agent.name}
-                              initial={{ opacity: 0, x: -20 }}
-                              animate={{ opacity: 1, x: 0 }}
-                              transition={{ delay: 0.8 + index * 0.1 }}
-                              className="hover:bg-green-50/50 transition-colors"
-                            >
-                              <TableCell className="font-medium py-3">{agent.name}</TableCell>
-                              <TableCell className="text-center">
-                                <Badge className="bg-green-100 text-green-800">{agent.deals}</Badge>
-                              </TableCell>
-                              <TableCell className="text-center font-semibold text-gray-700">{agent.value}</TableCell>
-                              <TableCell className="text-right text-green-600 font-medium">{agent.rate}</TableCell>
-                            </motion.tr>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    </div>
-                  </CardContent>
-                </Card>
-              </motion.div>
             </TabsContent>
 
             <TabsContent value="reports" className="space-y-8 p-6">
