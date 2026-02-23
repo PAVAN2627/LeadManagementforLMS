@@ -147,7 +147,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                     await Notification.create({
                         userId: updateData.assignedTo,
                         type: 'assignment',
-                        message: `You have been assigned to lead: ${updatedLead?.name}`,
+                        message: `New lead ${updatedLead?.name} assigned to you`,
+                        link: `/leads/${updatedLead?._id}`
                     });
                 }
 

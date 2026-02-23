@@ -2,6 +2,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import dbConnect from '../../src/lib/db.js';
 import { verifyToken } from '../../src/lib/jwt.js';
 import { Notification } from '../../src/models/Notification.js';
+import User from '../../src/models/User.js';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
     try {
@@ -26,13 +27,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         if (req.method === 'GET') {
             const notifications = await Notification.find({ userId })
                 .sort({ createdAt: -1 })
-                .limit(50);
+                .limit(20);
 
             const unreadCount = await Notification.countDocuments({ userId, isRead: false });
 
             return res.status(200).json({
-                notifications,
-                unreadCount
+                unreadCount,
+                notifications
             });
         }
 

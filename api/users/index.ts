@@ -5,7 +5,8 @@ import User from '../../src/models/User.js';
 import { z } from 'zod';
 import bcrypt from 'bcryptjs';
 import { notifyAdmins } from '../../src/lib/notifyAdmins.js';
-
+import { sendWelcomeEmail } from '../../src/lib/email.js';
+import { Notification } from '../../src/models/Notification.js';
 const createUserSchema = z.object({
     name: z.string().min(1, "Name is required"),
     email: z.string().email("Invalid email"),
@@ -98,6 +99,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
             // Notify admins about the new user
             await notifyAdmins(`New user "${name}" was added to the platform`, decoded.userId);
+
+            // Create notification for the new user
+            await Notification.create({
+                userId: newUser._id,
+                type: 'system',
+                message: 'Your LMS account has been created',
+                link: '/login'
+            });
+
+            // Send Brevo welcome email with credentials (non-blocking)
+            const loginUrl = 'https://lead-managementfor-lms-peach.vercel.app/login';
+            sendWelcomeEmail(email, name, password, loginUrl).catch(err => {
+                console.error("Non-blocking email send failure:", err);
+            });
 
             return res.status(201).json(userObj);
 

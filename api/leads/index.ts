@@ -125,12 +125,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 await Notification.create({
                     userId: resolvedAssignedTo,
                     type: 'assignment',
-                    message: `You have been assigned a new lead: ${name}`
+                    message: `New lead ${name} assigned to you`,
+                    link: `/leads/${populatedLead._id}`
                 });
             }
 
             // Notify admins about the new lead
-            await notifyAdmins(`New lead created: ${name}`, userId);
+            await notifyAdmins(`New lead ${name} created`, userId);
 
             return res.status(201).json(populatedLead);
         } catch (error) {
