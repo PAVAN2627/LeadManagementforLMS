@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { connectDB } from '../../src/lib/db.js';
+import dbConnect from '../../src/lib/db.js';
 import User from '../../src/models/User.js';
 import { verifyToken } from '../../src/lib/jwt.js';
 import { hashPassword, comparePassword } from '../../src/lib/auth-utils.js';
@@ -10,7 +10,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    await connectDB();
+    await dbConnect();
 
     const authHeader = req.headers.authorization;
     if (!authHeader?.startsWith('Bearer ')) {
@@ -33,17 +33,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(400).json({ message: 'New password must be at least 6 characters' });
     }
 
-    const user = await User.findById(decoded.userId);
+    const user = await User.findById(decoded.userId).select('+passwordHash');
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    const isValidPassword = await comparePassword(currentPassword, user.password);
+    const isValidPassword = await comparePassword(currentPassword, user.passwordHash);
     if (!isValidPassword) {
       return res.status(400).json({ message: 'Current password is incorrect' });
     }
 
-    user.password = await hashPassword(newPassword);
+    user.passwordHash = await hashPassword(newPassword);
     await user.save();
 
     res.status(200).json({ message: 'Password changed successfully' });

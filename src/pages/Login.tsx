@@ -5,7 +5,6 @@ import { Mail, Lock, ArrowLeft, Shield, Eye, EyeOff, CheckCircle2, Key, UserPlus
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/components/ui/use-toast";
 
@@ -18,8 +17,6 @@ const Login = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [showForgotPassword, setShowForgotPassword] = useState(false);
-  const [forgotEmail, setForgotEmail] = useState("");
   const { toast } = useToast();
 
   // If session is still loading, show nothing (ProtectedRoute handles spinner)
@@ -88,40 +85,6 @@ const Login = () => {
         variant: "destructive",
         title: isLogin ? "Login Failed" : "Signup Failed",
         description: error.message || (isLogin ? "Invalid credentials" : "An error occurred"),
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handleForgotPassword = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-
-    try {
-      const response = await fetch('/api/auth/forgot-password', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email: forgotEmail }),
-      });
-
-      const data = await response.json();
-
-      toast({
-        title: "Password Reset Email Sent",
-        description: data.message || "Check your email for password reset instructions.",
-      });
-
-      setShowForgotPassword(false);
-      setForgotEmail("");
-    } catch (error: any) {
-      console.error('Forgot password error:', error);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: error.message || "Failed to send reset email",
       });
     } finally {
       setIsSubmitting(false);
@@ -274,18 +237,7 @@ const Login = () => {
 
               {/* Password */}
               <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="password" className="text-gray-700 font-semibold text-base">Password</Label>
-                  {isLogin && (
-                    <button
-                      type="button"
-                      onClick={() => setShowForgotPassword(true)}
-                      className="text-sm text-teal-600 hover:text-teal-800 font-medium transition-colors"
-                    >
-                      Forgot Password?
-                    </button>
-                  )}
-                </div>
+                <Label htmlFor="password" className="text-gray-700 font-semibold text-base">Password</Label>
                 <div className="relative group">
                   <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 group-focus-within:text-teal-600 transition-colors" />
                   <Input
@@ -371,53 +323,6 @@ const Login = () => {
             </div>
           </div>
         </div>
-
-        {/* Forgot Password Dialog */}
-        <Dialog open={showForgotPassword} onOpenChange={setShowForgotPassword}>
-          <DialogContent className="sm:max-w-md">
-            <DialogHeader>
-              <DialogTitle>Reset Password</DialogTitle>
-              <DialogDescription>
-                Enter your email address and we'll send you a temporary password.
-              </DialogDescription>
-            </DialogHeader>
-            <form onSubmit={handleForgotPassword} className="space-y-4 mt-4">
-              <div className="space-y-2">
-                <Label htmlFor="forgot-email">Email Address</Label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                  <Input
-                    id="forgot-email"
-                    type="email"
-                    placeholder="name@company.com"
-                    value={forgotEmail}
-                    onChange={(e) => setForgotEmail(e.target.value)}
-                    className="pl-10"
-                    required
-                  />
-                </div>
-              </div>
-              <div className="flex gap-3">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setShowForgotPassword(false)}
-                  className="flex-1"
-                  disabled={isSubmitting}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  type="submit"
-                  className="flex-1 gradient-teal text-white"
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting ? "Sending..." : "Send Reset Email"}
-                </Button>
-              </div>
-            </form>
-          </DialogContent>
-        </Dialog>
       </motion.div>
     </div>
   );

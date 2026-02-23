@@ -155,3 +155,44 @@ export const sendFollowUpReminder = async (
         return false;
     }
 };
+
+export const sendEmail = async ({ to, subject, html }: { to: string; subject: string; html: string }) => {
+    const apiKey = process.env.BREVO_API_KEY;
+    if (!apiKey) {
+        console.error('BREVO_API_KEY is not set');
+        return;
+    }
+
+    const payload = {
+        sender: { 
+            name: process.env.BREVO_SENDER_NAME || 'Lead Management System', 
+            email: process.env.BREVO_SENDER_EMAIL || 'itsgauravrawat2005@gmail.com' 
+        },
+        to: [{ email: to }],
+        subject,
+        htmlContent: html
+    };
+
+    try {
+        const response = await fetch('https://api.brevo.com/v3/smtp/email', {
+            method: 'POST',
+            headers: {
+                'api-key': apiKey,
+                'content-type': 'application/json',
+                'accept': 'application/json'
+            },
+            body: JSON.stringify(payload)
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error('Failed to send email:', response.status, errorText);
+            return false;
+        }
+        
+        return true;
+    } catch (e) {
+        console.error('Exception sending email:', e);
+        return false;
+    }
+};
