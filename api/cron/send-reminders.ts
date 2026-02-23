@@ -18,21 +18,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     try {
         await dbConnect();
 
-        // Get current time and time 1 hour from now
+        // Get current time and time 24 hours from now (entire day)
         const now = new Date();
-        const oneHourFromNow = new Date(now.getTime() + 60 * 60 * 1000);
+        const twentyFourHoursFromNow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
 
-        // Find leads with follow-ups due in the next hour that haven't been reminded yet
+        // Find leads with follow-ups due in the next 24 hours
         const leadsToRemind = await Lead.find({
             nextFollowUp: {
                 $gte: now,
-                $lte: oneHourFromNow
+                $lte: twentyFourHoursFromNow
             },
             // Only active leads (not converted or lost)
             status: { $nin: ['converted', 'lost'] }
         }).populate('assignedTo', 'name email');
 
-        console.log(`Found ${leadsToRemind.length} leads with upcoming follow-ups`);
+        console.log(`Found ${leadsToRemind.length} leads with follow-ups in the next 24 hours`);
 
         const results = {
             total: leadsToRemind.length,

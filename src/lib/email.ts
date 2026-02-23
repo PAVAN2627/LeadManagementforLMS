@@ -91,15 +91,15 @@ export const sendFollowUpReminder = async (
             email: process.env.BREVO_SENDER_EMAIL || 'itsgauravrawat2005@gmail.com' 
         },
         to: [{ email: agentEmail, name: agentName }],
-        subject: `⏰ Follow-up Reminder: ${leadName} - ${leadCompany}`,
+        subject: `📅 Daily Reminder: Follow-up with ${leadName} - ${leadCompany}`,
         htmlContent: `
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
                 <div style="background: linear-gradient(135deg, #14b8a6 0%, #0891b2 100%); color: white; padding: 25px; text-align: center;">
-                    <h2 style="margin: 0; font-size: 24px;">⏰ Follow-up Reminder</h2>
+                    <h2 style="margin: 0; font-size: 24px;">📅 Daily Follow-up Reminder</h2>
                 </div>
                 <div style="padding: 30px; background-color: #ffffff;">
                     <p style="font-size: 16px; color: #333; margin-bottom: 20px;">Hello <strong>${agentName}</strong>,</p>
-                    <p style="font-size: 16px; color: #555; line-height: 1.5;">You have a scheduled follow-up with the following lead:</p>
+                    <p style="font-size: 16px; color: #555; line-height: 1.5;">You have a scheduled follow-up today with the following lead:</p>
                     
                     <div style="background-color: #f0fdfa; padding: 20px; border-left: 4px solid #14b8a6; margin: 25px 0; border-radius: 4px;">
                         <h3 style="margin: 0 0 15px 0; color: #0f766e; font-size: 18px;">${leadName}</h3>
