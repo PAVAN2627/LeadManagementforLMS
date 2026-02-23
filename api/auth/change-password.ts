@@ -1,8 +1,8 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { connectDB } from '../../src/lib/db';
-import User from '../../src/models/User';
-import { verifyToken } from '../../src/lib/jwt';
-import { hashPassword, comparePassword } from '../../src/lib/auth-utils';
+import { connectDB } from '../../src/lib/db.js';
+import User from '../../src/models/User.js';
+import { verifyToken } from '../../src/lib/jwt.js';
+import { hashPassword, comparePassword } from '../../src/lib/auth-utils.js';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {

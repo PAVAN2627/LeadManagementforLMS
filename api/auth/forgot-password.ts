@@ -1,8 +1,8 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { connectDB } from '../../src/lib/db';
-import User from '../../src/models/User';
-import { sendEmail } from '../../src/lib/email';
-import { hashPassword } from '../../src/lib/auth-utils';
+import { connectDB } from '../../src/lib/db.js';
+import User from '../../src/models/User.js';
+import { sendEmail } from '../../src/lib/email.js';
+import { hashPassword } from '../../src/lib/auth-utils.js';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
