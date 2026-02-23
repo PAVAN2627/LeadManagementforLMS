@@ -261,6 +261,32 @@ const AdminReports = () => {
     });
   }, [allUsers, leads]);
 
+  // Calculate monthly growth data from real leads
+  const monthlyGrowthData = useMemo(() => {
+    const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    const currentYear = new Date().getFullYear();
+    const monthlyCounts: { [key: string]: number } = {};
+
+    // Initialize all months with 0
+    monthNames.forEach(month => {
+      monthlyCounts[month] = 0;
+    });
+
+    // Count leads by month
+    leads.forEach((lead: ApiLead) => {
+      const leadDate = new Date(lead.date);
+      if (leadDate.getFullYear() === currentYear) {
+        const monthName = monthNames[leadDate.getMonth()];
+        monthlyCounts[monthName]++;
+      }
+    });
+
+    return monthNames.map(month => ({
+      month,
+      leads: monthlyCounts[month]
+    }));
+  }, [leads]);
+
   // Export all reports function
   const exportAllReports = () => {
     const reportData = {
@@ -773,7 +799,7 @@ const AdminReports = () => {
                           <h3 className="font-semibold text-gray-900 mb-2">Monthly Growth</h3>
                         </div>
                         <div className="bg-white p-6">
-                          <MonthlyGrowthChart />
+                          <MonthlyGrowthChart data={monthlyGrowthData} />
                         </div>
                       </motion.div>
                       <motion.div whileHover={{ scale: 1.02 }} className="rounded-2xl overflow-hidden bg-white shadow-lg border border-gray-200">

@@ -163,6 +163,53 @@ const AdminDashboard = () => {
     ].filter(item => item.value > 0); // Only show statuses with leads
   }, [leads]);
 
+  // Calculate monthly growth data from real leads
+  const monthlyGrowthData = useMemo(() => {
+    const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    const currentYear = new Date().getFullYear();
+    const monthlyCounts: { [key: string]: number } = {};
+
+    // Initialize all months with 0
+    monthNames.forEach(month => {
+      monthlyCounts[month] = 0;
+    });
+
+    // Count leads by month
+    leads.forEach((lead: ApiLead) => {
+      const leadDate = new Date(lead.date);
+      if (leadDate.getFullYear() === currentYear) {
+        const monthName = monthNames[leadDate.getMonth()];
+        monthlyCounts[monthName]++;
+      }
+    });
+
+    return monthNames.map(month => ({
+      month,
+      leads: monthlyCounts[month]
+    }));
+  }, [leads]);
+
+  // Calculate agent performance data from real leads
+  const agentPerformanceData = useMemo(() => {
+    const agents = users.filter((user: any) => user.role === "agent");
+    
+    return agents.map((agent: any) => {
+      const agentLeads = leads.filter((lead: ApiLead) => lead.assignedTo?._id === agent._id);
+      const converted = agentLeads.filter((lead: ApiLead) => lead.status === "converted").length;
+      const lost = agentLeads.filter((lead: ApiLead) => lead.status === "lost").length;
+      const pending = agentLeads.filter((lead: ApiLead) => 
+        !["converted", "lost"].includes(lead.status)
+      ).length;
+
+      return {
+        name: agent.name,
+        converted,
+        pending,
+        lost
+      };
+    }).slice(0, 5); // Show top 5 agents
+  }, [leads, users]);
+
   // Filtered users based on search query
   const filteredUsers = useMemo(() => {
     if (!userSearchQuery) return users;
@@ -711,14 +758,14 @@ const AdminDashboard = () => {
                   className="relative"
                 >
                   <div className="absolute inset-0 bg-gradient-to-br from-green-400/10 to-emerald-600/10 rounded-2xl -z-10" />
-                  <MonthlyGrowthChart />
+                  <MonthlyGrowthChart data={monthlyGrowthData} />
                 </motion.div>
                 <motion.div
                   whileHover={{ scale: 1.02, y: -5 }}
                   className="relative lg:col-span-2 xl:col-span-1"
                 >
                   <div className="absolute inset-0 bg-gradient-to-br from-purple-400/10 to-violet-600/10 rounded-2xl -z-10" />
-                  <AgentPerformanceChart />
+                  <AgentPerformanceChart data={agentPerformanceData.length > 0 ? agentPerformanceData : undefined} />
                 </motion.div>
               </motion.div>
 

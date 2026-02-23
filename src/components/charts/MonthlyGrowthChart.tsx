@@ -9,7 +9,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 
-const data = [
+const mockData = [
   { month: "Jan", leads: 45 },
   { month: "Feb", leads: 52 },
   { month: "Mar", leads: 48 },
@@ -24,11 +24,20 @@ const data = [
   { month: "Dec", leads: 140 },
 ];
 
-export function MonthlyGrowthChart() {
+interface MonthlyGrowthChartProps {
+  data?: {
+    month: string;
+    leads: number;
+  }[];
+}
+
+export function MonthlyGrowthChart({ data }: MonthlyGrowthChartProps) {
+  const chartData = data || mockData;
+
   return (
     <div className="h-[300px]">
       <ResponsiveContainer width="100%" height="100%">
-        <LineChart data={data}>
+        <LineChart data={chartData}>
           <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
           <XAxis
             dataKey="month"
