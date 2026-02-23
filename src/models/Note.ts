@@ -6,6 +6,8 @@ export interface INote extends Document {
     content: string;
     lead: mongoose.Types.ObjectId | ILead;
     author: mongoose.Types.ObjectId | IUser;
+    status?: string;
+    nextFollowUp?: Date;
     createdAt: Date;
     updatedAt: Date;
 }
@@ -23,6 +25,8 @@ const NoteSchema: Schema<INote> = new Schema(
             ref: 'User',
             required: true,
         },
+        status: { type: String },
+        nextFollowUp: { type: Date },
     },
     {
         timestamps: true,

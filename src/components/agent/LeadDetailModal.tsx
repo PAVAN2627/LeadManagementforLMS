@@ -21,6 +21,8 @@ import {
 } from "@/components/ui/select";
 import { Lead } from "@/components/tables/LeadsTable";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { api } from "@/lib/api";
 
 interface LeadDetailModalProps {
   lead: Lead | null;
@@ -45,6 +47,7 @@ export const LeadDetailModal = ({
   onClose,
   onSave,
 }: LeadDetailModalProps) => {
+  const queryClient = useQueryClient();
   const [editedStatus, setEditedStatus] = useState("");
   const [originalStatus, setOriginalStatus] = useState("");
   const [editedNotes, setEditedNotes] = useState("");
@@ -52,6 +55,13 @@ export const LeadDetailModal = ({
   const [isSaving, setIsSaving] = useState(false);
   const [showValidationError, setShowValidationError] = useState(false);
   const [validationMessage, setValidationMessage] = useState("");
+
+  // Fetch notes for the lead
+  const { data: notes = [], isLoading: notesLoading } = useQuery({
+    queryKey: ['lead-notes', lead?._id],
+    queryFn: () => lead?._id ? api.getLeadNotes(lead._id) : Promise.resolve([]),
+    enabled: !!lead?._id && isOpen,
+  });
 
   useEffect(() => {
     if (lead) {
@@ -69,7 +79,7 @@ export const LeadDetailModal = ({
     setShowValidationError(false);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     // Check if status changed
     const statusChanged = editedStatus !== originalStatus;
     
@@ -88,23 +98,34 @@ export const LeadDetailModal = ({
     }
 
     setIsSaving(true);
-    if (lead && onSave) {
-      const updates: any = {
-        status: editedStatus,
-        nextFollowUp: editedFollowUpDate,
-      };
+    try {
+      if (lead && onSave) {
+        const updates: any = {
+          status: editedStatus,
+          nextFollowUp: editedFollowUpDate,
+        };
 
-      // Only add note if there's content
-      if (editedNotes.trim()) {
-        updates.notes = editedNotes.trim();
+        // Save the lead updates
+        onSave(lead, updates);
+
+        // If there's a note, save it separately
+        if (editedNotes.trim()) {
+          await api.addLeadNote(lead._id, editedNotes.trim(), editedStatus, editedFollowUpDate);
+          // Invalidate notes query to refetch
+          queryClient.invalidateQueries({ queryKey: ['lead-notes', lead._id] });
+        }
       }
-
-      onSave(lead, updates);
-    }
-    setTimeout(() => {
+      
+      setTimeout(() => {
+        setIsSaving(false);
+        onClose();
+      }, 500);
+    } catch (error) {
+      console.error('Error saving lead:', error);
       setIsSaving(false);
-      onClose();
-    }, 500);
+      setShowValidationError(true);
+      setValidationMessage("Failed to save changes. Please try again.");
+    }
   };
 
   if (!lead) return null;
@@ -212,23 +233,26 @@ export const LeadDetailModal = ({
           </div>
 
           {/* Previous Notes & Follow-up History */}
-          {lead.notes && lead.notes.length > 0 && (
+          {notesLoading ? (
+            <div className="text-center py-4 text-muted-foreground">Loading notes...</div>
+          ) : notes && notes.length > 0 ? (
             <div className="space-y-3">
-              <h3 className="text-sm font-semibold text-foreground">Follow-up History</h3>
+              <h3 className="text-sm font-semibold text-foreground">Follow-up History ({notes.length})</h3>
               <div className="max-h-96 overflow-y-auto bg-muted/30 rounded-lg border border-border">
                 <table className="w-full text-sm">
                   <thead className="bg-muted/50 sticky top-0 z-10">
                     <tr className="border-b border-border">
                       <th className="text-left p-3 font-semibold text-xs text-muted-foreground">Date & Time</th>
+                      <th className="text-left p-3 font-semibold text-xs text-muted-foreground">Author</th>
                       <th className="text-left p-3 font-semibold text-xs text-muted-foreground">Status</th>
                       <th className="text-left p-3 font-semibold text-xs text-muted-foreground">Notes</th>
                       <th className="text-left p-3 font-semibold text-xs text-muted-foreground">Next Follow-up</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {lead.notes.map((note: any, index: number) => (
+                    {notes.map((note: any, index: number) => (
                       <motion.tr
-                        key={index}
+                        key={note._id || index}
                         initial={{ opacity: 0, x: -10 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: index * 0.05 }}
@@ -237,7 +261,15 @@ export const LeadDetailModal = ({
                         <td className="p-3 align-top">
                           <div className="flex items-center gap-1 text-xs text-muted-foreground whitespace-nowrap">
                             <Clock className="h-3 w-3 flex-shrink-0" />
-                            <span>{new Date(note.createdAt || note.date).toLocaleString()}</span>
+                            <span>{new Date(note.createdAt).toLocaleString()}</span>
+                          </div>
+                        </td>
+                        <td className="p-3 align-top">
+                          <div className="flex items-center gap-2">
+                            <div className="w-6 h-6 bg-gradient-to-br from-teal-500 to-emerald-600 rounded-full flex items-center justify-center text-white text-xs font-bold">
+                              {note.author?.name?.split(' ').map((n: string) => n[0]).join('') || 'U'}
+                            </div>
+                            <span className="text-xs text-muted-foreground">{note.author?.name || 'Unknown'}</span>
                           </div>
                         </td>
                         <td className="p-3 align-top">
@@ -252,7 +284,7 @@ export const LeadDetailModal = ({
                         </td>
                         <td className="p-3 align-top">
                           <p className="text-sm text-foreground whitespace-pre-wrap max-w-md">
-                            {note.content || note.text}
+                            {note.content}
                           </p>
                         </td>
                         <td className="p-3 align-top">
@@ -268,6 +300,10 @@ export const LeadDetailModal = ({
                   </tbody>
                 </table>
               </div>
+            </div>
+          ) : (
+            <div className="text-center py-6 text-muted-foreground bg-muted/20 rounded-lg border border-dashed border-border">
+              No follow-up history yet. Add a note to start tracking interactions.
             </div>
           )}
 
