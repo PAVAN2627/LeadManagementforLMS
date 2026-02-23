@@ -105,15 +105,25 @@ export const LeadDetailModal = ({
           nextFollowUp: editedFollowUpDate,
         };
 
-        // Save the lead updates
-        onSave(lead, updates);
-
-        // If there's a note, save it separately
+        // If there's a note, save it separately with status and follow-up info
         if (editedNotes.trim()) {
-          await api.addLeadNote(lead._id, editedNotes.trim(), editedStatus, editedFollowUpDate);
+          console.log('Saving note with:', {
+            content: editedNotes.trim(),
+            status: editedStatus,
+            nextFollowUp: editedFollowUpDate
+          });
+          await api.addLeadNote(
+            lead._id, 
+            editedNotes.trim(), 
+            editedStatus, 
+            editedFollowUpDate || undefined
+          );
           // Invalidate notes query to refetch
           queryClient.invalidateQueries({ queryKey: ['lead-notes', lead._id] });
         }
+
+        // Save the lead updates
+        onSave(lead, updates);
       }
       
       setTimeout(() => {
