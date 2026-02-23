@@ -214,36 +214,59 @@ export const LeadDetailModal = ({
           {/* Previous Notes & Follow-up History */}
           {lead.notes && lead.notes.length > 0 && (
             <div className="space-y-3">
-              <h3 className="text-sm font-semibold text-foreground">Previous Notes & Follow-up History</h3>
-              <div className="max-h-64 overflow-y-auto space-y-3 bg-muted/30 p-4 rounded-lg border border-border">
-                {lead.notes.map((note: any, index: number) => (
-                  <motion.div
-                    key={index}
-                    initial={{ opacity: 0, x: -10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: index * 0.05 }}
-                    className="bg-background p-3 rounded-md border border-border"
-                  >
-                    <div className="flex items-start justify-between gap-2 mb-2">
-                      <p className="text-xs text-muted-foreground flex items-center gap-1">
-                        <Clock className="h-3 w-3" />
-                        {new Date(note.createdAt || note.date).toLocaleString()}
-                      </p>
-                      {note.status && (
-                        <Badge variant="outline" className="text-xs">
-                          {note.status}
-                        </Badge>
-                      )}
-                    </div>
-                    <p className="text-sm text-foreground whitespace-pre-wrap">{note.content || note.text}</p>
-                    {note.nextFollowUp && (
-                      <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1">
-                        <Calendar className="h-3 w-3" />
-                        Next follow-up: {new Date(note.nextFollowUp).toLocaleDateString()}
-                      </p>
-                    )}
-                  </motion.div>
-                ))}
+              <h3 className="text-sm font-semibold text-foreground">Follow-up History</h3>
+              <div className="max-h-96 overflow-y-auto bg-muted/30 rounded-lg border border-border">
+                <table className="w-full text-sm">
+                  <thead className="bg-muted/50 sticky top-0 z-10">
+                    <tr className="border-b border-border">
+                      <th className="text-left p-3 font-semibold text-xs text-muted-foreground">Date & Time</th>
+                      <th className="text-left p-3 font-semibold text-xs text-muted-foreground">Status</th>
+                      <th className="text-left p-3 font-semibold text-xs text-muted-foreground">Notes</th>
+                      <th className="text-left p-3 font-semibold text-xs text-muted-foreground">Next Follow-up</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {lead.notes.map((note: any, index: number) => (
+                      <motion.tr
+                        key={index}
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: index * 0.05 }}
+                        className="border-b border-border last:border-b-0 hover:bg-muted/20 transition-colors"
+                      >
+                        <td className="p-3 align-top">
+                          <div className="flex items-center gap-1 text-xs text-muted-foreground whitespace-nowrap">
+                            <Clock className="h-3 w-3 flex-shrink-0" />
+                            <span>{new Date(note.createdAt || note.date).toLocaleString()}</span>
+                          </div>
+                        </td>
+                        <td className="p-3 align-top">
+                          {note.status && (
+                            <Badge 
+                              variant="outline" 
+                              className={`text-xs ${statusColors[note.status] || 'bg-gray-100 text-gray-700'}`}
+                            >
+                              {note.status.charAt(0).toUpperCase() + note.status.slice(1)}
+                            </Badge>
+                          )}
+                        </td>
+                        <td className="p-3 align-top">
+                          <p className="text-sm text-foreground whitespace-pre-wrap max-w-md">
+                            {note.content || note.text}
+                          </p>
+                        </td>
+                        <td className="p-3 align-top">
+                          {note.nextFollowUp && (
+                            <div className="flex items-center gap-1 text-xs text-muted-foreground whitespace-nowrap">
+                              <Calendar className="h-3 w-3 flex-shrink-0" />
+                              <span>{new Date(note.nextFollowUp).toLocaleString()}</span>
+                            </div>
+                          )}
+                        </td>
+                      </motion.tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             </div>
           )}
