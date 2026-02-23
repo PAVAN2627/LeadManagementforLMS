@@ -1,11 +1,9 @@
 import { motion } from "framer-motion";
-import { ArrowLeft } from "lucide-react";
-import { useNavigate, useLocation } from "react-router-dom";
-import { Button } from "@/components/ui/button";
+import { useLocation } from "react-router-dom";
+import { Navbar } from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 
 const GenericPage = () => {
-  const navigate = useNavigate();
   const location = useLocation();
   
   const getPageTitle = () => {
@@ -15,12 +13,9 @@ const GenericPage = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-teal-50">
+      <Navbar />
+      
       <div className="container mx-auto px-4 py-12">
-        <Button variant="ghost" onClick={() => navigate("/")} className="mb-8">
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Back to Home
-        </Button>
-
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}

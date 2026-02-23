@@ -55,16 +55,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         }
 
         if (req.method === 'POST') {
-            const { content } = req.body;
+            const { content, status, nextFollowUp } = req.body;
             if (!content || typeof content !== 'string') {
                 return res.status(400).json({ message: 'Note content is required' });
             }
 
-            const newNote = await Note.create({
+            const noteData: any = {
                 content,
                 lead: id,
                 author: decoded.userId
-            });
+            };
+
+            if (status) noteData.status = status;
+            if (nextFollowUp) noteData.nextFollowUp = new Date(nextFollowUp);
+
+            const newNote = await Note.create(noteData);
 
             const populatedNote = await newNote.populate('author', 'name role');
 

@@ -32,6 +32,15 @@ import AddLeadPage from "./pages/agent/AddLeadPage";
 import Settings from "./pages/agent/Settings";
 import AgentProfile from "./pages/agent/AgentProfile";
 import NotFound from "./pages/NotFound";
+import Careers from "./pages/Careers";
+import Services from "./pages/Services";
+import About from "./pages/About";
+import AISolutions from "./pages/AISolutions";
+import Contact from "./pages/Contact";
+import FAQ from "./pages/FAQ";
+import InternshipPrograms from "./pages/InternshipPrograms";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
+import TermsOfService from "./pages/TermsOfService";
 
 import { AuthProvider } from "@/context/AuthContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
@@ -59,28 +68,25 @@ const App = () => {
               <Route path="/roles" element={<Roles />} />
               <Route path="/lifecycle" element={<Lifecycle />} />
               
-              {/* Footer Links - Platform */}
-              <Route path="/integrations" element={<GenericPage />} />
-              <Route path="/security" element={<GenericPage />} />
-              <Route path="/api-docs" element={<GenericPage />} />
-              
-              {/* Footer Links - Resources */}
-              <Route path="/help-center" element={<GenericPage />} />
-              <Route path="/tutorials" element={<GenericPage />} />
-              <Route path="/blog" element={<GenericPage />} />
-              <Route path="/case-studies" element={<GenericPage />} />
-              <Route path="/community" element={<GenericPage />} />
-              
               {/* Footer Links - Company */}
-              <Route path="/about" element={<GenericPage />} />
-              <Route path="/careers" element={<GenericPage />} />
-              <Route path="/contact" element={<GenericPage />} />
+              <Route path="/about" element={<About />} />
+              <Route path="/careers" element={<Careers />} />
+              <Route path="/contact" element={<Contact />} />
               <Route path="/partners" element={<GenericPage />} />
               <Route path="/press" element={<GenericPage />} />
+              <Route path="/faq" element={<FAQ />} />
+              
+              {/* Footer Links - Services */}
+              <Route path="/services" element={<Services />} />
+              <Route path="/ai-solutions" element={<AISolutions />} />
+              <Route path="/web-app-dev" element={<Services />} />
+              <Route path="/digital-products" element={<Services />} />
+              <Route path="/internship-programs" element={<InternshipPrograms />} />
+              <Route path="/internship" element={<InternshipPrograms />} />
               
               {/* Footer Links - Legal */}
-              <Route path="/privacy-policy" element={<GenericPage />} />
-              <Route path="/terms-of-service" element={<GenericPage />} />
+              <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+              <Route path="/terms-of-service" element={<TermsOfService />} />
               <Route path="/cookie-policy" element={<GenericPage />} />
 
               {/* Admin Routes */}

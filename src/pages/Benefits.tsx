@@ -1,12 +1,10 @@
 import { motion } from "framer-motion";
-import { useNavigate } from "react-router-dom";
-import { Database, TrendingUp, Shield, Zap, LineChart, Target, ArrowLeft } from "lucide-react";
+import { Database, TrendingUp, Shield, Zap, LineChart, Target } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { Navbar } from "@/components/layout/Navbar";
+import Footer from "@/components/layout/Footer";
 
 const Benefits = () => {
-  const navigate = useNavigate();
-
   const benefits = [
     { icon: Database, title: "Centralized Data", description: "All lead information in one secure platform" },
     { icon: TrendingUp, title: "Increased Productivity", description: "Streamlined workflows and automation" },
@@ -18,23 +16,8 @@ const Benefits = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
-      {/* Header */}
-      <header className="sticky top-0 z-50 border-b border-gray-200 bg-white/95 backdrop-blur-lg shadow-sm">
-        <div className="mx-auto flex h-16 md:h-20 items-center justify-between px-4 md:px-6 lg:px-8">
-          <div className="flex items-center gap-4">
-            <Button
-              variant="ghost"
-              onClick={() => navigate("/")}
-              className="text-gray-700 hover:text-teal-600"
-            >
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Back to Home
-            </Button>
-          </div>
-          <img src="/Athenura logo.png" alt="Athenura LMS" className="h-8 md:h-12 w-auto" />
-        </div>
-      </header>
-
+      <Navbar />
+      
       {/* Benefits Section */}
       <section className="py-12 md:py-20 relative overflow-hidden">
         {/* Background Image */}
@@ -86,6 +69,8 @@ const Benefits = () => {
           </div>
         </div>
       </section>
+      
+      <Footer />
     </div>
   );
 };

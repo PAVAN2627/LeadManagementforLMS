@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
-import { motion } from "framer-motion";
-import { X, Phone, Mail, Building2, Calendar } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { X, Phone, Mail, Building2, Calendar, Clock, AlertCircle } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -20,6 +20,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Lead } from "@/components/tables/LeadsTable";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { api } from "@/lib/api";
 
 interface LeadDetailModalProps {
   lead: Lead | null;
@@ -44,50 +47,97 @@ export const LeadDetailModal = ({
   onClose,
   onSave,
 }: LeadDetailModalProps) => {
+  const queryClient = useQueryClient();
   const [editedStatus, setEditedStatus] = useState("");
+  const [originalStatus, setOriginalStatus] = useState("");
   const [editedNotes, setEditedNotes] = useState("");
   const [editedFollowUpDate, setEditedFollowUpDate] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+  const [showValidationError, setShowValidationError] = useState(false);
+  const [validationMessage, setValidationMessage] = useState("");
+
+  // Fetch notes for the lead
+  const { data: notes = [], isLoading: notesLoading } = useQuery({
+    queryKey: ['lead-notes', lead?._id],
+    queryFn: () => lead?._id ? api.getLeadNotes(lead._id) : Promise.resolve([]),
+    enabled: !!lead?._id && isOpen,
+  });
 
   useEffect(() => {
     if (lead) {
       setEditedStatus(lead.status);
+      setOriginalStatus(lead.status);
       setEditedNotes("");
       setEditedFollowUpDate(lead.nextFollowUp || "");
+      setShowValidationError(false);
+      setValidationMessage("");
     }
   }, [lead]);
 
-  const handleSave = () => {
-    setIsSaving(true);
-    if (lead && onSave) {
-      onSave(lead, {
-        status: editedStatus,
-        notes: editedNotes,
-        nextFollowUp: editedFollowUpDate,
-      });
+  const handleStatusChange = (newStatus: string) => {
+    setEditedStatus(newStatus);
+    setShowValidationError(false);
+  };
+
+  const handleSave = async () => {
+    // Check if status changed
+    const statusChanged = editedStatus !== originalStatus;
+    
+    // Validation: If status changed, notes and follow-up date are mandatory
+    if (statusChanged) {
+      if (!editedNotes.trim()) {
+        setShowValidationError(true);
+        setValidationMessage("Note is mandatory when updating lead status");
+        return;
+      }
+      if (!editedFollowUpDate) {
+        setShowValidationError(true);
+        setValidationMessage("Next follow-up date is mandatory when updating lead status");
+        return;
+      }
     }
-    setTimeout(() => {
+
+    setIsSaving(true);
+    try {
+      if (lead && onSave) {
+        const updates: any = {
+          status: editedStatus,
+          nextFollowUp: editedFollowUpDate,
+        };
+
+        // Save the lead updates
+        onSave(lead, updates);
+
+        // If there's a note, save it separately
+        if (editedNotes.trim()) {
+          await api.addLeadNote(lead._id, editedNotes.trim(), editedStatus, editedFollowUpDate);
+          // Invalidate notes query to refetch
+          queryClient.invalidateQueries({ queryKey: ['lead-notes', lead._id] });
+        }
+      }
+      
+      setTimeout(() => {
+        setIsSaving(false);
+        onClose();
+      }, 500);
+    } catch (error) {
+      console.error('Error saving lead:', error);
       setIsSaving(false);
-      onClose();
-    }, 500);
+      setShowValidationError(true);
+      setValidationMessage("Failed to save changes. Please try again.");
+    }
   };
 
   if (!lead) return null;
 
+  const statusChanged = editedStatus !== originalStatus;
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="w-[95vw] max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader className="flex flex-row items-start justify-between">
-          <div className="flex-1">
-            <DialogTitle className="text-2xl">{lead.name}</DialogTitle>
-            <p className="text-sm text-muted-foreground mt-1">{lead.company}</p>
-          </div>
-          <button
-            onClick={onClose}
-            className="text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <X className="h-5 w-5" />
-          </button>
+      <DialogContent className="w-[95vw] max-w-3xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="text-2xl">{lead.name}</DialogTitle>
+          <p className="text-sm text-muted-foreground mt-1">{lead.company}</p>
         </DialogHeader>
 
         <motion.div
@@ -95,6 +145,22 @@ export const LeadDetailModal = ({
           animate={{ opacity: 1, y: 0 }}
           className="space-y-6 mt-6"
         >
+          {/* Validation Error Alert */}
+          <AnimatePresence>
+            {showValidationError && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+              >
+                <Alert variant="destructive">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>{validationMessage}</AlertDescription>
+                </Alert>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
           {/* Lead Contact Information */}
           <div>
             <h3 className="text-sm font-semibold text-foreground mb-4">
@@ -135,7 +201,7 @@ export const LeadDetailModal = ({
             <h3 className="text-sm font-semibold text-foreground mb-4">
               Lead Information
             </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               <div>
                 <Label className="text-xs text-muted-foreground mb-2 block">
                   Current Status
@@ -152,15 +218,108 @@ export const LeadDetailModal = ({
                 </Label>
                 <p className="text-sm font-medium">{lead.date}</p>
               </div>
+              {lead.nextFollowUp && (
+                <div>
+                  <Label className="text-xs text-muted-foreground mb-2 block">
+                    Current Follow-up Date
+                  </Label>
+                  <p className="text-sm font-medium flex items-center gap-1">
+                    <Calendar className="h-3 w-3 text-teal-600" />
+                    {new Date(lead.nextFollowUp).toLocaleString()}
+                  </p>
+                </div>
+              )}
             </div>
           </div>
 
+          {/* Previous Notes & Follow-up History */}
+          {notesLoading ? (
+            <div className="text-center py-4 text-muted-foreground">Loading notes...</div>
+          ) : notes && notes.length > 0 ? (
+            <div className="space-y-3">
+              <h3 className="text-sm font-semibold text-foreground">Follow-up History ({notes.length})</h3>
+              <div className="max-h-96 overflow-y-auto bg-muted/30 rounded-lg border border-border">
+                <table className="w-full text-sm">
+                  <thead className="bg-muted/50 sticky top-0 z-10">
+                    <tr className="border-b border-border">
+                      <th className="text-left p-3 font-semibold text-xs text-muted-foreground">Date & Time</th>
+                      <th className="text-left p-3 font-semibold text-xs text-muted-foreground">Author</th>
+                      <th className="text-left p-3 font-semibold text-xs text-muted-foreground">Status</th>
+                      <th className="text-left p-3 font-semibold text-xs text-muted-foreground">Notes</th>
+                      <th className="text-left p-3 font-semibold text-xs text-muted-foreground">Next Follow-up</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {notes.map((note: any, index: number) => (
+                      <motion.tr
+                        key={note._id || index}
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: index * 0.05 }}
+                        className="border-b border-border last:border-b-0 hover:bg-muted/20 transition-colors"
+                      >
+                        <td className="p-3 align-top">
+                          <div className="flex items-center gap-1 text-xs text-muted-foreground whitespace-nowrap">
+                            <Clock className="h-3 w-3 flex-shrink-0" />
+                            <span>{new Date(note.createdAt).toLocaleString()}</span>
+                          </div>
+                        </td>
+                        <td className="p-3 align-top">
+                          <div className="flex items-center gap-2">
+                            <div className="w-6 h-6 bg-gradient-to-br from-teal-500 to-emerald-600 rounded-full flex items-center justify-center text-white text-xs font-bold">
+                              {note.author?.name?.split(' ').map((n: string) => n[0]).join('') || 'U'}
+                            </div>
+                            <span className="text-xs text-muted-foreground">{note.author?.name || 'Unknown'}</span>
+                          </div>
+                        </td>
+                        <td className="p-3 align-top">
+                          {note.status && (
+                            <Badge 
+                              variant="outline" 
+                              className={`text-xs ${statusColors[note.status] || 'bg-gray-100 text-gray-700'}`}
+                            >
+                              {note.status.charAt(0).toUpperCase() + note.status.slice(1)}
+                            </Badge>
+                          )}
+                        </td>
+                        <td className="p-3 align-top">
+                          <p className="text-sm text-foreground whitespace-pre-wrap max-w-md">
+                            {note.content}
+                          </p>
+                        </td>
+                        <td className="p-3 align-top">
+                          {note.nextFollowUp && (
+                            <div className="flex items-center gap-1 text-xs text-muted-foreground whitespace-nowrap">
+                              <Calendar className="h-3 w-3 flex-shrink-0" />
+                              <span>{new Date(note.nextFollowUp).toLocaleString()}</span>
+                            </div>
+                          )}
+                        </td>
+                      </motion.tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          ) : (
+            <div className="text-center py-6 text-muted-foreground bg-muted/20 rounded-lg border border-dashed border-border">
+              No follow-up history yet. Add a note to start tracking interactions.
+            </div>
+          )}
+
           {/* Status Update */}
           <div className="space-y-3 bg-accent/20 p-4 rounded-lg border border-accent/30">
-            <h3 className="text-sm font-semibold text-foreground">
-              Update Lead Status
-            </h3>
-            <Select value={editedStatus} onValueChange={setEditedStatus}>
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-semibold text-foreground">
+                Update Lead Status
+              </h3>
+              {statusChanged && (
+                <Badge variant="outline" className="text-xs bg-yellow-50 text-yellow-700 border-yellow-200">
+                  Status Changed
+                </Badge>
+              )}
+            </div>
+            <Select value={editedStatus} onValueChange={handleStatusChange}>
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
@@ -176,35 +335,66 @@ export const LeadDetailModal = ({
             </Select>
           </div>
 
-          {/* Notes */}
+          {/* Notes - Mandatory if status changed */}
           <div className="space-y-3">
-            <Label className="text-sm font-semibold">Add Notes</Label>
+            <div className="flex items-center justify-between">
+              <Label className="text-sm font-semibold">
+                Add Notes {statusChanged && <span className="text-red-500">*</span>}
+              </Label>
+              {statusChanged && (
+                <span className="text-xs text-red-500">Required</span>
+              )}
+            </div>
             <Textarea
               placeholder="Add interaction notes, observations, or next steps..."
-              className="min-h-[100px] resize-none"
+              className={`min-h-[120px] resize-none ${statusChanged && !editedNotes.trim() ? 'border-red-300 focus:border-red-500' : ''}`}
               value={editedNotes}
-              onChange={(e) => setEditedNotes(e.target.value)}
+              onChange={(e) => {
+                setEditedNotes(e.target.value);
+                if (e.target.value.trim()) {
+                  setShowValidationError(false);
+                }
+              }}
             />
-            <p className="text-xs text-muted-foreground">
-              Character count: {editedNotes.length}/500
-            </p>
+            <div className="flex items-center justify-between">
+              <p className="text-xs text-muted-foreground">
+                Character count: {editedNotes.length}/500
+              </p>
+              {statusChanged && !editedNotes.trim() && (
+                <p className="text-xs text-red-500">Note is required when status changes</p>
+              )}
+            </div>
           </div>
 
-          {/* Follow-up Date */}
+          {/* Follow-up Date - Mandatory if status changed */}
           <div className="space-y-3">
-            <Label htmlFor="followup-date" className="text-sm font-semibold">
-              Next Follow-up Date
-            </Label>
+            <div className="flex items-center justify-between">
+              <Label htmlFor="followup-date" className="text-sm font-semibold">
+                Next Follow-up Date {statusChanged && <span className="text-red-500">*</span>}
+              </Label>
+              {statusChanged && (
+                <span className="text-xs text-red-500">Required</span>
+              )}
+            </div>
             <div className="relative">
               <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
               <Input
                 id="followup-date"
-                type="date"
+                type="datetime-local"
                 value={editedFollowUpDate}
-                onChange={(e) => setEditedFollowUpDate(e.target.value)}
-                className="pl-10"
+                onChange={(e) => {
+                  setEditedFollowUpDate(e.target.value);
+                  if (e.target.value) {
+                    setShowValidationError(false);
+                  }
+                }}
+                className={`pl-10 ${statusChanged && !editedFollowUpDate ? 'border-red-300 focus:border-red-500' : ''}`}
+                min={new Date().toISOString().slice(0, 16)}
               />
             </div>
+            {statusChanged && !editedFollowUpDate && (
+              <p className="text-xs text-red-500">Follow-up date is required when status changes</p>
+            )}
           </div>
 
           {/* Action Buttons */}
