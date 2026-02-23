@@ -60,7 +60,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             }
 
             try {
-                const dashboardUrl = process.env.FRONTEND_URL || 'https://lead-managementfor-lms-peach.vercel.app';
+                const dashboardUrl = process.env.FRONTEND_URL || 'https://lead-managementfor-lms.vercel.app';
                 
                 const success = await sendFollowUpReminder(
                     agent.email,

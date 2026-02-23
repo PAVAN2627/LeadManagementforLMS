@@ -109,7 +109,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             });
 
             // Send Brevo welcome email with credentials (non-blocking)
-            const loginUrl = 'https://lead-managementfor-lms-peach.vercel.app/login';
+            const loginUrl = 'https://lead-managementfor-lms.vercel.app/login';
             sendWelcomeEmail(email, name, password, loginUrl).catch(err => {
                 console.error("Non-blocking email send failure:", err);
             });
