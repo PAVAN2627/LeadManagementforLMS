@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { useState } from "react";
 import { LoadingScreen } from "@/components/LoadingScreen";
+import ScrollToTop from "@/components/ScrollToTop";
 import Index from "./pages/Index";
 import LandingPage from "./pages/LandingPage";
 import Login from "./pages/Login";
@@ -58,6 +59,7 @@ const App = () => {
           <Sonner />
           {showLoading && <LoadingScreen onLoadingComplete={() => setShowLoading(false)} />}
           <BrowserRouter>
+            <ScrollToTop />
             <Routes>
               <Route path="/" element={<LandingPage />} />
               <Route path="/home" element={<Index />} />
