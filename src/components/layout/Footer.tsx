@@ -150,7 +150,7 @@ export default function Footer() {
                 referrerPolicy="no-referrer-when-downgrade"
               />
             </div>
-            <p className="text-sm text-white/90">
+            <p className="text-sm text-white/90 max-w-[160px]">
               Sector 62, Noida, Uttar Pradesh
             </p>
           </div>
