@@ -39,8 +39,11 @@ import {
 } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { useToast } from "@/components/ui/use-toast";
+import { api } from "@/lib/api";
 
 const SettingsPage = () => {
+  const { toast } = useToast();
   const [profile, setProfile] = useState({
     name: "Admin User",
     email: "admin@athenura.com",
@@ -49,6 +52,14 @@ const SettingsPage = () => {
     department: "Sales",
     bio: "Lead management system administrator with 5+ years of experience."
   });
+
+  const [passwordData, setPasswordData] = useState({
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: ""
+  });
+
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
 
   const [notifications, setNotifications] = useState({
     emailNewLead: true,
@@ -83,6 +94,44 @@ const SettingsPage = () => {
   const handleSave = () => {
     setSaved(true);
     setTimeout(() => setSaved(false), 3000);
+  };
+
+  const handleChangePassword = async () => {
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "New passwords do not match"
+      });
+      return;
+    }
+
+    if (passwordData.newPassword.length < 6) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Password must be at least 6 characters"
+      });
+      return;
+    }
+
+    setIsChangingPassword(true);
+    try {
+      await api.changePassword(passwordData.currentPassword, passwordData.newPassword);
+      toast({
+        title: "Success",
+        description: "Password changed successfully"
+      });
+      setPasswordData({ currentPassword: "", newPassword: "", confirmPassword: "" });
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error.message || "Failed to change password"
+      });
+    } finally {
+      setIsChangingPassword(false);
+    }
   };
 
   return (
@@ -265,19 +314,40 @@ const SettingsPage = () => {
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div className="space-y-2">
                       <Label className="text-gray-700">Current Password</Label>
-                      <Input type="password" className="border-gray-300" />
+                      <Input 
+                        type="password" 
+                        className="border-gray-300"
+                        value={passwordData.currentPassword}
+                        onChange={(e) => setPasswordData({...passwordData, currentPassword: e.target.value})}
+                      />
                     </div>
                     <div className="space-y-2">
                       <Label className="text-gray-700">New Password</Label>
-                      <Input type="password" className="border-gray-300" />
+                      <Input 
+                        type="password" 
+                        className="border-gray-300"
+                        value={passwordData.newPassword}
+                        onChange={(e) => setPasswordData({...passwordData, newPassword: e.target.value})}
+                      />
                     </div>
                     <div className="space-y-2">
                       <Label className="text-gray-700">Confirm Password</Label>
-                      <Input type="password" className="border-gray-300" />
+                      <Input 
+                        type="password" 
+                        className="border-gray-300"
+                        value={passwordData.confirmPassword}
+                        onChange={(e) => setPasswordData({...passwordData, confirmPassword: e.target.value})}
+                      />
                     </div>
                   </div>
-                  <Button variant="outline" size="sm" className="border-gray-300">
-                    Update Password
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="border-gray-300"
+                    onClick={handleChangePassword}
+                    disabled={isChangingPassword || !passwordData.currentPassword || !passwordData.newPassword || !passwordData.confirmPassword}
+                  >
+                    {isChangingPassword ? "Updating..." : "Update Password"}
                   </Button>
                 </CardContent>
               </Card>

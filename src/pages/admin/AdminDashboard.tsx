@@ -9,7 +9,6 @@ import {
   Ban,
   BarChart3,
   FileText,
-  Settings,
   Search,
   Filter,
   Eye,
@@ -712,7 +711,7 @@ const AdminDashboard = () => {
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.6 }}
               >
-                <TabsList className="grid w-full sm:w-auto grid-cols-3 bg-white shadow-sm border">
+                <TabsList className="grid w-full sm:w-auto grid-cols-2 bg-white shadow-sm border">
                   <TabsTrigger
                     value="analytics"
                     className="data-[state=active]:bg-teal-600 data-[state=active]:text-white transition-all duration-300"
@@ -726,13 +725,6 @@ const AdminDashboard = () => {
                   >
                     <FileText className="h-4 w-4 mr-2" />
                     Reports
-                  </TabsTrigger>
-                  <TabsTrigger
-                    value="settings"
-                    className="data-[state=active]:bg-teal-600 data-[state=active]:text-white transition-all duration-300"
-                  >
-                    <Settings className="h-4 w-4 mr-2" />
-                    Settings
                   </TabsTrigger>
                 </TabsList>
               </motion.div>
@@ -922,184 +914,6 @@ const AdminDashboard = () => {
                           </Card>
                         </motion.div>
                       ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            </TabsContent>
-
-            <TabsContent value="settings" className="space-y-8 p-6">
-              {/* Enhanced System Settings with Premium Design */}
-              <motion.div
-                initial={{ opacity: 0, y: 30 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2 }}
-                className="grid grid-cols-1 lg:grid-cols-2 gap-8"
-              >
-                {/* General Settings */}
-                <Card className="border-0 shadow-xl overflow-hidden">
-                  <CardHeader className="bg-gradient-to-r from-teal-600 to-cyan-600 text-white relative overflow-hidden">
-                    <motion.div
-                      animate={{
-                        backgroundPosition: ['0% 0%', '100% 100%'],
-                      }}
-                      transition={{
-                        duration: 15,
-                        repeat: Infinity,
-                        repeatType: "reverse"
-                      }}
-                      className="absolute inset-0 opacity-20"
-                      style={{
-                        backgroundImage: 'radial-gradient(circle at 30% 70%, rgba(255, 255, 255, 0.3) 0%, transparent 50%)'
-                      }}
-                    />
-
-                    <div className="relative z-10 flex items-center gap-3">
-                      <motion.div
-                        animate={{ rotate: [0, 360] }}
-                        transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
-                        className="p-2 bg-white/20 backdrop-blur-sm rounded-lg"
-                      >
-                        <Settings className="h-5 w-5" />
-                      </motion.div>
-                      <div>
-                        <CardTitle className="font-bold">General Settings</CardTitle>
-                        <p className="text-teal-100 text-sm">Configure system preferences</p>
-                      </div>
-                    </div>
-                  </CardHeader>
-
-                  <CardContent className="p-6 space-y-6">
-                    {[
-                      {
-                        label: "Organization Name",
-                        value: "LeadFlow Hub",
-                        type: "text",
-                        icon: Building,
-                        description: "Your company name displayed across the platform"
-                      },
-                      {
-                        label: "Default Currency",
-                        value: "USD",
-                        type: "select",
-                        icon: DollarSign,
-                        description: "Currency used for all financial calculations"
-                      },
-                      {
-                        label: "Time Zone",
-                        value: "UTC-8 (PST)",
-                        type: "select",
-                        icon: Clock,
-                        description: "Default timezone for all users and reports"
-                      }
-                    ].map((setting, index) => (
-                      <motion.div
-                        key={setting.label}
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: 0.3 + index * 0.1 }}
-                        className="group"
-                      >
-                        <div className="flex items-center gap-3 mb-2">
-                          <motion.div
-                            whileHover={{ scale: 1.1, rotate: 5 }}
-                            className="p-2 bg-teal-100 rounded-lg group-hover:bg-teal-200 transition-colors"
-                          >
-                            <setting.icon className="h-4 w-4 text-teal-600" />
-                          </motion.div>
-                          <label className="font-medium text-gray-700">{setting.label}</label>
-                        </div>
-
-                        {setting.type === 'select' ? (
-                          <select className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none transition-all duration-200">
-                            <option>{setting.value}</option>
-                          </select>
-                        ) : (
-                          <input
-                            type={setting.type}
-                            defaultValue={setting.value}
-                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none transition-all duration-200"
-                          />
-                        )}
-
-                        <p className="text-xs text-gray-500 mt-1 ml-11">{setting.description}</p>
-                      </motion.div>
-                    ))}
-                  </CardContent>
-                </Card>
-
-                {/* Lead Management Settings */}
-                <Card className="border-0 shadow-xl overflow-hidden">
-                  <CardHeader className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white relative overflow-hidden">
-                    <motion.div
-                      animate={{
-                        backgroundPosition: ['0% 0%', '100% 100%'],
-                      }}
-                      transition={{
-                        duration: 12,
-                        repeat: Infinity,
-                        repeatType: "reverse"
-                      }}
-                      className="absolute inset-0 opacity-20"
-                      style={{
-                        backgroundImage: 'radial-gradient(circle at 70% 30%, rgba(255, 255, 255, 0.3) 0%, transparent 50%)'
-                      }}
-                    />
-
-                    <div className="relative z-10 flex items-center gap-3">
-                      <motion.div
-                        animate={{ rotate: [0, -360] }}
-                        transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
-                        className="p-2 bg-white/20 backdrop-blur-sm rounded-lg"
-                      >
-                        <Users className="h-5 w-5" />
-                      </motion.div>
-                      <div>
-                        <CardTitle className="font-bold">Lead Assignment Rules</CardTitle>
-                        <p className="text-indigo-100 text-sm">Configure lead handling preferences</p>
-                      </div>
-                    </div>
-                  </CardHeader>
-
-                  <CardContent className="p-6 space-y-4">
-                    <div>
-                      <Label className="text-gray-700 font-medium">Assignment Method</Label>
-                      <Select>
-                        <SelectTrigger className="mt-2 border-gray-300 focus:ring-2 focus:ring-indigo-500">
-                          <SelectValue placeholder="Round Robin" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="round-robin">Round Robin</SelectItem>
-                          <SelectItem value="manual">Manual Assignment</SelectItem>
-                          <SelectItem value="performance">Performance Based</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div>
-                      <Label className="text-gray-700 font-medium">Email Notifications</Label>
-                      <div className="mt-3 space-y-3">
-                        {[
-                          { label: "New lead assignments", checked: true },
-                          { label: "Daily performance reports", checked: true },
-                          { label: "Lead status updates", checked: false }
-                        ].map((notification, index) => (
-                          <motion.label
-                            key={notification.label}
-                            initial={{ opacity: 0, x: -10 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ delay: 0.4 + index * 0.1 }}
-                            className="flex items-center space-x-3 p-2 rounded-lg hover:bg-indigo-50 transition-colors cursor-pointer"
-                          >
-                            <input
-                              type="checkbox"
-                              className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
-                              defaultChecked={notification.checked}
-                            />
-                            <span className="text-sm text-gray-600">{notification.label}</span>
-                          </motion.label>
-                        ))}
-                      </div>
                     </div>
                   </CardContent>
                 </Card>
