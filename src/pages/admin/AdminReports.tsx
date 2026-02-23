@@ -266,14 +266,14 @@ const AdminReports = () => {
     const reportData = {
       exportDate: new Date().toISOString().split('T')[0],
       dateRange: dateRange,
-      reportTemplates: reportTemplates,
       topPerformers: topPerformers,
       conversionTrends: conversionTrends,
       teamPerformance: teamPerformance,
       activityOverview: activityOverview,
       totalLeads: leads.length,
       totalUsers: allUsers.length,
-      conversionRate: conversionRate
+      conversionRate: conversionRate,
+      leadsByStatus: leadsByStatusData
     };
 
     const dataStr = JSON.stringify(reportData, null, 2);
@@ -308,56 +308,6 @@ const AdminReports = () => {
     const converted = leads.filter((l: ApiLead) => l.status === 'converted').length;
     return ((converted / leads.length) * 100).toFixed(1) + "%";
   }, [leads]);
-
-  const reportTemplates = [
-    {
-      title: "Lead Performance Report",
-      description: "Comprehensive analysis of lead generation and conversion",
-      icon: TrendingUp,
-      type: "leads",
-      lastGenerated: "2 hours ago"
-    },
-    {
-      title: "Sales Team Report",
-      description: "Individual and team performance metrics",
-      icon: Users,
-      type: "team",
-      lastGenerated: "1 day ago"
-    },
-    {
-      title: "Revenue Analysis",
-      description: "Revenue trends and forecasting",
-      icon: DollarSign,
-      type: "revenue",
-      lastGenerated: "3 hours ago"
-    },
-    {
-      title: "Pipeline Health",
-      description: "Sales pipeline status and bottlenecks",
-      icon: Activity,
-      type: "pipeline",
-      lastGenerated: "5 hours ago"
-    },
-    {
-      title: "Customer Journey",
-      description: "Lead journey from first contact to conversion",
-      icon: Target,
-      type: "journey",
-      lastGenerated: "1 day ago"
-    },
-    {
-      title: "Monthly Summary",
-      description: "Executive summary for monthly review",
-      icon: FileText,
-      type: "summary",
-      lastGenerated: "2 days ago"
-    }
-  ];
-
-  const generateReport = (type: string) => {
-    // Simulate report generation
-    console.log(`Generating ${type} report...`);
-  };
 
   return (
     <DashboardLayout role="admin" title="Reports & Analytics">
@@ -541,11 +491,10 @@ const AdminReports = () => {
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ delay: 1.0 }}
                   >
-                    <TabsList className="grid w-full grid-cols-4 bg-white shadow-lg border border-gray-200 rounded-xl p-1 h-auto">
+                    <TabsList className="grid w-full grid-cols-3 bg-white shadow-lg border border-gray-200 rounded-xl p-1 h-auto">
                       {[
                         { value: "overview", icon: BarChart3, label: "Overview" },
                         { value: "performance", icon: TrendingUp, label: "Performance" },
-                        { value: "reports", icon: FileText, label: "Reports" },
                         { value: "analytics", icon: PieChart, label: "Analytics" }
                       ].map((tab, index) => (
                         <motion.div
@@ -764,121 +713,6 @@ const AdminReports = () => {
                           </CardContent>
                         </Card>
                       </motion.div>
-                    </motion.div>
-                  </TabsContent>
-
-                  <TabsContent value="reports" className="space-y-6 mt-0">
-                    <motion.div
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 1.2 }}
-                      className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-                    >
-                      {reportTemplates.map((report, index) => (
-                        <motion.div
-                          key={report.title}
-                          initial={{ opacity: 0, y: 30, scale: 0.9 }}
-                          animate={{ opacity: 1, y: 0, scale: 1 }}
-                          transition={{
-                            delay: 1.3 + index * 0.1,
-                            type: "spring",
-                            stiffness: 100
-                          }}
-                          whileHover={{
-                            y: -10,
-                            scale: 1.05,
-                            transition: { type: "spring", stiffness: 400 }
-                          }}
-                          className="group"
-                        >
-                          <Card className="relative overflow-hidden border-gray-200 hover:shadow-2xl transition-all duration-500 cursor-pointer rounded-2xl bg-white">
-                            {/* Background Gradient */}
-                            <motion.div
-                              className="absolute inset-0 opacity-0 group-hover:opacity-10 transition-opacity duration-500"
-                              style={{
-                                background: "linear-gradient(135deg, #0f766e, #047857, #065f46)"
-                              }}
-                              animate={{
-                                background: [
-                                  "linear-gradient(135deg, #0f766e, #047857, #065f46)",
-                                  "linear-gradient(225deg, #0f766e, #047857, #065f46)",
-                                  "linear-gradient(315deg, #0f766e, #047857, #065f46)",
-                                  "linear-gradient(135deg, #0f766e, #047857, #065f46)"
-                                ]
-                              }}
-                              transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
-                            />
-
-                            <CardHeader className="relative z-10 pb-3 bg-gradient-to-r from-gray-50 to-teal-25">
-                              <div className="flex items-center gap-3">
-                                <motion.div
-                                  animate={{
-                                    rotate: [0, 5, -5, 0],
-                                    scale: [1, 1.1, 1]
-                                  }}
-                                  transition={{
-                                    duration: 3,
-                                    repeat: Infinity,
-                                    delay: index * 0.2
-                                  }}
-                                  className="p-3 bg-gradient-to-br from-teal-500 to-teal-600 rounded-xl shadow-lg group-hover:shadow-2xl transition-shadow duration-500"
-                                >
-                                  <report.icon className="h-6 w-6 text-white" />
-                                </motion.div>
-                                <div className="flex-1">
-                                  <CardTitle className="text-base font-bold text-gray-900 group-hover:text-teal-800 transition-colors">
-                                    {report.title}
-                                  </CardTitle>
-                                  <p className="text-sm text-gray-600 mt-1 group-hover:text-gray-700 transition-colors">
-                                    {report.description}
-                                  </p>
-                                </div>
-                              </div>
-                            </CardHeader>
-
-                            <CardContent className="relative z-10 pt-0 p-6 bg-white">
-                              <div className="flex items-center justify-between">
-                                <motion.span
-                                  initial={{ opacity: 0 }}
-                                  animate={{ opacity: 1 }}
-                                  transition={{ delay: 1.4 + index * 0.1 }}
-                                  className="text-xs text-gray-500 flex items-center gap-1"
-                                >
-                                  <Clock className="h-3 w-3" />
-                                  Last: {report.lastGenerated}
-                                </motion.span>
-
-                                <motion.div
-                                  whileHover={{ scale: 1.1 }}
-                                  whileTap={{ scale: 0.9 }}
-                                >
-                                  <Button
-                                    size="sm"
-                                    className="bg-gradient-to-r from-teal-600 to-teal-700 hover:from-teal-700 hover:to-teal-800 text-white shadow-lg hover:shadow-xl transition-all duration-300"
-                                    onClick={() => generateReport(report.type)}
-                                  >
-                                    <Download className="h-3 w-3 mr-1" />
-                                    Generate
-                                  </Button>
-                                </motion.div>
-                              </div>
-                            </CardContent>
-
-                            {/* Animated Border */}
-                            <motion.div
-                              className="absolute inset-0 rounded-2xl border-2 border-teal-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-                              animate={{
-                                borderColor: ["#14b8a6", "#0d9488", "#047857", "#14b8a6"]
-                              }}
-                              transition={{
-                                duration: 3,
-                                repeat: Infinity,
-                                ease: "linear"
-                              }}
-                            />
-                          </Card>
-                        </motion.div>
-                      ))}
                     </motion.div>
                   </TabsContent>
 
