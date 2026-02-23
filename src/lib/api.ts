@@ -192,8 +192,6 @@ export const api = {
         if (status) body.status = status;
         if (nextFollowUp) body.nextFollowUp = nextFollowUp;
         
-        console.log('API: Sending note with body:', body);
-        
         const response = await fetch(`${API_URL}/leads/${id}/notes`, {
             method: 'POST',
             headers: getHeaders(),
@@ -203,8 +201,6 @@ export const api = {
             const error = await response.json().catch(() => ({}));
             throw new Error(error.message || 'Failed to add note');
         }
-        const result = await response.json();
-        console.log('API: Received note response:', result);
-        return result;
+        return response.json();
     },
 };

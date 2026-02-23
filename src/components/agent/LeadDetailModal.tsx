@@ -107,11 +107,6 @@ export const LeadDetailModal = ({
 
         // If there's a note, save it separately with status and follow-up info
         if (editedNotes.trim()) {
-          console.log('Saving note with:', {
-            content: editedNotes.trim(),
-            status: editedStatus,
-            nextFollowUp: editedFollowUpDate
-          });
           await api.addLeadNote(
             lead._id, 
             editedNotes.trim(), 

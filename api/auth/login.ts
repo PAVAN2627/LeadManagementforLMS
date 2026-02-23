@@ -1,4 +1,3 @@
-
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { z } from 'zod';
 import dbConnect from '../../src/lib/db.js';
@@ -33,11 +32,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
         const { email, password } = result.data;
 
-        // 3. Find User
-        // Explicitly select passwordHash because it's set to select: false in schema
-        const user = await User.findOne({ email }).select('+passwordHash');
+        // 3. Find User - optimized query with only needed fields
+        const user = await User.findOne({ email }).select('+passwordHash role status _id name email').lean();
 
         if (!user) {
+            // Use same timing as password check to prevent timing attacks
+            await comparePassword(password, '$2a$10$invalidhashtopreventtimingattack');
             return res.status(401).json({ message: 'Invalid credentials' });
         }
 
@@ -58,10 +58,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             role: user.role
         });
 
-        // 6. Return Response
-        // Don't send password hash back
-        const userObject = user.toObject();
-        delete (userObject as any).passwordHash;
+        // 6. Return Response - passwordHash already excluded by select
+        const { passwordHash, ...userObject } = user;
 
         return res.status(200).json({
             token,

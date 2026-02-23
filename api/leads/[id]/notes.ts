@@ -57,8 +57,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         if (req.method === 'POST') {
             const { content, status, nextFollowUp } = req.body;
             
-            console.log('Received note data:', { content, status, nextFollowUp });
-            
             if (!content || typeof content !== 'string') {
                 return res.status(400).json({ message: 'Note content is required' });
             }
@@ -69,20 +67,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 author: decoded.userId
             };
 
-            if (status) {
-                noteData.status = status;
-                console.log('Adding status to note:', status);
-            }
-            if (nextFollowUp) {
-                noteData.nextFollowUp = new Date(nextFollowUp);
-                console.log('Adding nextFollowUp to note:', nextFollowUp);
-            }
+            if (status) noteData.status = status;
+            if (nextFollowUp) noteData.nextFollowUp = new Date(nextFollowUp);
 
-            console.log('Creating note with data:', noteData);
             const newNote = await Note.create(noteData);
-
             const populatedNote = await newNote.populate('author', 'name role');
-            console.log('Created note:', populatedNote);
 
             await notifyAdmins(`A note was added to lead "${lead.name}"`, decoded.userId);
 
