@@ -65,6 +65,8 @@ const ManagerDashboard = () => {
   const [selectedLeads, setSelectedLeads] = useState<string[]>([]);
   // Track per-row selected agent (key: leadId, value: agentId)
   const [rowAgentMap, setRowAgentMap] = useState<Record<string, string>>({});
+  // Track which lead is currently being updated
+  const [updatingLeadId, setUpdatingLeadId] = useState<string | null>(null);
 
   const { data: leads = [], isLoading: isLoadingLeads } = useQuery({
     queryKey: ['leads'],
@@ -115,6 +117,10 @@ const ManagerDashboard = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['leads'] });
       toast({ title: "Success", description: "Lead updated" });
+      setUpdatingLeadId(null);
+    },
+    onError: () => {
+      setUpdatingLeadId(null);
     }
   });
 
@@ -570,11 +576,12 @@ const ManagerDashboard = () => {
                                 onClick={() => {
                                   const agentId = rowAgentMap[lead._id] || lead.assignedTo?._id || "";
                                   if (!agentId) return;
+                                  setUpdatingLeadId(lead._id);
                                   updateLeadMutation.mutate({ id: lead._id, data: { assignedTo: agentId } as any });
                                 }}
-                                disabled={(!rowAgentMap[lead._id] && !lead.assignedTo?._id) || updateLeadMutation.isPending}
+                                disabled={(!rowAgentMap[lead._id] && !lead.assignedTo?._id) || updatingLeadId === lead._id}
                               >
-                                {updateLeadMutation.isPending ? "Saving..." : "Assign"}
+                                {updatingLeadId === lead._id ? "Assigning..." : "Assign"}
                               </Button>
                             </motion.div>
                           </TableCell>

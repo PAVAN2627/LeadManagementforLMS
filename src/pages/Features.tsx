@@ -1,12 +1,9 @@
 import { motion } from "framer-motion";
-import { ArrowLeft, CheckCircle2, Zap, Shield, Users, BarChart3, Bell, FileText } from "lucide-react";
-import { useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
+import { CheckCircle2, Zap, Shield, Users, BarChart3, Bell, FileText } from "lucide-react";
+import { Navbar } from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 
 const Features = () => {
-  const navigate = useNavigate();
-
   const features = [
     {
       icon: Users,
@@ -42,16 +39,9 @@ const Features = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-teal-50">
+      <Navbar />
+      
       <div className="container mx-auto px-4 py-12">
-        <Button
-          variant="ghost"
-          onClick={() => navigate("/")}
-          className="mb-8"
-        >
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Back to Home
-        </Button>
-
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
