@@ -1,18 +1,12 @@
 import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
 import {
-  DollarSign,
-  Target,
   Calendar,
   Download,
   Filter,
-  BarChart3,
-  TrendingUp,
 } from "lucide-react";
 import { ManagerLayout } from "@/components/layout/ManagerLayout";
-import { SummaryCard } from "@/components/ui/summary-card";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import {
   Select,
   SelectContent,
