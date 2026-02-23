@@ -351,6 +351,188 @@ const AdminReports = () => {
     });
   };
 
+  // Download Leads Report
+  const downloadLeadsReport = () => {
+    const csvContent = [
+      ['Lead Name', 'Email', 'Phone', 'Company', 'Status', 'Source', 'Agent', 'Date', 'Next Follow-up'],
+      ...leads.map((lead: ApiLead) => [
+        lead.name,
+        lead.email,
+        lead.phone,
+        lead.company,
+        lead.status,
+        lead.source,
+        lead.assignedTo?.name || 'Unassigned',
+        new Date(lead.createdAt).toLocaleDateString(),
+        lead.nextFollowUp ? new Date(lead.nextFollowUp).toLocaleDateString() : 'N/A'
+      ])
+    ]
+      .map(row => row.map(field => `"${field}"`).join(','))
+      .join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `leads-report-${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    toast({
+      title: "Download Complete",
+      description: "Leads report has been downloaded.",
+    });
+  };
+
+  // Download Manager Report
+  const downloadManagerReport = () => {
+    const managers = allUsers.filter((u: any) => u.role.toLowerCase() === 'manager');
+    
+    const managerData = managers.map((manager: any) => {
+      const agents = allUsers.filter((u: any) => u.role === 'agent');
+      const totalLeads = leads.length;
+      const converted = leads.filter((l: ApiLead) => l.status === 'converted').length;
+      
+      return [
+        manager.name,
+        manager.email,
+        agents.length,
+        totalLeads,
+        converted,
+        totalLeads > 0 ? ((converted / totalLeads) * 100).toFixed(1) + '%' : '0%'
+      ];
+    });
+
+    const csvContent = [
+      ['Manager Name', 'Email', 'Team Size', 'Total Leads', 'Converted', 'Conversion Rate'],
+      ...managerData
+    ]
+      .map(row => row.map(field => `"${field}"`).join(','))
+      .join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `manager-report-${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    toast({
+      title: "Download Complete",
+      description: "Manager report has been downloaded.",
+    });
+  };
+
+  // Download Users Report
+  const downloadUsersReport = () => {
+    const csvContent = [
+      ['Name', 'Email', 'Role', 'Department', 'Status', 'Phone', 'Created At'],
+      ...allUsers.map((user: any) => [
+        user.name,
+        user.email,
+        user.role,
+        user.department || 'N/A',
+        user.status,
+        user.phone || 'N/A',
+        new Date(user.createdAt).toLocaleDateString()
+      ])
+    ]
+      .map(row => row.map(field => `"${field}"`).join(','))
+      .join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `users-report-${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    toast({
+      title: "Download Complete",
+      description: "Users report has been downloaded.",
+    });
+  };
+
+  // Download Conversion Report
+  const downloadConversionReport = () => {
+    const convertedLeads = leads.filter((l: ApiLead) => l.status === 'converted');
+    
+    const csvContent = [
+      ['Lead Name', 'Email', 'Company', 'Agent', 'Converted Date', 'Source'],
+      ...convertedLeads.map((lead: ApiLead) => [
+        lead.name,
+        lead.email,
+        lead.company,
+        lead.assignedTo?.name || 'Unassigned',
+        new Date(lead.updatedAt).toLocaleDateString(),
+        lead.source
+      ])
+    ]
+      .map(row => row.map(field => `"${field}"`).join(','))
+      .join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `conversion-report-${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    toast({
+      title: "Download Complete",
+      description: "Conversion report has been downloaded.",
+    });
+  };
+
+  // Download Monthly Summary
+  const downloadMonthlySummary = () => {
+    const now = new Date();
+    const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const thisMonthLeads = leads.filter((l: ApiLead) => new Date(l.createdAt) >= thisMonthStart);
+    const converted = thisMonthLeads.filter((l: ApiLead) => l.status === 'converted').length;
+    
+    const csvContent = [
+      ['Metric', 'Value'],
+      ['Month', now.toLocaleString('default', { month: 'long', year: 'numeric' })],
+      ['Total Leads', thisMonthLeads.length],
+      ['Converted Leads', converted],
+      ['Conversion Rate', thisMonthLeads.length > 0 ? ((converted / thisMonthLeads.length) * 100).toFixed(1) + '%' : '0%'],
+      ['Active Agents', allUsers.filter((u: any) => u.role === 'agent' && u.status === 'active').length],
+      ['Total Users', allUsers.length],
+      ['New Leads', thisMonthLeads.filter((l: ApiLead) => l.status === 'new').length],
+      ['Contacted', thisMonthLeads.filter((l: ApiLead) => l.status === 'contacted').length],
+      ['Qualified', thisMonthLeads.filter((l: ApiLead) => l.status === 'qualified').length]
+    ]
+      .map(row => row.map(field => `"${field}"`).join(','))
+      .join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `monthly-summary-${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    toast({
+      title: "Download Complete",
+      description: "Monthly summary has been downloaded.",
+    });
+  };
+
   return (
     <DashboardLayout role="admin" title="Reports & Analytics">
       <div className="space-y-8">
@@ -533,11 +715,12 @@ const AdminReports = () => {
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ delay: 1.0 }}
                   >
-                    <TabsList className="grid w-full grid-cols-3 bg-white shadow-lg border border-gray-200 rounded-xl p-1 h-auto">
+                    <TabsList className="grid w-full grid-cols-4 bg-white shadow-lg border border-gray-200 rounded-xl p-1 h-auto">
                       {[
                         { value: "overview", icon: BarChart3, label: "Overview" },
                         { value: "performance", icon: TrendingUp, label: "Performance" },
-                        { value: "analytics", icon: PieChart, label: "Analytics" }
+                        { value: "analytics", icon: PieChart, label: "Analytics" },
+                        { value: "reports", icon: FileText, label: "Reports" }
                       ].map((tab, index) => (
                         <motion.div
                           key={tab.value}
@@ -894,6 +1077,219 @@ const AdminReports = () => {
                                 </motion.div>
                               ))}
                             </div>
+                          </CardContent>
+                        </Card>
+                      </motion.div>
+                    </motion.div>
+                  </TabsContent>
+
+                  <TabsContent value="reports" className="space-y-6 mt-0">
+                    <motion.div
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 1.2 }}
+                      className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+                    >
+                      {/* Leads Report */}
+                      <motion.div
+                        initial={{ opacity: 0, y: 30 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 1.3 }}
+                        whileHover={{ y: -5, scale: 1.02 }}
+                      >
+                        <Card className="border-gray-200 shadow-lg hover:shadow-xl transition-all duration-300 rounded-2xl overflow-hidden">
+                          <CardHeader className="bg-gradient-to-r from-blue-50 to-cyan-50 border-b border-gray-100">
+                            <CardTitle className="flex items-center gap-3 text-gray-900">
+                              <div className="p-2 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-lg shadow-md">
+                                <Target className="h-5 w-5 text-white" />
+                              </div>
+                              <div>
+                                <div className="text-base font-bold">Leads Report</div>
+                                <div className="text-xs text-gray-600 font-normal">All leads with details</div>
+                              </div>
+                            </CardTitle>
+                          </CardHeader>
+                          <CardContent className="p-6">
+                            <p className="text-sm text-gray-600 mb-4">
+                              Download complete list of all leads with name, email, company, status, source, and assigned agent.
+                            </p>
+                            <Button
+                              className="w-full bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white"
+                              onClick={downloadLeadsReport}
+                            >
+                              <Download className="h-4 w-4 mr-2" />
+                              Download CSV
+                            </Button>
+                          </CardContent>
+                        </Card>
+                      </motion.div>
+
+                      {/* Agent Performance Report */}
+                      <motion.div
+                        initial={{ opacity: 0, y: 30 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 1.4 }}
+                        whileHover={{ y: -5, scale: 1.02 }}
+                      >
+                        <Card className="border-gray-200 shadow-lg hover:shadow-xl transition-all duration-300 rounded-2xl overflow-hidden">
+                          <CardHeader className="bg-gradient-to-r from-green-50 to-emerald-50 border-b border-gray-100">
+                            <CardTitle className="flex items-center gap-3 text-gray-900">
+                              <div className="p-2 bg-gradient-to-br from-green-500 to-emerald-500 rounded-lg shadow-md">
+                                <Users className="h-5 w-5 text-white" />
+                              </div>
+                              <div>
+                                <div className="text-base font-bold">Agent Performance</div>
+                                <div className="text-xs text-gray-600 font-normal">Individual agent metrics</div>
+                              </div>
+                            </CardTitle>
+                          </CardHeader>
+                          <CardContent className="p-6">
+                            <p className="text-sm text-gray-600 mb-4">
+                              Download performance metrics for all agents including total leads, conversions, and conversion rates.
+                            </p>
+                            <Button
+                              className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white"
+                              onClick={downloadAllAgentPerformance}
+                            >
+                              <Download className="h-4 w-4 mr-2" />
+                              Download CSV
+                            </Button>
+                          </CardContent>
+                        </Card>
+                      </motion.div>
+
+                      {/* Manager Report */}
+                      <motion.div
+                        initial={{ opacity: 0, y: 30 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 1.5 }}
+                        whileHover={{ y: -5, scale: 1.02 }}
+                      >
+                        <Card className="border-gray-200 shadow-lg hover:shadow-xl transition-all duration-300 rounded-2xl overflow-hidden">
+                          <CardHeader className="bg-gradient-to-r from-purple-50 to-pink-50 border-b border-gray-100">
+                            <CardTitle className="flex items-center gap-3 text-gray-900">
+                              <div className="p-2 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg shadow-md">
+                                <BarChart3 className="h-5 w-5 text-white" />
+                              </div>
+                              <div>
+                                <div className="text-base font-bold">Manager Report</div>
+                                <div className="text-xs text-gray-600 font-normal">Team overview & stats</div>
+                              </div>
+                            </CardTitle>
+                          </CardHeader>
+                          <CardContent className="p-6">
+                            <p className="text-sm text-gray-600 mb-4">
+                              Download comprehensive manager report with team performance, lead distribution, and conversion metrics.
+                            </p>
+                            <Button
+                              className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
+                              onClick={downloadManagerReport}
+                            >
+                              <Download className="h-4 w-4 mr-2" />
+                              Download CSV
+                            </Button>
+                          </CardContent>
+                        </Card>
+                      </motion.div>
+
+                      {/* Users Report */}
+                      <motion.div
+                        initial={{ opacity: 0, y: 30 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 1.6 }}
+                        whileHover={{ y: -5, scale: 1.02 }}
+                      >
+                        <Card className="border-gray-200 shadow-lg hover:shadow-xl transition-all duration-300 rounded-2xl overflow-hidden">
+                          <CardHeader className="bg-gradient-to-r from-orange-50 to-red-50 border-b border-gray-100">
+                            <CardTitle className="flex items-center gap-3 text-gray-900">
+                              <div className="p-2 bg-gradient-to-br from-orange-500 to-red-500 rounded-lg shadow-md">
+                                <Users className="h-5 w-5 text-white" />
+                              </div>
+                              <div>
+                                <div className="text-base font-bold">Users Report</div>
+                                <div className="text-xs text-gray-600 font-normal">All system users</div>
+                              </div>
+                            </CardTitle>
+                          </CardHeader>
+                          <CardContent className="p-6">
+                            <p className="text-sm text-gray-600 mb-4">
+                              Download complete list of all users with name, email, role, department, status, and contact info.
+                            </p>
+                            <Button
+                              className="w-full bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 text-white"
+                              onClick={downloadUsersReport}
+                            >
+                              <Download className="h-4 w-4 mr-2" />
+                              Download CSV
+                            </Button>
+                          </CardContent>
+                        </Card>
+                      </motion.div>
+
+                      {/* Conversion Report */}
+                      <motion.div
+                        initial={{ opacity: 0, y: 30 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 1.7 }}
+                        whileHover={{ y: -5, scale: 1.02 }}
+                      >
+                        <Card className="border-gray-200 shadow-lg hover:shadow-xl transition-all duration-300 rounded-2xl overflow-hidden">
+                          <CardHeader className="bg-gradient-to-r from-teal-50 to-green-50 border-b border-gray-100">
+                            <CardTitle className="flex items-center gap-3 text-gray-900">
+                              <div className="p-2 bg-gradient-to-br from-teal-500 to-green-500 rounded-lg shadow-md">
+                                <TrendingUp className="h-5 w-5 text-white" />
+                              </div>
+                              <div>
+                                <div className="text-base font-bold">Conversion Report</div>
+                                <div className="text-xs text-gray-600 font-normal">Converted leads only</div>
+                              </div>
+                            </CardTitle>
+                          </CardHeader>
+                          <CardContent className="p-6">
+                            <p className="text-sm text-gray-600 mb-4">
+                              Download list of all converted leads with conversion dates, assigned agents, and lead details.
+                            </p>
+                            <Button
+                              className="w-full bg-gradient-to-r from-teal-600 to-green-600 hover:from-teal-700 hover:to-green-700 text-white"
+                              onClick={downloadConversionReport}
+                            >
+                              <Download className="h-4 w-4 mr-2" />
+                              Download CSV
+                            </Button>
+                          </CardContent>
+                        </Card>
+                      </motion.div>
+
+                      {/* Monthly Summary */}
+                      <motion.div
+                        initial={{ opacity: 0, y: 30 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 1.8 }}
+                        whileHover={{ y: -5, scale: 1.02 }}
+                      >
+                        <Card className="border-gray-200 shadow-lg hover:shadow-xl transition-all duration-300 rounded-2xl overflow-hidden">
+                          <CardHeader className="bg-gradient-to-r from-indigo-50 to-blue-50 border-b border-gray-100">
+                            <CardTitle className="flex items-center gap-3 text-gray-900">
+                              <div className="p-2 bg-gradient-to-br from-indigo-500 to-blue-500 rounded-lg shadow-md">
+                                <FileText className="h-5 w-5 text-white" />
+                              </div>
+                              <div>
+                                <div className="text-base font-bold">Monthly Summary</div>
+                                <div className="text-xs text-gray-600 font-normal">Current month stats</div>
+                              </div>
+                            </CardTitle>
+                          </CardHeader>
+                          <CardContent className="p-6">
+                            <p className="text-sm text-gray-600 mb-4">
+                              Download comprehensive monthly summary with all key metrics, trends, and performance indicators.
+                            </p>
+                            <Button
+                              className="w-full bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 text-white"
+                              onClick={downloadMonthlySummary}
+                            >
+                              <Download className="h-4 w-4 mr-2" />
+                              Download CSV
+                            </Button>
                           </CardContent>
                         </Card>
                       </motion.div>
