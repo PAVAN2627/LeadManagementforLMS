@@ -488,49 +488,38 @@ const ManagerDashboard = () => {
 
               {/* Desktop View - Table */}
               <div className="hidden md:block overflow-x-auto">
-                <Table key="lead-assignment-table-v2">
-                  <TableHeader>
-                    <TableRow className="bg-muted/50">
-                      <TableHead className="font-bold text-foreground min-w-[150px]">Lead Name</TableHead>
-                      <TableHead className="font-bold text-foreground min-w-[120px]">Status</TableHead>
-                      <TableHead className="font-bold text-foreground min-w-[140px]">Assign Agent</TableHead>
-                      <TableHead className="font-bold text-foreground min-w-[100px]">Priority</TableHead>
-                      <TableHead className="text-right font-bold text-foreground min-w-[100px]">Action</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
+                <table className="w-full">
+                  <thead>
+                    <tr className="bg-muted/50 border-b">
+                      <th className="text-left p-4 font-bold text-foreground min-w-[150px]">Lead Name</th>
+                      <th className="text-left p-4 font-bold text-foreground min-w-[120px]">Status</th>
+                      <th className="text-left p-4 font-bold text-foreground min-w-[140px]">Assign Agent</th>
+                      <th className="text-left p-4 font-bold text-foreground min-w-[100px]">Priority</th>
+                      <th className="text-right p-4 font-bold text-foreground min-w-[100px]">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
                     {filteredLeads.length === 0 ? (
-                      <TableRow>
-                        <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
-                          <motion.div
-                            initial={{ opacity: 0, scale: 0.8 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            transition={{ duration: 0.3 }}
-                          >
-                            No leads found matching your filters
-                          </motion.div>
-                        </TableCell>
-                      </TableRow>
+                      <tr>
+                        <td colSpan={5} className="text-center py-8 text-muted-foreground">
+                          No leads found matching your filters
+                        </td>
+                      </tr>
                     ) : (
-                      filteredLeads.slice(0, 8).map((lead, index) => (
-                        <TableRow
-                          key={lead._id}
-                          className="table-row-hover border-b border-border/50"
-                        >
-                          <TableCell className="font-medium whitespace-nowrap">
-                            {lead.name}
-                          </TableCell>
-                          <TableCell className="whitespace-nowrap">
-                            <Badge className={`${statusColors[lead.status]} badge-pulse`}>
+                      filteredLeads.slice(0, 8).map((lead) => (
+                        <tr key={lead._id} className="border-b hover:bg-muted/50">
+                          <td className="p-4 font-medium">{lead.name}</td>
+                          <td className="p-4">
+                            <Badge className={`${statusColors[lead.status]}`}>
                               {lead.status.charAt(0).toUpperCase() + lead.status.slice(1)}
                             </Badge>
-                          </TableCell>
-                          <TableCell className="whitespace-nowrap">
+                          </td>
+                          <td className="p-4">
                             <Select
                               value={rowAgentMap[lead._id] || lead.assignedTo?._id || ""}
                               onValueChange={(val) => setRowAgentMap(prev => ({ ...prev, [lead._id]: val }))}
                             >
-                              <SelectTrigger className="w-32 h-8 select-animated">
+                              <SelectTrigger className="w-32 h-8">
                                 <SelectValue placeholder="Select agent" />
                               </SelectTrigger>
                               <SelectContent>
@@ -541,10 +530,10 @@ const ManagerDashboard = () => {
                                 ))}
                               </SelectContent>
                             </Select>
-                          </TableCell>
-                          <TableCell className="whitespace-nowrap">
+                          </td>
+                          <td className="p-4">
                             <Select defaultValue="medium">
-                              <SelectTrigger className="w-24 h-8 select-animated">
+                              <SelectTrigger className="w-24 h-8">
                                 <SelectValue />
                               </SelectTrigger>
                               <SelectContent>
@@ -553,11 +542,11 @@ const ManagerDashboard = () => {
                                 <SelectItem value="low">Low</SelectItem>
                               </SelectContent>
                             </Select>
-                          </TableCell>
-                          <TableCell className="text-right whitespace-nowrap">
+                          </td>
+                          <td className="p-4 text-right">
                             <Button
                               size="sm"
-                              className="gradient-bg-animated text-primary-foreground button-ripple hover:scale-105 transition-all shadow-md"
+                              className="gradient-bg-animated text-primary-foreground"
                               onClick={() => {
                                 const agentId = rowAgentMap[lead._id] || lead.assignedTo?._id || "";
                                 if (!agentId) return;
@@ -568,12 +557,12 @@ const ManagerDashboard = () => {
                             >
                               {updatingLeadId === lead._id ? "Assigning..." : "Assign"}
                             </Button>
-                          </TableCell>
-                        </TableRow>
+                          </td>
+                        </tr>
                       ))
                     )}
-                  </TableBody>
-                </Table>
+                  </tbody>
+                </table>
               </div>
             </div>
           </div>
