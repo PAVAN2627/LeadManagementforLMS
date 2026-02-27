@@ -31,13 +31,9 @@ export default defineConfig(({ mode }) => ({
         manualChunks: (id) => {
           // Vendor chunks - only check node_modules
           if (id.includes('node_modules')) {
-            // React core
-            if (id.includes('react/') || id.includes('react-dom/')) {
-              return 'react-core';
-            }
-            // React Router
-            if (id.includes('react-router')) {
-              return 'react-router';
+            // React ecosystem - keep together to avoid duplication
+            if (id.includes('react') || id.includes('react-dom') || id.includes('react-router') || id.includes('scheduler')) {
+              return 'react';
             }
             // Animation
             if (id.includes('framer-motion')) {
@@ -52,7 +48,7 @@ export default defineConfig(({ mode }) => ({
               return 'query';
             }
             // Charts
-            if (id.includes('recharts')) {
+            if (id.includes('recharts') || id.includes('d3-')) {
               return 'charts';
             }
             // Radix UI
