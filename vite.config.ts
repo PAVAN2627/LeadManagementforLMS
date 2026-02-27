@@ -28,33 +28,32 @@ export default defineConfig(({ mode }) => ({
   build: {
     rollupOptions: {
       output: {
-        manualChunks: {
+        manualChunks: (id) => {
           // Vendor chunks
-          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
-          'ui-vendor': ['framer-motion', 'lucide-react'],
-          'query-vendor': ['@tanstack/react-query'],
-          'chart-vendor': ['recharts'],
-          // UI components
-          'ui-components': [
-            './src/components/ui/button',
-            './src/components/ui/card',
-            './src/components/ui/input',
-            './src/components/ui/label',
-            './src/components/ui/dialog',
-            './src/components/ui/dropdown-menu',
-            './src/components/ui/table',
-            './src/components/ui/badge',
-            './src/components/ui/avatar',
-            './src/components/ui/select',
-            './src/components/ui/textarea',
-            './src/components/ui/switch',
-            './src/components/ui/separator',
-            './src/components/ui/toast',
-            './src/components/ui/use-toast',
-          ],
+          if (id.includes('node_modules')) {
+            if (id.includes('react') || id.includes('react-dom') || id.includes('react-router')) {
+              return 'react-vendor';
+            }
+            if (id.includes('framer-motion')) {
+              return 'framer-vendor';
+            }
+            if (id.includes('lucide-react')) {
+              return 'icons-vendor';
+            }
+            if (id.includes('@tanstack/react-query')) {
+              return 'query-vendor';
+            }
+            if (id.includes('recharts')) {
+              return 'chart-vendor';
+            }
+            if (id.includes('@radix-ui')) {
+              return 'radix-vendor';
+            }
+            return 'vendor';
+          }
         },
       },
     },
-    chunkSizeWarningLimit: 600,
+    chunkSizeWarningLimit: 1000,
   },
 }));
