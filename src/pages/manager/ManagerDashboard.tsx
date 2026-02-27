@@ -143,6 +143,37 @@ const ManagerDashboard = () => {
     );
   };
 
+  const handleExportCSV = () => {
+    const csvData = filteredLeads.map(lead => ({
+      'Lead Name': lead.name,
+      'Email': lead.email,
+      'Phone': lead.phone,
+      'Company': lead.company,
+      'Status': lead.status,
+      'Assigned To': lead.assignedTo?.name || 'Unassigned',
+      'Source': lead.source,
+      'Date': new Date(lead.date).toLocaleDateString(),
+    }));
+
+    const headers = Object.keys(csvData[0] || {});
+    const csvContent = [
+      headers.join(','),
+      ...csvData.map(row => headers.map(header => `"${row[header as keyof typeof row] || ''}"`).join(','))
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `lead-assignment-${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    toast({ title: "Export Successful", description: `Exported ${csvData.length} leads to CSV` });
+  };
+
   // Derived agent performance
   const agentPerformance = useMemo(() => {
     return agents.map((agent: ApiUser) => {
@@ -299,7 +330,12 @@ const ManagerDashboard = () => {
                         </DialogContent>
                       </Dialog>
                     )}
-                    <Button variant="outline" size="sm" className="hover:scale-105 transition-transform hover:border-primary icon-bounce">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="hover:scale-105 transition-transform hover:border-primary icon-bounce"
+                      onClick={handleExportCSV}
+                    >
                       <Download className="h-4 w-4 mr-2" />
                       Export
                     </Button>
