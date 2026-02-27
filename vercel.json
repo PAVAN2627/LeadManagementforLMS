@@ -3,25 +3,20 @@
     "outputDirectory": "dist",
     "framework": "vite",
     "installCommand": "npm install",
-    "functions": {
-        "api/index.ts": {
-            "maxDuration": 10
-        }
-    },
     "crons": [
         {
             "path": "/api/cron/send-reminders",
             "schedule": "0 9 * * *"
         }
     ],
-    "rewrites": [
+    "routes": [
         {
-            "source": "/api/:path*",
-            "destination": "/api/index"
+            "src": "/api/(.*)",
+            "dest": "/api/index"
         },
         {
-            "source": "/((?!api/.*).*)",
-            "destination": "/index.html"
+            "src": "/(.*)",
+            "dest": "/index.html"
         }
     ]
 }

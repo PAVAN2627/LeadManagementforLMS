@@ -16,10 +16,22 @@ import usersHandler from './_users/index.js';
 import userByIdHandler from './_users/[id].js';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-    const { url } = req;
+    // Get the pathname - Vercel passes the original path even after rewrite
+    const url = req.url || '';
+    const pathname = url.split('?')[0];
     
-    // Remove /api prefix and get the path
-    const path = url?.replace(/^\/api/, '') || '';
+    // The path should already have /api prefix from the original request
+    let path = pathname;
+    
+    // If it doesn't start with /api, add it (shouldn't happen but just in case)
+    if (!path.startsWith('/api')) {
+        path = '/api' + path;
+    }
+    
+    // Remove /api prefix for matching
+    path = path.replace(/^\/api/, '') || '/';
+    
+    console.log('API Request:', { method: req.method, originalUrl: url, matchPath: path });
     
     try {
         // Analytics
