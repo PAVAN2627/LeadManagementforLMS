@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
-import { User, Mail, Phone, Building, Save, Edit2, Target, Award } from "lucide-react";
+import { User, Mail, Phone, Building, Save, Edit2, Target, Award, Lock } from "lucide-react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -11,11 +11,25 @@ import { useToast } from "@/components/ui/use-toast";
 import { Badge } from "@/components/ui/badge";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api, ApiUser, ApiLead } from "@/lib/api";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 const AgentProfile = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [isEditing, setIsEditing] = useState(false);
+  const [showPasswordDialog, setShowPasswordDialog] = useState(false);
+  const [passwordData, setPasswordData] = useState({
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: ""
+  });
   const [formData, setFormData] = useState<Partial<ApiUser>>({
     name: "",
     email: "",
@@ -85,18 +99,91 @@ const AgentProfile = () => {
       queryClient.invalidateQueries({ queryKey: ['profile'] });
       setIsEditing(false);
       toast({
-        title: "Profile Updated",
-        description: "Your profile information has been saved successfully.",
+        title: "Success",
+        description: "Your profile has been updated successfully.",
         duration: 3000,
       });
     },
     onError: (error: Error) => {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
+      toast({ 
+        title: "Error", 
+        description: error.message || "Failed to update profile", 
+        variant: "destructive" 
+      });
+    }
+  });
+
+  const changePasswordMutation = useMutation({
+    mutationFn: (data: { currentPassword: string; newPassword: string }) => {
+      return api.changePassword(data.currentPassword, data.newPassword);
+    },
+    onSuccess: () => {
+      setShowPasswordDialog(false);
+      setPasswordData({ currentPassword: "", newPassword: "", confirmPassword: "" });
+      toast({
+        title: "Success",
+        description: "Your password has been changed successfully.",
+        duration: 3000,
+      });
+    },
+    onError: (error: Error) => {
+      toast({ 
+        title: "Error", 
+        description: error.message || "Failed to change password", 
+        variant: "destructive" 
+      });
     }
   });
 
   const handleSave = () => {
+    if (!formData.name?.trim()) {
+      toast({ 
+        title: "Validation Error", 
+        description: "Name is required", 
+        variant: "destructive" 
+      });
+      return;
+    }
+    if (!formData.email?.trim()) {
+      toast({ 
+        title: "Validation Error", 
+        description: "Email is required", 
+        variant: "destructive" 
+      });
+      return;
+    }
     updateProfileMutation.mutate(formData);
+  };
+
+  const handlePasswordChange = () => {
+    if (!passwordData.currentPassword) {
+      toast({ 
+        title: "Validation Error", 
+        description: "Current password is required", 
+        variant: "destructive" 
+      });
+      return;
+    }
+    if (!passwordData.newPassword || passwordData.newPassword.length < 6) {
+      toast({ 
+        title: "Validation Error", 
+        description: "New password must be at least 6 characters", 
+        variant: "destructive" 
+      });
+      return;
+    }
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      toast({ 
+        title: "Validation Error", 
+        description: "Passwords do not match", 
+        variant: "destructive" 
+      });
+      return;
+    }
+    changePasswordMutation.mutate({
+      currentPassword: passwordData.currentPassword,
+      newPassword: passwordData.newPassword
+    });
   };
 
   const handleInputChange = (field: string, value: string) => {
@@ -341,12 +428,77 @@ const AgentProfile = () => {
                   <h4 className="font-medium">Change Password</h4>
                   <p className="text-sm text-gray-600">Update your account password</p>
                 </div>
-                <Button variant="outline" onClick={() => toast({ title: "Password Updated", description: "Your password has been changed successfully." })}>Update</Button>
+                <Button variant="outline" onClick={() => setShowPasswordDialog(true)}>Update</Button>
               </div>
             </CardContent>
           </Card>
         </motion.div>
       </div>
+
+      {/* Password Change Dialog */}
+      <Dialog open={showPasswordDialog} onOpenChange={setShowPasswordDialog}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Lock className="h-5 w-5 text-primary" />
+              Change Password
+            </DialogTitle>
+            <DialogDescription>
+              Enter your current password and choose a new password.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="currentPassword">Current Password</Label>
+              <Input
+                id="currentPassword"
+                type="password"
+                value={passwordData.currentPassword}
+                onChange={(e) => setPasswordData(prev => ({ ...prev, currentPassword: e.target.value }))}
+                placeholder="Enter current password"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="newPassword">New Password</Label>
+              <Input
+                id="newPassword"
+                type="password"
+                value={passwordData.newPassword}
+                onChange={(e) => setPasswordData(prev => ({ ...prev, newPassword: e.target.value }))}
+                placeholder="Enter new password (min 6 characters)"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="confirmPassword">Confirm New Password</Label>
+              <Input
+                id="confirmPassword"
+                type="password"
+                value={passwordData.confirmPassword}
+                onChange={(e) => setPasswordData(prev => ({ ...prev, confirmPassword: e.target.value }))}
+                placeholder="Confirm new password"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setShowPasswordDialog(false);
+                setPasswordData({ currentPassword: "", newPassword: "", confirmPassword: "" });
+              }}
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={handlePasswordChange}
+              disabled={changePasswordMutation.isPending}
+              className="gradient-bg-animated text-primary-foreground"
+            >
+              {changePasswordMutation.isPending ? "Updating..." : "Update Password"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </DashboardLayout>
   );
 };

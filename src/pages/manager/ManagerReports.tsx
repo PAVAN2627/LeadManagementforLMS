@@ -39,7 +39,36 @@ const ManagerReports = () => {
 
   const agents = useMemo(() => users.filter((u: any) => u.role === 'agent'), [users]);
 
-  // Calculate real-time chart data
+  // Filter leads by time range
+  const filteredLeads = useMemo(() => {
+    const now = new Date();
+    let startDate: Date;
+
+    switch (timeRange) {
+      case "week":
+        startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        break;
+      case "month":
+        startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+        break;
+      case "quarter":
+        const currentQuarter = Math.floor(now.getMonth() / 3);
+        startDate = new Date(now.getFullYear(), currentQuarter * 3, 1);
+        break;
+      case "year":
+        startDate = new Date(now.getFullYear(), 0, 1);
+        break;
+      default:
+        startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+    }
+
+    return leads.filter((lead: ApiLead) => {
+      const leadDate = new Date(lead.date);
+      return leadDate >= startDate && leadDate <= now;
+    });
+  }, [leads, timeRange]);
+
+  // Calculate real-time chart data based on filtered leads
   const leadsByStatusData = useMemo(() => {
     const statusCounts = {
       new: 0,
@@ -51,7 +80,7 @@ const ManagerReports = () => {
       lost: 0
     };
 
-    leads.forEach((lead: ApiLead) => {
+    filteredLeads.forEach((lead: ApiLead) => {
       if (statusCounts.hasOwnProperty(lead.status)) {
         statusCounts[lead.status]++;
       }
@@ -66,86 +95,183 @@ const ManagerReports = () => {
       { name: "Converted", value: statusCounts.converted, color: "#28A745" },
       { name: "Lost", value: statusCounts.lost, color: "#DC3545" },
     ].filter(item => item.value > 0);
-  }, [leads]);
+  }, [filteredLeads]);
 
-  // Calculate monthly growth data
+  // Calculate monthly/weekly growth data based on time range
   const monthlyGrowthData = useMemo(() => {
-    const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-    const currentYear = new Date().getFullYear();
-    const monthlyCounts: { [key: string]: number } = {};
-
-    monthNames.forEach(month => {
-      monthlyCounts[month] = 0;
-    });
-
-    leads.forEach((lead: ApiLead) => {
-      const leadDate = new Date(lead.date);
-      if (leadDate.getFullYear() === currentYear) {
-        const monthName = monthNames[leadDate.getMonth()];
-        monthlyCounts[monthName]++;
+    const now = new Date();
+    
+    if (timeRange === "week") {
+      // Weekly data - last 7 days
+      const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+      const dailyCounts: { [key: string]: number } = {};
+      
+      for (let i = 6; i >= 0; i--) {
+        const date = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
+        const dayName = days[date.getDay()];
+        dailyCounts[dayName] = 0;
       }
-    });
 
-    return monthNames.map(month => ({
-      month,
-      leads: monthlyCounts[month]
-    }));
-  }, [leads]);
+      filteredLeads.forEach((lead: ApiLead) => {
+        const leadDate = new Date(lead.date);
+        const dayName = days[leadDate.getDay()];
+        if (dailyCounts.hasOwnProperty(dayName)) {
+          dailyCounts[dayName]++;
+        }
+      });
 
-  // Calculate agent performance data
+      return Object.keys(dailyCounts).map(day => ({
+        month: day,
+        leads: dailyCounts[day]
+      }));
+    } else if (timeRange === "year") {
+      // Yearly data - all 12 months
+      const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+      const currentYear = now.getFullYear();
+      const monthlyCounts: { [key: string]: number } = {};
+
+      monthNames.forEach(month => {
+        monthlyCounts[month] = 0;
+      });
+
+      filteredLeads.forEach((lead: ApiLead) => {
+        const leadDate = new Date(lead.date);
+        if (leadDate.getFullYear() === currentYear) {
+          const monthName = monthNames[leadDate.getMonth()];
+          monthlyCounts[monthName]++;
+        }
+      });
+
+      return monthNames.map(month => ({
+        month,
+        leads: monthlyCounts[month]
+      }));
+    } else {
+      // Monthly or Quarter data - weeks in current period
+      const weeks = ["Week 1", "Week 2", "Week 3", "Week 4"];
+      const weeklyCounts: { [key: string]: number } = {};
+      
+      weeks.forEach(week => {
+        weeklyCounts[week] = 0;
+      });
+
+      filteredLeads.forEach((lead: ApiLead) => {
+        const leadDate = new Date(lead.date);
+        const dayOfMonth = leadDate.getDate();
+        const weekIndex = Math.min(Math.floor((dayOfMonth - 1) / 7), 3);
+        const weekName = weeks[weekIndex];
+        weeklyCounts[weekName]++;
+      });
+
+      return weeks.map(week => ({
+        month: week,
+        leads: weeklyCounts[week]
+      }));
+    }
+  }, [filteredLeads, timeRange]);
+
+  // Calculate agent performance data based on filtered leads
   const agentPerformanceData = useMemo(() => {
     return agents.map((agent: any) => {
-      const agentLeads = leads.filter((l: ApiLead) => l.assignedTo?._id === agent._id);
+      const agentLeads = filteredLeads.filter((l: ApiLead) => l.assignedTo?._id === agent._id);
       const converted = agentLeads.filter((l: ApiLead) => l.status === 'converted').length;
       const lost = agentLeads.filter((l: ApiLead) => l.status === 'lost').length;
       const pending = agentLeads.filter((l: ApiLead) => 
         !["converted", "lost"].includes(l.status)
       ).length;
+      const conversionRate = agentLeads.length ? Math.round((converted / agentLeads.length) * 100) : 0;
 
       return {
+        id: agent._id,
         name: agent.name,
+        email: agent.email,
+        phone: agent.phone,
+        leadsAssigned: agentLeads.length,
         converted,
         pending,
-        lost
+        lost,
+        conversionRate
       };
-    }).slice(0, 5);
-  }, [leads, agents]);
+    });
+  }, [filteredLeads, agents]);
 
-  // Export functionality
+  // Export all agents' performance data to CSV
   const handleExport = () => {
-    const csvContent = [
-      ['Report Type', 'Manager Reports'],
-      ['Generated Date', new Date().toLocaleDateString()],
-      ['Time Range', timeRange],
+    const timeRangeLabel = {
+      week: "This Week",
+      month: "This Month",
+      quarter: "This Quarter",
+      year: "This Year"
+    }[timeRange] || "This Month";
+
+    // Prepare comprehensive agent performance data
+    const csvRows = [
+      ['Manager Department Report'],
+      ['Generated Date', new Date().toLocaleString()],
+      ['Time Range', timeRangeLabel],
+      ['Total Agents', agents.length.toString()],
+      ['Total Leads', filteredLeads.length.toString()],
       [''],
-      ['Lead Summary'],
-      ['Status', 'Count'],
-      ...leadsByStatusData.map(item => [item.name, item.value]),
+      ['AGENT PERFORMANCE SUMMARY'],
+      ['Agent Name', 'Email', 'Phone', 'Leads Assigned', 'Converted', 'Pending', 'Lost', 'Conversion Rate (%)'],
+      ...agentPerformanceData.map(agent => [
+        agent.name,
+        agent.email || 'N/A',
+        agent.phone || 'N/A',
+        agent.leadsAssigned.toString(),
+        agent.converted.toString(),
+        agent.pending.toString(),
+        agent.lost.toString(),
+        agent.conversionRate.toString() + '%'
+      ]),
       [''],
-      ['Monthly Growth'],
-      ['Month', 'Leads'],
-      ...monthlyGrowthData.map(item => [item.month, item.leads]),
+      ['DEPARTMENT TOTALS'],
+      ['Total Leads Assigned', agentPerformanceData.reduce((sum, a) => sum + a.leadsAssigned, 0).toString()],
+      ['Total Converted', agentPerformanceData.reduce((sum, a) => sum + a.converted, 0).toString()],
+      ['Total Pending', agentPerformanceData.reduce((sum, a) => sum + a.pending, 0).toString()],
+      ['Total Lost', agentPerformanceData.reduce((sum, a) => sum + a.lost, 0).toString()],
+      ['Overall Conversion Rate', 
+        agentPerformanceData.reduce((sum, a) => sum + a.leadsAssigned, 0) > 0
+          ? Math.round((agentPerformanceData.reduce((sum, a) => sum + a.converted, 0) / 
+              agentPerformanceData.reduce((sum, a) => sum + a.leadsAssigned, 0)) * 100) + '%'
+          : '0%'
+      ],
       [''],
-      ['Agent Performance'],
-      ['Agent', 'Converted', 'Pending', 'Lost'],
-      ...agentPerformanceData.map(agent => [agent.name, agent.converted, agent.pending, agent.lost]),
-    ]
+      ['LEAD STATUS BREAKDOWN'],
+      ['Status', 'Count', 'Percentage'],
+      ...leadsByStatusData.map(item => [
+        item.name,
+        item.value.toString(),
+        filteredLeads.length > 0 
+          ? Math.round((item.value / filteredLeads.length) * 100) + '%'
+          : '0%'
+      ]),
+      [''],
+      ['GROWTH TREND'],
+      ['Period', 'Leads'],
+      ...monthlyGrowthData.map(item => [item.month, item.leads.toString()]),
+    ];
+
+    const csvContent = csvRows
       .map(row => row.map(field => `"${field}"`).join(','))
       .join('\n');
 
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     const url = URL.createObjectURL(blob);
+    const fileName = `manager-department-report-${timeRange}-${new Date().toISOString().split('T')[0]}.csv`;
+    
     link.setAttribute('href', url);
-    link.setAttribute('download', `manager-report-${new Date().toISOString().split('T')[0]}.csv`);
+    link.setAttribute('download', fileName);
     link.style.visibility = 'hidden';
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    URL.revokeObjectURL(url);
 
     toast({
       title: "Export Successful",
-      description: "Manager report has been downloaded as CSV.",
+      description: `All ${agents.length} agents' performance data has been downloaded.`,
     });
   };
 
@@ -237,12 +363,56 @@ const ManagerReports = () => {
         className="grid grid-cols-1 gap-6"
       >
         <motion.div
-          whileHover={{ scale: 1.01, y: -5 }}
+          whileHover={{ scale: 1.02, y: -5 }}
           transition={{ type: "spring", stiffness: 300 }}
           className="card-hover-effect hover-glow rounded-xl overflow-hidden animated-border"
         >
           <div className="animated-border-content">
             <AgentPerformanceChart data={agentPerformanceData.length > 0 ? agentPerformanceData : undefined} />
+          </div>
+        </motion.div>
+      </motion.div>
+
+      {/* Summary Stats */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.7, type: "spring", stiffness: 100 }}
+        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-6"
+      >
+        <motion.div
+          whileHover={{ scale: 1.05, y: -5 }}
+          className="bg-gradient-to-br from-teal-500 to-teal-600 rounded-xl p-6 text-white shadow-lg"
+        >
+          <div className="text-sm opacity-90 mb-1">Total Agents</div>
+          <div className="text-3xl font-bold">{agents.length}</div>
+        </motion.div>
+        <motion.div
+          whileHover={{ scale: 1.05, y: -5 }}
+          className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-6 text-white shadow-lg"
+        >
+          <div className="text-sm opacity-90 mb-1">Total Leads</div>
+          <div className="text-3xl font-bold">{filteredLeads.length}</div>
+        </motion.div>
+        <motion.div
+          whileHover={{ scale: 1.05, y: -5 }}
+          className="bg-gradient-to-br from-green-500 to-green-600 rounded-xl p-6 text-white shadow-lg"
+        >
+          <div className="text-sm opacity-90 mb-1">Converted</div>
+          <div className="text-3xl font-bold">
+            {agentPerformanceData.reduce((sum, a) => sum + a.converted, 0)}
+          </div>
+        </motion.div>
+        <motion.div
+          whileHover={{ scale: 1.05, y: -5 }}
+          className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl p-6 text-white shadow-lg"
+        >
+          <div className="text-sm opacity-90 mb-1">Conversion Rate</div>
+          <div className="text-3xl font-bold">
+            {agentPerformanceData.reduce((sum, a) => sum + a.leadsAssigned, 0) > 0
+              ? Math.round((agentPerformanceData.reduce((sum, a) => sum + a.converted, 0) / 
+                  agentPerformanceData.reduce((sum, a) => sum + a.leadsAssigned, 0)) * 100)
+              : 0}%
           </div>
         </motion.div>
       </motion.div>

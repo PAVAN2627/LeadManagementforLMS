@@ -35,7 +35,6 @@ const managerItems: SidebarItem[] = [
   { icon: Users, label: "Team Performance", path: "/manager/team" },
   { icon: FileText, label: "Reports", path: "/manager/reports" },
   { icon: User, label: "Profile", path: "/manager/profile" },
-  { icon: Settings, label: "Settings", path: "/manager/settings" },
 ];
 
 export function ManagerSidebar({ isOpen, setIsOpen }: ManagerSidebarProps) {

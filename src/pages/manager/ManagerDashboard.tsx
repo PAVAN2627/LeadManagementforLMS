@@ -451,7 +451,7 @@ const ManagerDashboard = () => {
               </div>
 
               {/* Desktop View - Table */}
-              <div className="hidden md:block">
+              <div className="hidden md:block overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow className="table-header-glow border-b-2 border-primary/20">
@@ -474,11 +474,11 @@ const ManagerDashboard = () => {
                           />
                         </motion.div>
                       </TableHead>
-                      <TableHead className="font-bold text-foreground bg-muted/50">Lead Name</TableHead>
-                      <TableHead className="font-bold text-foreground bg-muted/50">Status</TableHead>
-                      <TableHead className="font-bold text-foreground bg-muted/50">Assign Agent</TableHead>
-                      <TableHead className="font-bold text-foreground bg-muted/50">Priority</TableHead>
-                      <TableHead className="text-right font-bold text-foreground bg-muted/50">Action</TableHead>
+                      <TableHead className="font-bold text-foreground bg-muted/50 min-w-[150px]">Lead Name</TableHead>
+                      <TableHead className="font-bold text-foreground bg-muted/50 min-w-[120px]">Status</TableHead>
+                      <TableHead className="font-bold text-foreground bg-muted/50 min-w-[140px]">Assign Agent</TableHead>
+                      <TableHead className="font-bold text-foreground bg-muted/50 min-w-[100px]">Priority</TableHead>
+                      <TableHead className="text-right font-bold text-foreground bg-muted/50 min-w-[100px]">Action</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -516,7 +516,7 @@ const ManagerDashboard = () => {
                               />
                             </motion.div>
                           </TableCell>
-                          <TableCell className="font-medium">
+                          <TableCell className="font-medium whitespace-nowrap">
                             <motion.span
                               initial={{ opacity: 0 }}
                               animate={{ opacity: 1 }}
@@ -525,7 +525,7 @@ const ManagerDashboard = () => {
                               {lead.name}
                             </motion.span>
                           </TableCell>
-                          <TableCell>
+                          <TableCell className="whitespace-nowrap">
                             <motion.div
                               initial={{ scale: 0 }}
                               animate={{ scale: 1 }}
@@ -536,7 +536,7 @@ const ManagerDashboard = () => {
                               </Badge>
                             </motion.div>
                           </TableCell>
-                          <TableCell>
+                          <TableCell className="whitespace-nowrap">
                             <Select
                               value={rowAgentMap[lead._id] || lead.assignedTo?._id || ""}
                               onValueChange={(val) => setRowAgentMap(prev => ({ ...prev, [lead._id]: val }))}
@@ -553,7 +553,7 @@ const ManagerDashboard = () => {
                               </SelectContent>
                             </Select>
                           </TableCell>
-                          <TableCell>
+                          <TableCell className="whitespace-nowrap">
                             <Select defaultValue="medium">
                               <SelectTrigger className="w-24 h-8 select-animated">
                                 <SelectValue />
@@ -565,7 +565,7 @@ const ManagerDashboard = () => {
                               </SelectContent>
                             </Select>
                           </TableCell>
-                          <TableCell className="text-right">
+                          <TableCell className="text-right whitespace-nowrap">
                             <motion.div
                               whileHover={{ scale: 1.05 }}
                               whileTap={{ scale: 0.95 }}
@@ -695,21 +695,14 @@ const ManagerDashboard = () => {
 
             {/* Desktop View - Table */}
             <div className="hidden md:block w-full overflow-x-auto">
-              <table className="w-full text-sm" style={{ tableLayout: 'fixed', borderCollapse: 'collapse' }}>
-                <colgroup>
-                  <col style={{ width: '25%' }} />
-                  <col style={{ width: '18%' }} />
-                  <col style={{ width: '18%' }} />
-                  <col style={{ width: '18%' }} />
-                  <col style={{ width: '21%' }} />
-                </colgroup>
+              <table className="w-full text-sm" style={{ tableLayout: 'auto', borderCollapse: 'collapse', minWidth: '100%' }}>
                 <thead>
                   <tr className="border-b-2 border-primary/20 bg-muted/50">
-                    <th className="h-12 px-4 text-left font-bold text-foreground">Agent Name</th>
-                    <th className="h-12 px-4 text-center font-bold text-foreground">Leads Assigned</th>
-                    <th className="h-12 px-4 text-center font-bold text-foreground">Converted</th>
-                    <th className="h-12 px-4 text-center font-bold text-foreground">Pending</th>
-                    <th className="h-12 px-4 text-center font-bold text-foreground">Conversion Rate</th>
+                    <th className="h-12 px-4 text-left font-bold text-foreground whitespace-nowrap">Agent Name</th>
+                    <th className="h-12 px-4 text-center font-bold text-foreground whitespace-nowrap">Leads Assigned</th>
+                    <th className="h-12 px-4 text-center font-bold text-foreground whitespace-nowrap">Converted</th>
+                    <th className="h-12 px-4 text-center font-bold text-foreground whitespace-nowrap">Pending</th>
+                    <th className="h-12 px-4 text-center font-bold text-foreground whitespace-nowrap">Conversion Rate</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -720,24 +713,30 @@ const ManagerDashboard = () => {
                         key={agent.id}
                         className="border-b border-border/50 hover:bg-primary/5 transition-colors"
                       >
-                        <td className="h-16 px-4 font-medium text-left align-middle">
+                        <td className="h-16 px-4 font-medium text-left align-middle whitespace-nowrap">
                           {agent.name}
                         </td>
-                        <td className="h-16 px-4 text-center align-middle">
+                        <td className="h-16 px-4 text-center align-middle whitespace-nowrap">
                           {agent.leadsAssigned}
                         </td>
-                        <td className="h-16 px-4 text-center align-middle text-success font-medium">
+                        <td className="h-16 px-4 text-center align-middle text-success font-medium whitespace-nowrap">
                           {agent.converted}
                         </td>
-                        <td className="h-16 px-4 text-center align-middle text-warning font-medium">
+                        <td className="h-16 px-4 text-center align-middle text-warning font-medium whitespace-nowrap">
                           {agent.pending}
                         </td>
                         <td className="h-16 px-4 text-center align-middle">
-                          <div className="flex items-center justify-center gap-2">
-                            <div className="w-20 h-2 bg-muted rounded-full overflow-hidden">
-                              <div
-                                style={{ width: `${conversionRate}%` }}
-                                className="h-full bg-primary rounded-full transition-all duration-1000"
+                          <div className="flex items-center justify-center gap-3 min-w-[200px]">
+                            <div className="w-32 h-3 bg-gray-200 rounded-full overflow-hidden shadow-inner">
+                              <motion.div
+                                initial={{ width: 0 }}
+                                animate={{ width: `${conversionRate}%` }}
+                                transition={{ duration: 1, delay: index * 0.1 + 0.5, ease: "easeOut" }}
+                                className={`h-full rounded-full transition-all duration-500 ${
+                                  conversionRate >= 70 ? 'bg-gradient-to-r from-green-500 to-green-600' :
+                                  conversionRate >= 50 ? 'bg-gradient-to-r from-yellow-500 to-yellow-600' :
+                                  'bg-gradient-to-r from-red-500 to-red-600'
+                                }`}
                               />
                             </div>
                             <span className="text-sm font-medium min-w-[40px]">{conversionRate}%</span>
