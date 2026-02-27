@@ -454,8 +454,8 @@ const ManagerDashboard = () => {
               <div className="hidden md:block overflow-x-auto">
                 <Table>
                   <TableHeader>
-                    <TableRow className="table-header-glow border-b-2 border-primary/20">
-                      <TableHead className="bg-muted/50 w-12">
+                    <TableRow className="bg-muted/50">
+                      <TableHead className="w-12">
                         <motion.div
                           whileHover={{ scale: 1.2, rotate: 5 }}
                           whileTap={{ scale: 0.9 }}
@@ -474,11 +474,11 @@ const ManagerDashboard = () => {
                           />
                         </motion.div>
                       </TableHead>
-                      <TableHead className="font-bold text-foreground bg-muted/50 min-w-[150px]">Lead Name</TableHead>
-                      <TableHead className="font-bold text-foreground bg-muted/50 min-w-[120px]">Status</TableHead>
-                      <TableHead className="font-bold text-foreground bg-muted/50 min-w-[140px]">Assign Agent</TableHead>
-                      <TableHead className="font-bold text-foreground bg-muted/50 min-w-[100px]">Priority</TableHead>
-                      <TableHead className="text-right font-bold text-foreground bg-muted/50 min-w-[100px]">Action</TableHead>
+                      <TableHead className="font-bold text-foreground min-w-[150px]">Lead Name</TableHead>
+                      <TableHead className="font-bold text-foreground min-w-[120px]">Status</TableHead>
+                      <TableHead className="font-bold text-foreground min-w-[140px]">Assign Agent</TableHead>
+                      <TableHead className="font-bold text-foreground min-w-[100px]">Priority</TableHead>
+                      <TableHead className="text-right font-bold text-foreground min-w-[100px]">Action</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
