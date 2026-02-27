@@ -25,4 +25,36 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          // Vendor chunks
+          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
+          'ui-vendor': ['framer-motion', 'lucide-react'],
+          'query-vendor': ['@tanstack/react-query'],
+          'chart-vendor': ['recharts'],
+          // UI components
+          'ui-components': [
+            './src/components/ui/button',
+            './src/components/ui/card',
+            './src/components/ui/input',
+            './src/components/ui/label',
+            './src/components/ui/dialog',
+            './src/components/ui/dropdown-menu',
+            './src/components/ui/table',
+            './src/components/ui/badge',
+            './src/components/ui/avatar',
+            './src/components/ui/select',
+            './src/components/ui/textarea',
+            './src/components/ui/switch',
+            './src/components/ui/separator',
+            './src/components/ui/toast',
+            './src/components/ui/use-toast',
+          ],
+        },
+      },
+    },
+    chunkSizeWarningLimit: 600,
+  },
 }));
