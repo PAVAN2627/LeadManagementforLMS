@@ -29,26 +29,37 @@ export default defineConfig(({ mode }) => ({
     rollupOptions: {
       output: {
         manualChunks: (id) => {
-          // Vendor chunks
+          // Vendor chunks - only check node_modules
           if (id.includes('node_modules')) {
-            if (id.includes('react') || id.includes('react-dom') || id.includes('react-router')) {
-              return 'react-vendor';
+            // React core
+            if (id.includes('react/') || id.includes('react-dom/')) {
+              return 'react-core';
             }
+            // React Router
+            if (id.includes('react-router')) {
+              return 'react-router';
+            }
+            // Animation
             if (id.includes('framer-motion')) {
-              return 'framer-vendor';
+              return 'framer';
             }
+            // Icons
             if (id.includes('lucide-react')) {
-              return 'icons-vendor';
+              return 'icons';
             }
-            if (id.includes('@tanstack/react-query')) {
-              return 'query-vendor';
+            // Query
+            if (id.includes('@tanstack')) {
+              return 'query';
             }
+            // Charts
             if (id.includes('recharts')) {
-              return 'chart-vendor';
+              return 'charts';
             }
+            // Radix UI
             if (id.includes('@radix-ui')) {
-              return 'radix-vendor';
+              return 'radix';
             }
+            // Everything else
             return 'vendor';
           }
         },
