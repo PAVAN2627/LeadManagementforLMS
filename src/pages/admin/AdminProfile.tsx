@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/components/ui/use-toast";
-import { useQuery, useMutation, useQueryClient } from "@tantml/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api, ApiUser } from "@/lib/api";
 import { Badge } from "@/components/ui/badge";
 import {
