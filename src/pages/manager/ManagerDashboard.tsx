@@ -513,32 +513,17 @@ const ManagerDashboard = () => {
                       </TableRow>
                     ) : (
                       filteredLeads.slice(0, 8).map((lead, index) => (
-                        <motion.tr
+                        <TableRow
                           key={lead._id}
-                          initial={{ opacity: 0, x: -10 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          transition={{ delay: index * 0.05, type: "spring", stiffness: 300 }}
                           className="table-row-hover border-b border-border/50"
                         >
                           <TableCell className="font-medium whitespace-nowrap">
-                            <motion.span
-                              initial={{ opacity: 0 }}
-                              animate={{ opacity: 1 }}
-                              transition={{ delay: index * 0.05 + 0.1 }}
-                            >
-                              {lead.name}
-                            </motion.span>
+                            {lead.name}
                           </TableCell>
                           <TableCell className="whitespace-nowrap">
-                            <motion.div
-                              initial={{ scale: 0 }}
-                              animate={{ scale: 1 }}
-                              transition={{ delay: index * 0.05 + 0.15, type: "spring" }}
-                            >
-                              <Badge className={`${statusColors[lead.status]} badge-pulse`}>
-                                {lead.status.charAt(0).toUpperCase() + lead.status.slice(1)}
-                              </Badge>
-                            </motion.div>
+                            <Badge className={`${statusColors[lead.status]} badge-pulse`}>
+                              {lead.status.charAt(0).toUpperCase() + lead.status.slice(1)}
+                            </Badge>
                           </TableCell>
                           <TableCell className="whitespace-nowrap">
                             <Select
@@ -570,26 +555,21 @@ const ManagerDashboard = () => {
                             </Select>
                           </TableCell>
                           <TableCell className="text-right whitespace-nowrap">
-                            <motion.div
-                              whileHover={{ scale: 1.05 }}
-                              whileTap={{ scale: 0.95 }}
+                            <Button
+                              size="sm"
+                              className="gradient-bg-animated text-primary-foreground button-ripple hover:scale-105 transition-all shadow-md"
+                              onClick={() => {
+                                const agentId = rowAgentMap[lead._id] || lead.assignedTo?._id || "";
+                                if (!agentId) return;
+                                setUpdatingLeadId(lead._id);
+                                updateLeadMutation.mutate({ id: lead._id, data: { assignedTo: agentId } as any });
+                              }}
+                              disabled={(!rowAgentMap[lead._id] && !lead.assignedTo?._id) || updatingLeadId === lead._id}
                             >
-                              <Button
-                                size="sm"
-                                className="gradient-bg-animated text-primary-foreground button-ripple hover:scale-105 transition-all shadow-md"
-                                onClick={() => {
-                                  const agentId = rowAgentMap[lead._id] || lead.assignedTo?._id || "";
-                                  if (!agentId) return;
-                                  setUpdatingLeadId(lead._id);
-                                  updateLeadMutation.mutate({ id: lead._id, data: { assignedTo: agentId } as any });
-                                }}
-                                disabled={(!rowAgentMap[lead._id] && !lead.assignedTo?._id) || updatingLeadId === lead._id}
-                              >
-                                {updatingLeadId === lead._id ? "Assigning..." : "Assign"}
-                              </Button>
-                            </motion.div>
+                              {updatingLeadId === lead._id ? "Assigning..." : "Assign"}
+                            </Button>
                           </TableCell>
-                        </motion.tr>
+                        </TableRow>
                       ))
                     )}
                   </TableBody>
