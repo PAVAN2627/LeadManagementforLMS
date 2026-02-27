@@ -1,8 +1,0 @@
-# Exclude API subdirectories from being deployed as separate functions
-# They are imported by api/index.ts instead
-api/analytics/**
-api/auth/**
-api/cron/**
-api/leads/**
-api/notifications/**
-api/users/**

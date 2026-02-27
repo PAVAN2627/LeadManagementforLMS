@@ -1,19 +1,19 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
-// Import all handlers
-import analyticsHandler from './analytics/index.js';
-import adminSignupHandler from './auth/admin-signup.js';
-import changePasswordHandler from './auth/change-password.js';
-import loginHandler from './auth/login.js';
-import meHandler from './auth/me.js';
-import sendRemindersHandler from './cron/send-reminders.js';
-import leadsHandler from './leads/index.js';
-import leadByIdHandler from './leads/[id].js';
-import leadNotesHandler from './leads/[id]/notes.js';
-import notificationsHandler from './notifications/index.js';
-import notificationByIdHandler from './notifications/[id].js';
-import usersHandler from './users/index.js';
-import userByIdHandler from './users/[id].js';
+// Import all handlers (underscore prefix prevents Vercel from deploying as separate functions)
+import analyticsHandler from './_analytics/index.js';
+import adminSignupHandler from './_auth/admin-signup.js';
+import changePasswordHandler from './_auth/change-password.js';
+import loginHandler from './_auth/login.js';
+import meHandler from './_auth/me.js';
+import sendRemindersHandler from './_cron/send-reminders.js';
+import leadsHandler from './_leads/index.js';
+import leadByIdHandler from './_leads/[id].js';
+import leadNotesHandler from './_leads/[id]/notes.js';
+import notificationsHandler from './_notifications/index.js';
+import notificationByIdHandler from './_notifications/[id].js';
+import usersHandler from './_users/index.js';
+import userByIdHandler from './_users/[id].js';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
     const { url } = req;
