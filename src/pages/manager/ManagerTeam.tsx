@@ -272,12 +272,12 @@ const ManagerTeam = () => {
                       {conversionRate}%
                     </motion.span>
                   </div>
-                  <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
+                  <div className="w-full h-3 bg-gray-200 rounded-full overflow-hidden shadow-inner">
                     <motion.div
                       initial={{ width: 0 }}
                       animate={{ width: `${conversionRate}%` }}
                       transition={{ duration: 1, delay: index * 0.1 + 0.6, ease: "easeOut" }}
-                      className="h-full bg-gradient-bg-animated rounded-full"
+                      className="h-full bg-gradient-to-r from-green-400 to-green-600 rounded-full"
                     />
                   </div>
                 </div>
@@ -376,12 +376,12 @@ const ManagerTeam = () => {
                       </TableCell>
                       <TableCell className="text-center">
                         <div className="flex items-center justify-center gap-2">
-                          <div className="w-16 h-2 bg-muted rounded-full overflow-hidden">
+                          <div className="w-20 h-3 bg-gray-200 rounded-full overflow-hidden shadow-inner">
                             <motion.div
                               initial={{ width: 0 }}
                               animate={{ width: `${conversionRate}%` }}
                               transition={{ duration: 1, delay: index * 0.1 + 0.5 }}
-                              className="h-full bg-gradient-bg-animated rounded-full"
+                              className="h-full bg-gradient-to-r from-green-400 to-green-600 rounded-full"
                             />
                           </div>
                           <span className="text-sm font-medium">{conversionRate}%</span>
@@ -478,12 +478,12 @@ const ManagerTeam = () => {
                       <span className="text-muted-foreground">Conversion Rate</span>
                       <span className="font-semibold">{conversionRate}%</span>
                     </div>
-                    <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
+                    <div className="w-full h-3 bg-gray-200 rounded-full overflow-hidden shadow-inner">
                       <motion.div
                         initial={{ width: 0 }}
                         animate={{ width: `${conversionRate}%` }}
                         transition={{ duration: 1, delay: index * 0.05 + 0.4 }}
-                        className="h-full bg-gradient-bg-animated rounded-full"
+                        className="h-full bg-gradient-to-r from-green-400 to-green-600 rounded-full"
                       />
                     </div>
                   </div>

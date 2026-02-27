@@ -111,15 +111,9 @@ const AdminProfile = () => {
       });
       return;
     }
-    if (!formData.email?.trim()) {
-      toast({ 
-        title: "Validation Error", 
-        description: "Email is required", 
-        variant: "destructive" 
-      });
-      return;
-    }
-    updateProfileMutation.mutate(formData);
+    // Exclude email from update - it's permanent
+    const { email, ...updateData } = formData;
+    updateProfileMutation.mutate(updateData);
   };
 
   const handlePasswordChange = () => {
@@ -348,10 +342,11 @@ const AdminProfile = () => {
                     id="email"
                     type="email"
                     value={formData.email}
-                    onChange={(e) => handleInputChange("email", e.target.value)}
-                    disabled={!isEditing}
-                    className="border-gray-300"
+                    disabled={true}
+                    className="bg-muted/50 cursor-not-allowed"
+                    title="Email cannot be changed"
                   />
+                  <p className="text-xs text-muted-foreground">Email cannot be changed</p>
                 </div>
 
                 <div className="space-y-2">
