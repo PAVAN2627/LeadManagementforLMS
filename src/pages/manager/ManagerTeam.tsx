@@ -60,6 +60,15 @@ const ManagerTeam = () => {
     department: "Sales",
   });
 
+  // Agent leads dialog state
+  const [selectedAgent, setSelectedAgent] = useState<any>(null);
+  const [isAgentLeadsOpen, setIsAgentLeadsOpen] = useState(false);
+
+  const handleViewAgentDetails = (agent: any) => {
+    setSelectedAgent(agent);
+    setIsAgentLeadsOpen(true);
+  };
+
   // Fetch agents
   const { data: users = [] } = useQuery({
     queryKey: ['users', 'agent'],
@@ -198,9 +207,9 @@ const ManagerTeam = () => {
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      <DropdownMenuItem>View Details</DropdownMenuItem>
-                      <DropdownMenuItem>Send Message</DropdownMenuItem>
-                      <DropdownMenuItem>Assign Leads</DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleViewAgentDetails(agent)}>
+                        View Details
+                      </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </div>
@@ -426,6 +435,18 @@ const ManagerTeam = () => {
                         </Badge>
                       </div>
                     </div>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" className="hover:scale-110 transition-transform">
+                          <MoreVertical className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => handleViewAgentDetails(agent)}>
+                          View Details
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
 
                   <div className="grid grid-cols-3 gap-3">
@@ -480,6 +501,84 @@ const ManagerTeam = () => {
           </div>
         </div>
       </motion.div>
+
+      {/* Agent Leads Dialog */}
+      <Dialog open={isAgentLeadsOpen} onOpenChange={setIsAgentLeadsOpen}>
+        <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-gray-900 flex items-center gap-2">
+              <Users className="h-5 w-5 text-primary" />
+              {selectedAgent?.name}'s Leads
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 pt-2">
+            {selectedAgent && (() => {
+              const agentLeads = leads.filter(l => l.assignedTo && l.assignedTo._id === selectedAgent._id);
+              
+              if (agentLeads.length === 0) {
+                return (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <AlertCircle className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                    <p>No leads assigned to this agent yet.</p>
+                  </div>
+                );
+              }
+
+              return (
+                <div className="space-y-3">
+                  {agentLeads.map((lead) => {
+                    const statusColors: Record<string, string> = {
+                      new: "bg-blue-100 text-blue-800 border-blue-200",
+                      contacted: "bg-purple-100 text-purple-800 border-purple-200",
+                      qualified: "bg-indigo-100 text-indigo-800 border-indigo-200",
+                      proposal: "bg-yellow-100 text-yellow-800 border-yellow-200",
+                      negotiation: "bg-orange-100 text-orange-800 border-orange-200",
+                      converted: "bg-green-100 text-green-800 border-green-200",
+                      lost: "bg-red-100 text-red-800 border-red-200",
+                    };
+
+                    return (
+                      <motion.div
+                        key={lead._id}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="p-4 border border-border rounded-lg hover:shadow-md transition-shadow bg-card"
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex-1 space-y-2">
+                            <div className="flex items-center gap-2">
+                              <h4 className="font-semibold text-foreground">{lead.name}</h4>
+                              <Badge className={`${statusColors[lead.status]} border`}>
+                                {lead.status.charAt(0).toUpperCase() + lead.status.slice(1)}
+                              </Badge>
+                            </div>
+                            <div className="space-y-1 text-sm text-muted-foreground">
+                              <div className="flex items-center gap-2">
+                                <Mail className="h-3 w-3" />
+                                <span>{lead.email}</span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Phone className="h-3 w-3" />
+                                <span>{lead.phone}</span>
+                              </div>
+                              {lead.company && (
+                                <div className="flex items-center gap-2">
+                                  <Users className="h-3 w-3" />
+                                  <span>{lead.company}</span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </motion.div>
+                    );
+                  })}
+                </div>
+              );
+            })()}
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Add Agent Dialog */}
       <Dialog open={isAddAgentOpen} onOpenChange={setIsAddAgentOpen}>

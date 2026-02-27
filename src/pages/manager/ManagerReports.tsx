@@ -315,16 +315,54 @@ const ManagerReports = () => {
         </motion.div>
 
         <motion.div
-          whileHover={{ scale: 1.05 }}
+          whileHover={{ scale: 1.08 }}
           whileTap={{ scale: 0.95 }}
           className="ml-auto"
         >
           <Button 
             onClick={handleExport}
-            className="gradient-bg-animated text-primary-foreground button-ripple shadow-lg icon-bounce"
+            className="gradient-bg-animated text-primary-foreground button-ripple shadow-lg relative overflow-visible export-button-animated group"
           >
-            <Download className="h-4 w-4 mr-2" />
-            Export Report
+            <motion.div
+              className="absolute inset-0 bg-white/20 rounded-md"
+              initial={{ opacity: 0 }}
+              whileHover={{ 
+                opacity: [0, 0.4, 0],
+                transition: { 
+                  duration: 0.8,
+                  repeat: Infinity,
+                  ease: "easeInOut"
+                }
+              }}
+            />
+            <motion.div
+              animate={{ 
+                rotate: [0, 360],
+              }}
+              transition={{ 
+                duration: 3,
+                repeat: Infinity,
+                ease: "linear"
+              }}
+              className="inline-block mr-2"
+            >
+              <Download className="h-4 w-4" />
+            </motion.div>
+            <span className="relative z-10 font-semibold">Export Report</span>
+            <motion.div
+              className="absolute -inset-1 bg-gradient-to-r from-teal-400 via-cyan-400 to-teal-400 rounded-md opacity-0 group-hover:opacity-30 blur-sm"
+              animate={{
+                backgroundPosition: ['0% 50%', '100% 50%', '0% 50%'],
+              }}
+              transition={{
+                duration: 2,
+                repeat: Infinity,
+                ease: "linear"
+              }}
+              style={{
+                backgroundSize: '200% 200%',
+              }}
+            />
           </Button>
         </motion.div>
       </motion.div>
