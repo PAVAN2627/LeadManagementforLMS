@@ -455,25 +455,6 @@ const ManagerDashboard = () => {
                 <Table>
                   <TableHeader>
                     <TableRow className="bg-muted/50">
-                      <TableHead className="w-12">
-                        <motion.div
-                          whileHover={{ scale: 1.2, rotate: 5 }}
-                          whileTap={{ scale: 0.9 }}
-                        >
-                          <input
-                            type="checkbox"
-                            className="rounded border-gray-300 text-primary focus:ring-primary checkbox-animated cursor-pointer"
-                            checked={selectedLeads.length === filteredLeads.length && filteredLeads.length > 0}
-                            onChange={(e) => {
-                              if (e.target.checked) {
-                                setSelectedLeads(filteredLeads.map(l => l._id));
-                              } else {
-                                setSelectedLeads([]);
-                              }
-                            }}
-                          />
-                        </motion.div>
-                      </TableHead>
                       <TableHead className="font-bold text-foreground min-w-[150px]">Lead Name</TableHead>
                       <TableHead className="font-bold text-foreground min-w-[120px]">Status</TableHead>
                       <TableHead className="font-bold text-foreground min-w-[140px]">Assign Agent</TableHead>
@@ -484,7 +465,7 @@ const ManagerDashboard = () => {
                   <TableBody>
                     {filteredLeads.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                        <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
                           <motion.div
                             initial={{ opacity: 0, scale: 0.8 }}
                             animate={{ opacity: 1, scale: 1 }}
@@ -503,19 +484,6 @@ const ManagerDashboard = () => {
                           transition={{ delay: index * 0.05, type: "spring", stiffness: 300 }}
                           className="table-row-hover border-b border-border/50"
                         >
-                          <TableCell>
-                            <motion.div
-                              whileHover={{ scale: 1.2 }}
-                              whileTap={{ scale: 0.9 }}
-                            >
-                              <input
-                                type="checkbox"
-                                className="rounded border-gray-300 text-primary focus:ring-primary checkbox-animated cursor-pointer"
-                                checked={selectedLeads.includes(lead._id)}
-                                onChange={() => toggleLeadSelection(lead._id)}
-                              />
-                            </motion.div>
-                          </TableCell>
                           <TableCell className="font-medium whitespace-nowrap">
                             <motion.span
                               initial={{ opacity: 0 }}
