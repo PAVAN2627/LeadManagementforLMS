@@ -488,7 +488,7 @@ const ManagerDashboard = () => {
 
               {/* Desktop View - Table */}
               <div className="hidden md:block overflow-x-auto">
-                <Table>
+                <Table key="lead-assignment-table-v2">
                   <TableHeader>
                     <TableRow className="bg-muted/50">
                       <TableHead className="font-bold text-foreground min-w-[150px]">Lead Name</TableHead>
