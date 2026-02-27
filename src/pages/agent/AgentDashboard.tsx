@@ -4,11 +4,6 @@ import {
   TrendingUp,
   Plus,
   Search,
-  Filter,
-  Phone,
-  Mail,
-  MapPin,
-  Calendar,
   Eye,
   CheckCircle
 } from "lucide-react";
@@ -25,6 +20,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
   DialogContent,
@@ -32,7 +29,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -40,11 +36,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api, ApiLead } from "@/lib/api";
 import { useToast } from "@/components/ui/use-toast";
+import { LeadViewModal } from "@/components/agent/LeadViewModal";
 
 const AgentDashboard = () => {
   const { toast } = useToast();
@@ -90,18 +86,6 @@ const AgentDashboard = () => {
     }
   });
 
-  // Update status mutation
-  const updateStatusMutation = useMutation({
-    mutationFn: ({ id, status }: { id: string; status: ApiLead['status'] }) =>
-      api.updateLead(id, { status }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['leads'] });
-      toast({ title: "Updated", description: "Lead status updated" });
-      setIsDetailOpen(false);
-    }
-  });
-
-
   const filteredLeads = leads.filter((lead: ApiLead) => {
     const matchesSearch = lead.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       lead.company.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -124,10 +108,6 @@ const AgentDashboard = () => {
   const handleViewLead = (lead: ApiLead) => {
     setSelectedLead(lead);
     setIsDetailOpen(true);
-  };
-
-  const handleUpdateStatus = (leadId: string, newStatus: ApiLead['status']) => {
-    updateStatusMutation.mutate({ id: leadId, status: newStatus });
   };
 
   return (
@@ -319,15 +299,16 @@ const AgentDashboard = () => {
                     <span className="text-sm text-gray-600">Status:</span>
                     <Badge
                       className={
-                        lead.status === "converted" ? "bg-green-100 text-green-800" :
-                          lead.status === "qualified" ? "bg-blue-100 text-blue-800" :
-                            lead.status === "proposal" ? "bg-yellow-100 text-yellow-800" :
-                              lead.status === "new" ? "bg-purple-100 text-purple-800" :
-                                lead.status === "contacted" ? "bg-orange-100 text-orange-800" :
-                                  "bg-red-100 text-red-800"
+                        lead.status === "new" ? "bg-blue-50 text-blue-700 border border-blue-200" :
+                          lead.status === "contacted" ? "bg-purple-50 text-purple-700 border border-purple-200" :
+                            lead.status === "qualified" ? "bg-amber-50 text-amber-700 border border-amber-200" :
+                              lead.status === "proposal" ? "bg-indigo-50 text-indigo-700 border border-indigo-200" :
+                                lead.status === "negotiation" ? "bg-orange-50 text-orange-700 border border-orange-200" :
+                                  lead.status === "converted" ? "bg-green-50 text-green-700 border border-green-200" :
+                                    "bg-red-50 text-red-700 border border-red-200"
                       }
                     >
-                      {lead.status}
+                      {lead.status.charAt(0).toUpperCase() + lead.status.slice(1)}
                     </Badge>
                   </div>
                 </div>
@@ -358,15 +339,16 @@ const AgentDashboard = () => {
                     <TableCell>
                       <Badge
                         className={
-                          lead.status === "converted" ? "bg-green-100 text-green-800" :
-                            lead.status === "qualified" ? "bg-blue-100 text-blue-800" :
-                              lead.status === "proposal" ? "bg-yellow-100 text-yellow-800" :
-                                lead.status === "new" ? "bg-purple-100 text-purple-800" :
-                                  lead.status === "contacted" ? "bg-orange-100 text-orange-800" :
-                                    "bg-red-100 text-red-800"
+                          lead.status === "new" ? "bg-blue-50 text-blue-700 border border-blue-200" :
+                            lead.status === "contacted" ? "bg-purple-50 text-purple-700 border border-purple-200" :
+                              lead.status === "qualified" ? "bg-amber-50 text-amber-700 border border-amber-200" :
+                                lead.status === "proposal" ? "bg-indigo-50 text-indigo-700 border border-indigo-200" :
+                                  lead.status === "negotiation" ? "bg-orange-50 text-orange-700 border border-orange-200" :
+                                    lead.status === "converted" ? "bg-green-50 text-green-700 border border-green-200" :
+                                      "bg-red-50 text-red-700 border border-red-200"
                         }
                       >
-                        {lead.status}
+                        {lead.status.charAt(0).toUpperCase() + lead.status.slice(1)}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right">
@@ -387,92 +369,12 @@ const AgentDashboard = () => {
         </div>
       </div>
 
-      {/* Lead Detail Modal */}
-      <Dialog open={isDetailOpen} onOpenChange={setIsDetailOpen}>
-        <DialogContent className="max-w-2xl">
-          {selectedLead && (
-            <>
-              <DialogHeader>
-                <DialogTitle className="text-gray-900">Lead Details</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-6">
-                <div className="flex items-start justify-between">
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-3">
-                      <div className="h-12 w-12 bg-teal-600 rounded-full flex items-center justify-center text-white font-bold">
-                        {selectedLead.name.split(' ').map(n => n[0]).join('').toUpperCase()}
-                      </div>
-                      <div>
-                        <h2 className="text-xl font-bold text-gray-900">{selectedLead.name}</h2>
-                        <p className="text-gray-600">{selectedLead.company}</p>
-                      </div>
-                    </div>
-
-                    <div className="space-y-3">
-                      <div className="flex items-center gap-2 text-gray-600">
-                        <Mail className="h-4 w-4" />
-                        <span>{selectedLead.email}</span>
-                      </div>
-                      <div className="flex items-center gap-2 text-gray-600">
-                        <Phone className="h-4 w-4" />
-                        <span>{selectedLead.phone}</span>
-                      </div>
-                      <div className="flex items-center gap-2 text-gray-600">
-                        <MapPin className="h-4 w-4" />
-                        <span>{selectedLead.location || 'Unknown'}</span>
-                      </div>
-                      <div className="flex items-center gap-2 text-gray-600">
-                        <Calendar className="h-4 w-4" />
-                        <span>Created: {new Date(selectedLead.createdAt).toLocaleDateString()}</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <Badge
-                    className={
-                      selectedLead.status === "converted" ? "bg-green-100 text-green-800" :
-                        selectedLead.status === "qualified" ? "bg-blue-100 text-blue-800" :
-                          selectedLead.status === "proposal" ? "bg-yellow-100 text-yellow-800" :
-                            selectedLead.status === "new" ? "bg-purple-100 text-purple-800" :
-                              selectedLead.status === "contacted" ? "bg-orange-100 text-orange-800" :
-                                "bg-red-100 text-red-800"
-                    }
-                  >
-                    {selectedLead.status}
-                  </Badge>
-                </div>
-
-                {selectedLead.notes && (
-                  <div>
-                    <h3 className="font-semibold text-gray-900 mb-2">Notes</h3>
-                    <p className="text-gray-600">{selectedLead.notes}</p>
-                  </div>
-                )}
-
-                <div className="flex gap-2 pt-4">
-                  <Select onValueChange={(value) => handleUpdateStatus(selectedLead._id, value as ApiLead["status"])}>
-                    <SelectTrigger className="border-gray-300">
-                      <SelectValue placeholder="Update Status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="new">New</SelectItem>
-                      <SelectItem value="contacted">Contacted</SelectItem>
-                      <SelectItem value="in-progress">In Progress</SelectItem>
-                      <SelectItem value="qualified">Qualified</SelectItem>
-                      <SelectItem value="converted">Converted</SelectItem>
-                      <SelectItem value="lost">Lost</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <Button className="bg-teal-600 hover:bg-teal-700 text-white">
-                    <Phone className="mr-2 h-4 w-4" />
-                    Call Lead
-                  </Button>
-                </div>
-              </div>
-            </>
-          )}
-        </DialogContent>
-      </Dialog>
+      {/* Lead Detail Modal - View Only */}
+      <LeadViewModal
+        lead={selectedLead}
+        isOpen={isDetailOpen}
+        onClose={() => setIsDetailOpen(false)}
+      />
     </DashboardLayout>
   );
 };

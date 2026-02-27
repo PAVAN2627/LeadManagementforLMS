@@ -36,18 +36,13 @@ import { LeadDetailModal } from "@/components/agent/LeadDetailModal";
 import { AddLeadModal } from "@/components/agent/AddLeadModal";
 
 const statusColors: Record<ApiLead["status"], string> = {
-  new: "bg-gradient-to-r from-blue-500/20 to-cyan-500/20 text-blue-700 border border-blue-300 dark:text-blue-400 shadow-sm",
-  contacted:
-    "bg-gradient-to-r from-purple-500/20 to-pink-500/20 text-purple-700 border border-purple-300 dark:text-purple-400 shadow-sm",
-  qualified:
-    "bg-gradient-to-r from-amber-500/20 to-yellow-500/20 text-amber-700 border border-amber-300 dark:text-amber-400 shadow-sm",
-  proposal:
-    "bg-gradient-to-r from-indigo-500/20 to-blue-500/20 text-indigo-700 border border-indigo-300 dark:text-indigo-400 shadow-sm",
-  negotiation:
-    "bg-gradient-to-r from-orange-500/20 to-red-500/20 text-orange-700 border border-orange-300 dark:text-orange-400 shadow-sm",
-  converted:
-    "bg-gradient-to-r from-green-500/20 to-emerald-500/20 text-green-700 border border-green-300 dark:text-green-400 shadow-sm",
-  lost: "bg-gradient-to-r from-red-500/20 to-rose-500/20 text-red-700 border border-red-300 dark:text-red-400 shadow-sm",
+  new: "bg-blue-50 text-blue-700 border border-blue-200",
+  contacted: "bg-purple-50 text-purple-700 border border-purple-200",
+  qualified: "bg-amber-50 text-amber-700 border border-amber-200",
+  proposal: "bg-indigo-50 text-indigo-700 border border-indigo-200",
+  negotiation: "bg-orange-50 text-orange-700 border border-orange-200",
+  converted: "bg-green-50 text-green-700 border border-green-200",
+  lost: "bg-red-50 text-red-700 border border-red-200",
 };
 
 const MyLeads = () => {
