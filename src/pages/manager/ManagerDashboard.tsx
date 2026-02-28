@@ -97,16 +97,42 @@ const ManagerDashboard = () => {
       if (selectedStatus !== "all" && lead.status !== selectedStatus) return false;
       if (searchQuery && !lead.name.toLowerCase().includes(searchQuery.toLowerCase()) &&
         !lead.email.toLowerCase().includes(searchQuery.toLowerCase())) return false;
+      
       if (dateFilter !== "all") {
         const leadDate = new Date(lead.date);
-        const today = new Date();
-        if (dateFilter === "today") return leadDate.toDateString() === today.toDateString();
-        // Simple approximation for week/month logic
-        const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
-        const monthAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
+        const now = new Date();
+        let startDate: Date;
 
-        if (dateFilter === "week" && leadDate < weekAgo) return false;
-        if (dateFilter === "month" && leadDate < monthAgo) return false;
+        switch (dateFilter) {
+          case "today":
+            return leadDate.toDateString() === now.toDateString();
+          case "week":
+            // Start of this week (Sunday)
+            const dayOfWeek = now.getDay();
+            startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - dayOfWeek);
+            startDate.setHours(0, 0, 0, 0);
+            break;
+          case "month":
+            // Start of this month
+            startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+            startDate.setHours(0, 0, 0, 0);
+            break;
+          case "quarter":
+            // Start of this quarter
+            const currentQuarter = Math.floor(now.getMonth() / 3);
+            startDate = new Date(now.getFullYear(), currentQuarter * 3, 1);
+            startDate.setHours(0, 0, 0, 0);
+            break;
+          case "year":
+            // Start of this year
+            startDate = new Date(now.getFullYear(), 0, 1);
+            startDate.setHours(0, 0, 0, 0);
+            break;
+          default:
+            return true;
+        }
+
+        return leadDate >= startDate;
       }
       return true;
     });
@@ -391,6 +417,8 @@ const ManagerDashboard = () => {
                       <SelectItem value="today">Today</SelectItem>
                       <SelectItem value="week">This Week</SelectItem>
                       <SelectItem value="month">This Month</SelectItem>
+                      <SelectItem value="quarter">This Quarter</SelectItem>
+                      <SelectItem value="year">This Year</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
