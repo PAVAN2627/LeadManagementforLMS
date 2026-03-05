@@ -45,6 +45,7 @@ import {
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { useToast } from "@/components/ui/use-toast";
+import * as XLSX from 'xlsx';
 
 const ManagerTeam = () => {
   const { toast } = useToast();
@@ -89,6 +90,51 @@ const ManagerTeam = () => {
   const handleAddAgent = () => {
     if (!newAgent.name || !newAgent.email || !newAgent.password) return;
     createAgentMutation.mutate({ ...newAgent, role: "agent" });
+  };
+
+  const bulkCreateAgentsMutation = useMutation({
+    mutationFn: api.bulkCreateUsers,
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['users'] });
+      toast({ title: "Success", description: data.message });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    }
+  });
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const data = new Uint8Array(event.target?.result as ArrayBuffer);
+      const workbook = XLSX.read(data, { type: 'array' });
+      const sheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[sheetName];
+      const json = XLSX.utils.sheet_to_json(worksheet) as any[];
+
+      if (json.length === 0) {
+        toast({ title: "Error", description: "Empty or invalid Excel file", variant: "destructive" });
+        return;
+      }
+
+      const parsedUsers = json.map(row => ({
+        name: row.Name || row.name || '',
+        email: row.Email || row.email || '',
+        phone: (row.Phone || row.phone || '').toString(),
+        password: row.Password || row.password || 'password123',
+        role: 'agent', // forces agent
+        department: row.Department || row.department || 'Sales',
+      }));
+
+      bulkCreateAgentsMutation.mutate(parsedUsers);
+      if (e.target) {
+        e.target.value = '';
+      }
+    };
+    reader.readAsArrayBuffer(file);
   };
 
   // Calculate stats per agent
@@ -296,7 +342,22 @@ const ManagerTeam = () => {
               </motion.div>
               <h2 className="text-lg font-semibold text-foreground gradient-text-animated">Detailed Performance</h2>
             </div>
-            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} className="flex gap-2">
+              <Button
+                variant="outline"
+                className="hover:border-primary shadow-lg sm:w-auto w-full"
+                onClick={() => document.getElementById('team-excel-upload')?.click()}
+                disabled={bulkCreateAgentsMutation.isPending}
+              >
+                {bulkCreateAgentsMutation.isPending ? "Importing..." : "Bulk Import"}
+              </Button>
+              <input
+                type="file"
+                id="team-excel-upload"
+                className="hidden"
+                accept=".xlsx, .xls, .csv"
+                onChange={handleFileUpload}
+              />
               <Button
                 className="gradient-bg-animated text-primary-foreground button-ripple shadow-lg w-full sm:w-auto"
                 onClick={() => setIsAddAgentOpen(true)}

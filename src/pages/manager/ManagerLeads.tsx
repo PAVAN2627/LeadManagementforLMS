@@ -37,6 +37,7 @@ import { Label } from "@/components/ui/label";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api, ApiLead, ApiUser } from "@/lib/api";
 import { useToast } from "@/components/ui/use-toast";
+import * as XLSX from 'xlsx';
 
 const statusColors: Record<string, string> = {
   new: "bg-primary text-primary-foreground",
@@ -107,6 +108,53 @@ const ManagerLeads = () => {
       setUpdatingLeadId(null);
     }
   });
+
+  const bulkCreateLeadsMutation = useMutation({
+    mutationFn: api.bulkCreateLeads,
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['leads'] });
+      toast({ title: "Success", description: data.message });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    }
+  });
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const data = new Uint8Array(event.target?.result as ArrayBuffer);
+      const workbook = XLSX.read(data, { type: 'array' });
+      const sheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[sheetName];
+      const json = XLSX.utils.sheet_to_json(worksheet) as any[];
+
+      if (json.length === 0) {
+        toast({ title: "Error", description: "Empty or invalid Excel file", variant: "destructive" });
+        return;
+      }
+
+      const parsedLeads = json.map(row => ({
+        name: row.Name || row.name || '',
+        email: row.Email || row.email || '',
+        phone: (row.Phone || row.phone || '').toString(),
+        company: row.Company || row.company || '',
+        source: row.Source || row.source || 'Website',
+        status: row.Status || row.status || 'new',
+        assignedToEmail: row['Assigned Agent'] || row.assignedAgentEmail || row.assignedToEmail || '',
+        date: row.Date || row.date || new Date().toISOString(),
+      }));
+
+      bulkCreateLeadsMutation.mutate(parsedLeads);
+      if (e.target) {
+        e.target.value = '';
+      }
+    };
+    reader.readAsArrayBuffer(file);
+  };
 
   const handleBulkAssign = (agentName: string) => {
     const agent = agents.find((a: ApiUser) => a.name === agentName);
@@ -212,6 +260,22 @@ const ManagerLeads = () => {
                       <Download className="h-4 w-4 mr-2" />
                       Export
                     </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="hover:scale-105 transition-transform hover:border-primary icon-bounce"
+                      onClick={() => document.getElementById('manager-excel-upload')?.click()}
+                      disabled={bulkCreateLeadsMutation.isPending}
+                    >
+                      {bulkCreateLeadsMutation.isPending ? "Importing..." : "Bulk Import"}
+                    </Button>
+                    <input
+                      type="file"
+                      id="manager-excel-upload"
+                      className="hidden"
+                      accept=".xlsx, .xls, .csv"
+                      onChange={handleFileUpload}
+                    />
                     <Button variant="outline" size="sm" className="hover:scale-105 transition-transform hover:border-primary icon-spin">
                       <RefreshCw className="h-4 w-4" />
                     </Button>

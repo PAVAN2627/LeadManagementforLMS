@@ -144,6 +144,32 @@ export const api = {
         return response.json();
     },
 
+    bulkCreateUsers: async (users: any[]): Promise<any> => {
+        const response = await fetch(`${API_URL}/users/bulk`, {
+            method: 'POST',
+            headers: getHeaders(),
+            body: JSON.stringify({ users }),
+        });
+        if (!response.ok) {
+            const error = await response.json().catch(() => ({}));
+            throw new Error(error.message || 'Failed to bulk create users');
+        }
+        return response.json();
+    },
+
+    bulkCreateLeads: async (leads: any[]): Promise<any> => {
+        const response = await fetch(`${API_URL}/leads/bulk`, {
+            method: 'POST',
+            headers: getHeaders(),
+            body: JSON.stringify({ leads }),
+        });
+        if (!response.ok) {
+            const error = await response.json().catch(() => ({}));
+            throw new Error(error.message || 'Failed to bulk create leads');
+        }
+        return response.json();
+    },
+
     createLead: async (data: Partial<ApiLead>): Promise<ApiLead> => {
         const response = await fetch(`${API_URL}/leads`, {
             method: 'POST',

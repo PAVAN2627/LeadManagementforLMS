@@ -53,6 +53,7 @@ import {
 } from "@/components/ui/select";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api, ApiUser } from "@/lib/api";
+import * as XLSX from 'xlsx';
 
 // Use ApiUser as the main type
 type User = ApiUser;
@@ -106,6 +107,51 @@ const AdminUsers = () => {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     }
   });
+
+  const bulkCreateUsersMutation = useMutation({
+    mutationFn: api.bulkCreateUsers,
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['users'] });
+      toast({ title: "Success", description: data.message });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    }
+  });
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const data = new Uint8Array(event.target?.result as ArrayBuffer);
+      const workbook = XLSX.read(data, { type: 'array' });
+      const sheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[sheetName];
+      const json = XLSX.utils.sheet_to_json(worksheet) as any[];
+
+      if (json.length === 0) {
+        toast({ title: "Error", description: "Empty or invalid Excel file", variant: "destructive" });
+        return;
+      }
+
+      const parsedUsers = json.map(row => ({
+        name: row.Name || row.name || '',
+        email: row.Email || row.email || '',
+        phone: (row.Phone || row.phone || '').toString(),
+        password: row.Password || row.password || 'password123',
+        role: (row.Role || row.role || 'agent').toLowerCase(),
+        department: row.Department || row.department || 'Sales',
+      }));
+
+      bulkCreateUsersMutation.mutate(parsedUsers);
+      if (e.target) {
+        e.target.value = '';
+      }
+    };
+    reader.readAsArrayBuffer(file);
+  };
 
   const updateUserMutation = useMutation({
     mutationFn: ({ id, data }: { id: string; data: Partial<ApiUser> }) => api.updateUser(id, data),
@@ -364,6 +410,25 @@ const AdminUsers = () => {
                   <Download className="h-4 w-4 mr-2" />
                   Export
                 </Button>
+              </motion.div>
+
+              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  className="bg-white/20 hover:bg-white/30 text-white border-0 backdrop-blur-sm transition-all duration-300 shadow-lg hover:shadow-xl"
+                  onClick={() => document.getElementById('user-excel-upload')?.click()}
+                  disabled={bulkCreateUsersMutation.isPending}
+                >
+                  {bulkCreateUsersMutation.isPending ? "Importing..." : "Bulk Import"}
+                </Button>
+                <input
+                  type="file"
+                  id="user-excel-upload"
+                  className="hidden"
+                  accept=".xlsx, .xls, .csv"
+                  onChange={handleFileUpload}
+                />
               </motion.div>
 
               <Dialog open={isAddUserOpen} onOpenChange={setIsAddUserOpen}>
@@ -1142,15 +1207,14 @@ const AdminUsers = () => {
                           animate={{ scale: 1 }}
                           transition={{ delay: 0.1 + index * 0.05 }}
                         >
-                          <Badge className={`px-3 py-1 font-semibold shadow-sm ${
-                            user.role.toLowerCase() === 'admin'
+                          <Badge className={`px-3 py-1 font-semibold shadow-sm ${user.role.toLowerCase() === 'admin'
                               ? 'bg-gradient-to-r from-red-500 to-red-600 text-white'
                               : user.role.toLowerCase() === 'manager'
                                 ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white'
                                 : user.role.toLowerCase() === 'agent'
                                   ? 'bg-gradient-to-r from-green-500 to-green-600 text-white'
                                   : 'bg-gradient-to-r from-gray-500 to-gray-600 text-white'
-                          }`}>
+                            }`}>
                             {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
                           </Badge>
                         </motion.div>
