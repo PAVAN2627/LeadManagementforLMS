@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { useState } from "react";
 import { LoadingScreen } from "@/components/LoadingScreen";
+import ScrollToTop from "@/components/ScrollToTop";
 import Index from "./pages/Index";
 import LandingPage from "./pages/LandingPage";
 import Login from "./pages/Login";
@@ -18,18 +19,15 @@ import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminLeads from "./pages/admin/AdminLeads";
 import AdminUsers from "./pages/admin/AdminUsers";
 import AdminReports from "./pages/admin/AdminReports";
-import AdminSettings from "./pages/admin/AdminSettings";
 import AdminProfile from "./pages/admin/AdminProfile";
 import ManagerDashboard from "./pages/manager/ManagerDashboard";
 import ManagerTeam from "./pages/manager/ManagerTeam";
 import ManagerReports from "./pages/manager/ManagerReports";
 import ManagerLeads from "./pages/manager/ManagerLeads";
-import ManagerSettings from "./pages/manager/ManagerSettings";
 import ManagerProfile from "./pages/manager/ManagerProfile";
 import AgentDashboard from "./pages/agent/AgentDashboard";
 import MyLeads from "./pages/agent/MyLeads";
 import AddLeadPage from "./pages/agent/AddLeadPage";
-import Settings from "./pages/agent/Settings";
 import AgentProfile from "./pages/agent/AgentProfile";
 import NotFound from "./pages/NotFound";
 import Careers from "./pages/Careers";
@@ -58,6 +56,7 @@ const App = () => {
           <Sonner />
           {showLoading && <LoadingScreen onLoadingComplete={() => setShowLoading(false)} />}
           <BrowserRouter>
+            <ScrollToTop />
             <Routes>
               <Route path="/" element={<LandingPage />} />
               <Route path="/home" element={<Index />} />
@@ -115,11 +114,6 @@ const App = () => {
                   <AdminProfile />
                 </ProtectedRoute>
               } />
-              <Route path="/admin/settings" element={
-                <ProtectedRoute allowedRoles={['admin']}>
-                  <AdminSettings />
-                </ProtectedRoute>
-              } />
 
               {/* Manager Routes */}
               <Route path="/manager" element={
@@ -147,11 +141,6 @@ const App = () => {
                   <ManagerProfile />
                 </ProtectedRoute>
               } />
-              <Route path="/manager/settings" element={
-                <ProtectedRoute allowedRoles={['manager']}>
-                  <ManagerSettings />
-                </ProtectedRoute>
-              } />
 
               {/* Agent Routes */}
               <Route path="/agent" element={
@@ -172,11 +161,6 @@ const App = () => {
               <Route path="/agent/profile" element={
                 <ProtectedRoute allowedRoles={['agent']}>
                   <AgentProfile />
-                </ProtectedRoute>
-              } />
-              <Route path="/agent/settings" element={
-                <ProtectedRoute allowedRoles={['agent']}>
-                  <Settings />
                 </ProtectedRoute>
               } />
               <Route path="/agent/*" element={

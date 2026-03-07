@@ -38,7 +38,7 @@ adapters
 docs
 GSD-STYLE.md
 PROJECT_RULES.md
-
+.gsd
 scripts
 
 # Backend files to ignore

@@ -213,15 +213,33 @@ export const api = {
         return response.json();
     },
 
-    addLeadNote: async (id: string, content: string): Promise<any> => {
+    addLeadNote: async (id: string, content: string, status?: string, nextFollowUp?: string): Promise<any> => {
+        const body: any = { content };
+        if (status) body.status = status;
+        if (nextFollowUp) body.nextFollowUp = nextFollowUp;
+        
         const response = await fetch(`${API_URL}/leads/${id}/notes`, {
             method: 'POST',
             headers: getHeaders(),
-            body: JSON.stringify({ content }),
+            body: JSON.stringify(body),
         });
         if (!response.ok) {
             const error = await response.json().catch(() => ({}));
             throw new Error(error.message || 'Failed to add note');
+        }
+        return response.json();
+    },
+
+    // Change Password
+    changePassword: async (currentPassword: string, newPassword: string): Promise<{ message: string }> => {
+        const response = await fetch(`${API_URL}/auth/change-password`, {
+            method: 'POST',
+            headers: getHeaders(),
+            body: JSON.stringify({ currentPassword, newPassword })
+        });
+        if (!response.ok) {
+            const error = await response.json().catch(() => ({}));
+            throw new Error(error.message || 'Failed to change password');
         }
         return response.json();
     },

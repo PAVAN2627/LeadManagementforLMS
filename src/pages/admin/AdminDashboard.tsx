@@ -9,7 +9,6 @@ import {
   Ban,
   BarChart3,
   FileText,
-  Settings,
   Search,
   Filter,
   Eye,
@@ -133,6 +132,82 @@ const AdminDashboard = () => {
   const lostLeads = analytics?.lostLeads || 0;
   const activeAgents = analytics?.activeAgents || 0;
   const conversionRate = analytics?.conversionRate || '0.0';
+
+  // Calculate real-time chart data
+  const leadsByStatusData = useMemo(() => {
+    const statusCounts = {
+      new: 0,
+      contacted: 0,
+      qualified: 0,
+      proposal: 0,
+      negotiation: 0,
+      converted: 0,
+      lost: 0
+    };
+
+    leads.forEach((lead: ApiLead) => {
+      if (statusCounts.hasOwnProperty(lead.status)) {
+        statusCounts[lead.status]++;
+      }
+    });
+
+    return [
+      { name: "New", value: statusCounts.new, color: "#1F8A98" },
+      { name: "Contacted", value: statusCounts.contacted, color: "#17A2B8" },
+      { name: "Qualified", value: statusCounts.qualified, color: "#20C997" },
+      { name: "Proposal", value: statusCounts.proposal, color: "#FFC107" },
+      { name: "Negotiation", value: statusCounts.negotiation, color: "#FF9800" },
+      { name: "Converted", value: statusCounts.converted, color: "#28A745" },
+      { name: "Lost", value: statusCounts.lost, color: "#DC3545" },
+    ].filter(item => item.value > 0); // Only show statuses with leads
+  }, [leads]);
+
+  // Calculate monthly growth data from real leads
+  const monthlyGrowthData = useMemo(() => {
+    const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    const currentYear = new Date().getFullYear();
+    const monthlyCounts: { [key: string]: number } = {};
+
+    // Initialize all months with 0
+    monthNames.forEach(month => {
+      monthlyCounts[month] = 0;
+    });
+
+    // Count leads by month
+    leads.forEach((lead: ApiLead) => {
+      const leadDate = new Date(lead.date);
+      if (leadDate.getFullYear() === currentYear) {
+        const monthName = monthNames[leadDate.getMonth()];
+        monthlyCounts[monthName]++;
+      }
+    });
+
+    return monthNames.map(month => ({
+      month,
+      leads: monthlyCounts[month]
+    }));
+  }, [leads]);
+
+  // Calculate agent performance data from real leads
+  const agentPerformanceData = useMemo(() => {
+    const agents = users.filter((user: any) => user.role === "agent");
+    
+    return agents.map((agent: any) => {
+      const agentLeads = leads.filter((lead: ApiLead) => lead.assignedTo?._id === agent._id);
+      const converted = agentLeads.filter((lead: ApiLead) => lead.status === "converted").length;
+      const lost = agentLeads.filter((lead: ApiLead) => lead.status === "lost").length;
+      const pending = agentLeads.filter((lead: ApiLead) => 
+        !["converted", "lost"].includes(lead.status)
+      ).length;
+
+      return {
+        name: agent.name,
+        converted,
+        pending,
+        lost
+      };
+    }).slice(0, 5); // Show top 5 agents
+  }, [leads, users]);
 
   // Filtered users based on search query
   const filteredUsers = useMemo(() => {
@@ -636,7 +711,7 @@ const AdminDashboard = () => {
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.6 }}
               >
-                <TabsList className="grid w-full sm:w-auto grid-cols-3 bg-white shadow-sm border">
+                <TabsList className="grid w-full sm:w-auto grid-cols-2 bg-white shadow-sm border">
                   <TabsTrigger
                     value="analytics"
                     className="data-[state=active]:bg-teal-600 data-[state=active]:text-white transition-all duration-300"
@@ -650,13 +725,6 @@ const AdminDashboard = () => {
                   >
                     <FileText className="h-4 w-4 mr-2" />
                     Reports
-                  </TabsTrigger>
-                  <TabsTrigger
-                    value="settings"
-                    className="data-[state=active]:bg-teal-600 data-[state=active]:text-white transition-all duration-300"
-                  >
-                    <Settings className="h-4 w-4 mr-2" />
-                    Settings
                   </TabsTrigger>
                 </TabsList>
               </motion.div>
@@ -675,237 +743,24 @@ const AdminDashboard = () => {
                   className="relative"
                 >
                   <div className="absolute inset-0 bg-gradient-to-br from-blue-400/10 to-indigo-600/10 rounded-2xl -z-10" />
-                  <LeadsByStatusChart />
+                  <LeadsByStatusChart data={leadsByStatusData.length > 0 ? leadsByStatusData : undefined} />
                 </motion.div>
                 <motion.div
                   whileHover={{ scale: 1.02, y: -5 }}
                   className="relative"
                 >
                   <div className="absolute inset-0 bg-gradient-to-br from-green-400/10 to-emerald-600/10 rounded-2xl -z-10" />
-                  <MonthlyGrowthChart />
+                  <MonthlyGrowthChart data={monthlyGrowthData} />
                 </motion.div>
                 <motion.div
                   whileHover={{ scale: 1.02, y: -5 }}
                   className="relative lg:col-span-2 xl:col-span-1"
                 >
                   <div className="absolute inset-0 bg-gradient-to-br from-purple-400/10 to-violet-600/10 rounded-2xl -z-10" />
-                  <AgentPerformanceChart />
+                  <AgentPerformanceChart data={agentPerformanceData.length > 0 ? agentPerformanceData : undefined} />
                 </motion.div>
               </motion.div>
 
-              {/* Enhanced Performance Metrics Dashboard */}
-              <motion.div
-                initial={{ opacity: 0, y: 30 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.4 }}
-                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
-              >
-                {[
-                  {
-                    title: "Conversion Rate",
-                    value: `${conversionRate}%`,
-                    trend: "+2.5% from last month",
-                    trendPositive: true,
-                    color: "from-teal-500 to-cyan-600",
-                    bgColor: "from-teal-50 to-cyan-100",
-                    icon: TrendingUp,
-                    hasProgress: true,
-                    progressValue: conversionRate
-                  },
-                  {
-                    title: "Average Deal Size",
-                    value: "$12,450",
-                    trend: "+5.2% from last month",
-                    trendPositive: true,
-                    color: "from-green-500 to-emerald-600",
-                    bgColor: "from-green-50 to-emerald-100",
-                    icon: BarChart3
-                  },
-                  {
-                    title: "Response Time",
-                    value: "2.4h",
-                    trend: "+0.3h from last month",
-                    trendPositive: false,
-                    color: "from-orange-500 to-red-600",
-                    bgColor: "from-orange-50 to-red-100",
-                    icon: RefreshCw
-                  },
-                  {
-                    title: "Pipeline Value",
-                    value: "$156.7K",
-                    trend: "+18.3% from last quarter",
-                    trendPositive: true,
-                    color: "from-purple-500 to-violet-600",
-                    bgColor: "from-purple-50 to-violet-100",
-                    icon: FileText
-                  }
-                ].map((metric, index) => (
-                  <motion.div
-                    key={metric.title}
-                    initial={{ opacity: 0, y: 20, scale: 0.9 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    transition={{ delay: 0.5 + index * 0.1, type: "spring" }}
-                    whileHover={{
-                      scale: 1.05,
-                      rotateY: 5,
-                      transition: { duration: 0.2 }
-                    }}
-                    className="group perspective-1000"
-                  >
-                    <Card className={`relative overflow-hidden border-0 shadow-lg hover:shadow-xl transition-all duration-500 bg-gradient-to-br ${metric.bgColor} transform-gpu`}>
-                      <div className="absolute inset-0 opacity-0 group-hover:opacity-20 transition-opacity duration-500">
-                        <div className={`absolute inset-0 bg-gradient-to-br ${metric.color}`} />
-                      </div>
-
-                      <div className="absolute top-0 left-0 right-0 h-1">
-                        <motion.div
-                          initial={{ width: 0 }}
-                          animate={{ width: "100%" }}
-                          transition={{ delay: 1 + index * 0.2, duration: 1 }}
-                          className={`h-full bg-gradient-to-r ${metric.color}`}
-                        />
-                      </div>
-
-                      <CardContent className="relative p-6 z-10">
-                        <div className="flex items-center justify-between mb-4">
-                          <motion.div
-                            whileHover={{ scale: 1.1, rotate: 10 }}
-                            className={`p-2 bg-gradient-to-br ${metric.color} rounded-lg shadow-md`}
-                          >
-                            <metric.icon className="h-4 w-4 text-white" />
-                          </motion.div>
-                          <motion.div
-                            initial={{ scale: 0 }}
-                            animate={{ scale: 1 }}
-                            transition={{ delay: 0.7 + index * 0.1, type: "spring" }}
-                            className={`px-2 py-1 text-xs font-semibold rounded-full ${metric.trendPositive
-                              ? 'bg-green-100 text-green-700'
-                              : 'bg-red-100 text-red-700'
-                              }`}
-                          >
-                            {metric.trendPositive ? '↗' : '↘'}
-                          </motion.div>
-                        </div>
-
-                        <div className="space-y-1">
-                          <p className="text-xs font-medium text-gray-600">{metric.title}</p>
-                          <motion.p
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 0.8 + index * 0.1 }}
-                            className="text-2xl font-bold text-gray-800"
-                          >
-                            {metric.value}
-                          </motion.p>
-                          <p className={`text-xs font-medium ${metric.trendPositive ? 'text-green-600' : 'text-red-600'
-                            }`}>
-                            {metric.trend}
-                          </p>
-                        </div>
-
-                        {metric.hasProgress && (
-                          <div className="mt-3">
-                            <div className="w-full bg-gray-200 rounded-full h-1.5">
-                              <motion.div
-                                initial={{ width: 0 }}
-                                animate={{ width: `${metric.progressValue}%` }}
-                                transition={{ delay: 1.2 + index * 0.1, duration: 1 }}
-                                className={`h-1.5 rounded-full bg-gradient-to-r ${metric.color}`}
-                              />
-                            </div>
-                          </div>
-                        )}
-                      </CardContent>
-                    </Card>
-                  </motion.div>
-                ))}
-              </motion.div>
-
-              {/* Advanced Analytics Tables */}
-              <motion.div
-                initial={{ opacity: 0, y: 30 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.6 }}
-                className="grid grid-cols-1 lg:grid-cols-2 gap-6"
-              >
-                {/* Lead Source Analytics */}
-                <Card className="border-0 shadow-lg">
-                  <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-100 border-b">
-                    <CardTitle className="flex items-center gap-2 text-blue-800">
-                      <BarChart3 className="h-5 w-5" />
-                      Lead Source Performance
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="p-0">
-                    <div className="overflow-x-auto">
-                      <Table>
-                        <TableBody>
-                          {[
-                            { source: "Website", leads: 45, conv: "24.4%", revenue: "$89.2K" },
-                            { source: "LinkedIn", leads: 32, conv: "18.7%", revenue: "$52.3K" },
-                            { source: "Referral", leads: 28, conv: "35.7%", revenue: "$68.1K" },
-                            { source: "Cold Email", leads: 19, conv: "12.6%", revenue: "$24.7K" }
-                          ].map((item, index) => (
-                            <motion.tr
-                              key={item.source}
-                              initial={{ opacity: 0, x: -20 }}
-                              animate={{ opacity: 1, x: 0 }}
-                              transition={{ delay: 0.8 + index * 0.1 }}
-                              className="hover:bg-blue-50/50 transition-colors"
-                            >
-                              <TableCell className="font-medium py-3">{item.source}</TableCell>
-                              <TableCell className="text-center">
-                                <Badge className="bg-blue-100 text-blue-800">{item.leads}</Badge>
-                              </TableCell>
-                              <TableCell className="text-center text-green-600 font-medium">{item.conv}</TableCell>
-                              <TableCell className="text-right font-semibold">{item.revenue}</TableCell>
-                            </motion.tr>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* Agent Performance Analytics */}
-                <Card className="border-0 shadow-lg">
-                  <CardHeader className="bg-gradient-to-r from-green-50 to-emerald-100 border-b">
-                    <CardTitle className="flex items-center gap-2 text-green-800">
-                      <Users className="h-5 w-5" />
-                      Top Agent Performance
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="p-0">
-                    <div className="overflow-x-auto">
-                      <Table>
-                        <TableBody>
-                          {[
-                            { name: "Sarah Johnson", deals: 12, value: "$156.2K", rate: "28.5%" },
-                            { name: "Mike Chen", deals: 10, value: "$134.8K", rate: "25.0%" },
-                            { name: "Emily Davis", deals: 8, value: "$98.4K", rate: "22.2%" },
-                            { name: "John Smith", deals: 6, value: "$76.1K", rate: "18.7%" }
-                          ].map((agent, index) => (
-                            <motion.tr
-                              key={agent.name}
-                              initial={{ opacity: 0, x: -20 }}
-                              animate={{ opacity: 1, x: 0 }}
-                              transition={{ delay: 0.8 + index * 0.1 }}
-                              className="hover:bg-green-50/50 transition-colors"
-                            >
-                              <TableCell className="font-medium py-3">{agent.name}</TableCell>
-                              <TableCell className="text-center">
-                                <Badge className="bg-green-100 text-green-800">{agent.deals}</Badge>
-                              </TableCell>
-                              <TableCell className="text-center font-semibold text-gray-700">{agent.value}</TableCell>
-                              <TableCell className="text-right text-green-600 font-medium">{agent.rate}</TableCell>
-                            </motion.tr>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    </div>
-                  </CardContent>
-                </Card>
-              </motion.div>
             </TabsContent>
 
             <TabsContent value="reports" className="space-y-8 p-6">
@@ -1059,184 +914,6 @@ const AdminDashboard = () => {
                           </Card>
                         </motion.div>
                       ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            </TabsContent>
-
-            <TabsContent value="settings" className="space-y-8 p-6">
-              {/* Enhanced System Settings with Premium Design */}
-              <motion.div
-                initial={{ opacity: 0, y: 30 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2 }}
-                className="grid grid-cols-1 lg:grid-cols-2 gap-8"
-              >
-                {/* General Settings */}
-                <Card className="border-0 shadow-xl overflow-hidden">
-                  <CardHeader className="bg-gradient-to-r from-teal-600 to-cyan-600 text-white relative overflow-hidden">
-                    <motion.div
-                      animate={{
-                        backgroundPosition: ['0% 0%', '100% 100%'],
-                      }}
-                      transition={{
-                        duration: 15,
-                        repeat: Infinity,
-                        repeatType: "reverse"
-                      }}
-                      className="absolute inset-0 opacity-20"
-                      style={{
-                        backgroundImage: 'radial-gradient(circle at 30% 70%, rgba(255, 255, 255, 0.3) 0%, transparent 50%)'
-                      }}
-                    />
-
-                    <div className="relative z-10 flex items-center gap-3">
-                      <motion.div
-                        animate={{ rotate: [0, 360] }}
-                        transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
-                        className="p-2 bg-white/20 backdrop-blur-sm rounded-lg"
-                      >
-                        <Settings className="h-5 w-5" />
-                      </motion.div>
-                      <div>
-                        <CardTitle className="font-bold">General Settings</CardTitle>
-                        <p className="text-teal-100 text-sm">Configure system preferences</p>
-                      </div>
-                    </div>
-                  </CardHeader>
-
-                  <CardContent className="p-6 space-y-6">
-                    {[
-                      {
-                        label: "Organization Name",
-                        value: "LeadFlow Hub",
-                        type: "text",
-                        icon: Building,
-                        description: "Your company name displayed across the platform"
-                      },
-                      {
-                        label: "Default Currency",
-                        value: "USD",
-                        type: "select",
-                        icon: DollarSign,
-                        description: "Currency used for all financial calculations"
-                      },
-                      {
-                        label: "Time Zone",
-                        value: "UTC-8 (PST)",
-                        type: "select",
-                        icon: Clock,
-                        description: "Default timezone for all users and reports"
-                      }
-                    ].map((setting, index) => (
-                      <motion.div
-                        key={setting.label}
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: 0.3 + index * 0.1 }}
-                        className="group"
-                      >
-                        <div className="flex items-center gap-3 mb-2">
-                          <motion.div
-                            whileHover={{ scale: 1.1, rotate: 5 }}
-                            className="p-2 bg-teal-100 rounded-lg group-hover:bg-teal-200 transition-colors"
-                          >
-                            <setting.icon className="h-4 w-4 text-teal-600" />
-                          </motion.div>
-                          <label className="font-medium text-gray-700">{setting.label}</label>
-                        </div>
-
-                        {setting.type === 'select' ? (
-                          <select className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none transition-all duration-200">
-                            <option>{setting.value}</option>
-                          </select>
-                        ) : (
-                          <input
-                            type={setting.type}
-                            defaultValue={setting.value}
-                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none transition-all duration-200"
-                          />
-                        )}
-
-                        <p className="text-xs text-gray-500 mt-1 ml-11">{setting.description}</p>
-                      </motion.div>
-                    ))}
-                  </CardContent>
-                </Card>
-
-                {/* Lead Management Settings */}
-                <Card className="border-0 shadow-xl overflow-hidden">
-                  <CardHeader className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white relative overflow-hidden">
-                    <motion.div
-                      animate={{
-                        backgroundPosition: ['0% 0%', '100% 100%'],
-                      }}
-                      transition={{
-                        duration: 12,
-                        repeat: Infinity,
-                        repeatType: "reverse"
-                      }}
-                      className="absolute inset-0 opacity-20"
-                      style={{
-                        backgroundImage: 'radial-gradient(circle at 70% 30%, rgba(255, 255, 255, 0.3) 0%, transparent 50%)'
-                      }}
-                    />
-
-                    <div className="relative z-10 flex items-center gap-3">
-                      <motion.div
-                        animate={{ rotate: [0, -360] }}
-                        transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
-                        className="p-2 bg-white/20 backdrop-blur-sm rounded-lg"
-                      >
-                        <Users className="h-5 w-5" />
-                      </motion.div>
-                      <div>
-                        <CardTitle className="font-bold">Lead Assignment Rules</CardTitle>
-                        <p className="text-indigo-100 text-sm">Configure lead handling preferences</p>
-                      </div>
-                    </div>
-                  </CardHeader>
-
-                  <CardContent className="p-6 space-y-4">
-                    <div>
-                      <Label className="text-gray-700 font-medium">Assignment Method</Label>
-                      <Select>
-                        <SelectTrigger className="mt-2 border-gray-300 focus:ring-2 focus:ring-indigo-500">
-                          <SelectValue placeholder="Round Robin" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="round-robin">Round Robin</SelectItem>
-                          <SelectItem value="manual">Manual Assignment</SelectItem>
-                          <SelectItem value="performance">Performance Based</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div>
-                      <Label className="text-gray-700 font-medium">Email Notifications</Label>
-                      <div className="mt-3 space-y-3">
-                        {[
-                          { label: "New lead assignments", checked: true },
-                          { label: "Daily performance reports", checked: true },
-                          { label: "Lead status updates", checked: false }
-                        ].map((notification, index) => (
-                          <motion.label
-                            key={notification.label}
-                            initial={{ opacity: 0, x: -10 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ delay: 0.4 + index * 0.1 }}
-                            className="flex items-center space-x-3 p-2 rounded-lg hover:bg-indigo-50 transition-colors cursor-pointer"
-                          >
-                            <input
-                              type="checkbox"
-                              className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
-                              defaultChecked={notification.checked}
-                            />
-                            <span className="text-sm text-gray-600">{notification.label}</span>
-                          </motion.label>
-                        ))}
-                      </div>
                     </div>
                   </CardContent>
                 </Card>
@@ -1693,6 +1370,12 @@ const AdminDashboard = () => {
                           <span className="text-gray-500">Date Added: </span>
                           <span className="text-gray-900">{selectedLead.date}</span>
                         </div>
+                        {selectedLead.nextFollowUp && (
+                          <div>
+                            <span className="text-gray-500">Current Follow-up: </span>
+                            <span className="text-gray-900">{new Date(selectedLead.nextFollowUp).toLocaleString()}</span>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>

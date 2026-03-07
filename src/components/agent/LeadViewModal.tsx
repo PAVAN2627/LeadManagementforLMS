@@ -1,6 +1,5 @@
-import { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { Phone, Mail, Building2, Calendar, Clock, AlertCircle } from "lucide-react";
+import { motion } from "framer-motion";
+import { Phone, Mail, Building2, Calendar, Clock } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -10,26 +9,14 @@ import {
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Lead } from "@/components/tables/LeadsTable";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
-import { useToast } from "@/components/ui/use-toast";
 
-interface LeadDetailModalProps {
+interface LeadViewModalProps {
   lead: Lead | null;
   isOpen: boolean;
   onClose: () => void;
-  onSave?: (lead: Lead, updates: any) => void;
 }
 
 const statusColors: Record<string, string> = {
@@ -42,105 +29,17 @@ const statusColors: Record<string, string> = {
   lost: "bg-red-50 text-red-700 border border-red-200",
 };
 
-export const LeadDetailModal = ({
+export const LeadViewModal = ({
   lead,
   isOpen,
   onClose,
-  onSave,
-}: LeadDetailModalProps) => {
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
-
-  // State for editing
-  const [editedStatus, setEditedStatus] = useState<string>("");
-  const [originalStatus, setOriginalStatus] = useState<string>("");
-  const [editedNotes, setEditedNotes] = useState("");
-  const [editedFollowUpDate, setEditedFollowUpDate] = useState("");
-  const [isSaving, setIsSaving] = useState(false);
-  const [validationError, setValidationError] = useState("");
-
+}: LeadViewModalProps) => {
   // Fetch notes for the lead
   const { data: notes = [], isLoading: notesLoading } = useQuery({
     queryKey: ['lead-notes', lead?._id],
     queryFn: () => lead?._id ? api.getLeadNotes(lead._id) : Promise.resolve([]),
     enabled: !!lead?._id && isOpen,
   });
-
-  // Initialize state when lead changes
-  useEffect(() => {
-    if (lead) {
-      setEditedStatus(lead.status);
-      setOriginalStatus(lead.status);
-      setEditedNotes("");
-      setEditedFollowUpDate("");
-      setValidationError("");
-    }
-  }, [lead]);
-
-  // Mutation for adding note
-  const addNoteMutation = useMutation({
-    mutationFn: ({ leadId, content, status, nextFollowUp }: any) =>
-      api.addLeadNote(leadId, content, status, nextFollowUp),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['lead-notes', lead?._id] });
-      queryClient.invalidateQueries({ queryKey: ['leads'] });
-    },
-  });
-
-  const handleSave = async () => {
-    // Validation
-    if (editedStatus !== originalStatus) {
-      if (!editedNotes.trim()) {
-        setValidationError("Notes are required when changing status");
-        return;
-      }
-      if (!editedFollowUpDate) {
-        setValidationError("Follow-up date is required when changing status");
-        return;
-      }
-    }
-
-    setValidationError("");
-    setIsSaving(true);
-
-    try {
-      // Update lead status if changed
-      if (editedStatus !== originalStatus && onSave && lead) {
-        await onSave(lead, { status: editedStatus, nextFollowUp: editedFollowUpDate });
-      }
-
-      // Add note if provided
-      if (editedNotes.trim() && lead) {
-        await addNoteMutation.mutateAsync({
-          leadId: lead._id,
-          content: editedNotes,
-          status: editedStatus,
-          nextFollowUp: editedFollowUpDate || undefined,
-        });
-      }
-
-      toast({
-        title: "Success",
-        description: "Lead updated successfully",
-      });
-
-      // Reset form
-      setEditedNotes("");
-      setEditedFollowUpDate("");
-      setOriginalStatus(editedStatus);
-      onClose();
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to update lead",
-        variant: "destructive",
-      });
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  const hasChanges = editedStatus !== originalStatus || editedNotes.trim() !== "" || editedFollowUpDate !== "";
 
   if (!lead) return null;
 
@@ -231,71 +130,6 @@ export const LeadDetailModal = ({
             </div>
           </div>
 
-          {/* Status Update Section */}
-          <div className="space-y-4 bg-gradient-to-br from-teal-50/50 to-cyan-50/50 dark:from-teal-950/20 dark:to-cyan-950/20 p-4 rounded-lg border border-teal-200/50 dark:border-teal-800/50">
-            <h3 className="text-sm font-semibold text-foreground">Update Lead Status</h3>
-            
-            <div className="space-y-4">
-              <div>
-                <Label className="text-xs text-muted-foreground mb-2 block">
-                  New Status
-                </Label>
-                <Select value={editedStatus} onValueChange={setEditedStatus}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="new">New</SelectItem>
-                    <SelectItem value="contacted">Contacted</SelectItem>
-                    <SelectItem value="qualified">Qualified</SelectItem>
-                    <SelectItem value="proposal">Proposal</SelectItem>
-                    <SelectItem value="negotiation">Negotiation</SelectItem>
-                    <SelectItem value="converted">Converted</SelectItem>
-                    <SelectItem value="lost">Lost</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label className="text-xs text-muted-foreground mb-2 block">
-                  Notes {editedStatus !== originalStatus && <span className="text-red-500">*</span>}
-                </Label>
-                <Textarea
-                  placeholder="Add notes about this interaction..."
-                  value={editedNotes}
-                  onChange={(e) => setEditedNotes(e.target.value)}
-                  className="min-h-[100px]"
-                />
-              </div>
-
-              <div>
-                <Label className="text-xs text-muted-foreground mb-2 block">
-                  Next Follow-up Date {editedStatus !== originalStatus && <span className="text-red-500">*</span>}
-                </Label>
-                <Input
-                  type="datetime-local"
-                  value={editedFollowUpDate}
-                  onChange={(e) => setEditedFollowUpDate(e.target.value)}
-                />
-              </div>
-
-              <AnimatePresence>
-                {validationError && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                  >
-                    <Alert variant="destructive">
-                      <AlertCircle className="h-4 w-4" />
-                      <AlertDescription>{validationError}</AlertDescription>
-                    </Alert>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-          </div>
-
           {/* Follow-up History & Notes */}
           {notesLoading ? (
             <div className="text-center py-4 text-muted-foreground">Loading notes...</div>
@@ -372,23 +206,10 @@ export const LeadDetailModal = ({
           )}
 
           {/* Close Button */}
-          <div className="flex justify-end gap-3 pt-4 border-t border-border">
-            <Button 
-              onClick={onClose} 
-              variant="outline"
-              disabled={isSaving}
-            >
-              Cancel
+          <div className="flex justify-end pt-4 border-t border-border">
+            <Button onClick={onClose} className="bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600 text-white">
+              Close
             </Button>
-            {hasChanges && (
-              <Button 
-                onClick={handleSave}
-                disabled={isSaving}
-                className="bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600 text-white"
-              >
-                {isSaving ? "Saving..." : "Save Changes"}
-              </Button>
-            )}
           </div>
         </motion.div>
       </DialogContent>
@@ -396,4 +217,4 @@ export const LeadDetailModal = ({
   );
 };
 
-export default LeadDetailModal;
+export default LeadViewModal;

@@ -595,31 +595,6 @@ const AddLeadPage = () => {
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="budget" className="font-medium">
-                        Budget
-                      </Label>
-                      <div className="relative">
-                        <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
-                        <Select
-                          value={formData.budget}
-                          onValueChange={(value) => handleSelectChange("budget", value)}
-                        >
-                          <SelectTrigger className="pl-10">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="Not Specified">Not Specified</SelectItem>
-                            <SelectItem value="<$1000">&lt; $1,000</SelectItem>
-                            <SelectItem value="$1000-$5000">$1,000 - $5,000</SelectItem>
-                            <SelectItem value="$5000-$10000">$5,000 - $10,000</SelectItem>
-                            <SelectItem value="$10000-$50000">$10,000 - $50,000</SelectItem>
-                            <SelectItem value=">$50000">&gt; $50,000</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
                       <Label htmlFor="priority" className="font-medium">
                         Priority
                       </Label>

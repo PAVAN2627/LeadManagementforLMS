@@ -215,7 +215,7 @@ const Login = () => {
             </div>
 
             {/* Form */}
-            <form onSubmit={handleAuth} className="space-y-5">
+            <form onSubmit={handleAuth} className="space-y-5" autoComplete="on">
               {/* Email */}
               <div className="space-y-2">
                 <Label htmlFor="email" className="text-gray-700 font-semibold text-base">Email Address</Label>
@@ -223,10 +223,12 @@ const Login = () => {
                   <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 group-focus-within:text-teal-600 transition-colors" />
                   <Input
                     id="email"
+                    name="email"
                     type="email"
                     placeholder="name@company.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
+                    autoComplete="email"
                     className="pl-11 h-12 border-gray-300 focus:border-teal-600 focus:ring-2 focus:ring-teal-600/20 transition-all text-base"
                     required
                   />
@@ -240,10 +242,12 @@ const Login = () => {
                   <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 group-focus-within:text-teal-600 transition-colors" />
                   <Input
                     id="password"
+                    name="password"
                     type={showPassword ? "text" : "password"}
                     placeholder="Enter your password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
+                    autoComplete={isLogin ? "current-password" : "new-password"}
                     className="pl-11 pr-11 h-12 border-gray-300 focus:border-teal-600 focus:ring-2 focus:ring-teal-600/20 transition-all text-base"
                     required
                   />
@@ -265,10 +269,12 @@ const Login = () => {
                     <Key className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 group-focus-within:text-teal-600 transition-colors" />
                     <Input
                       id="secret"
+                      name="secret"
                       type="password"
                       placeholder="Enter admin secret key"
                       value={secret}
                       onChange={(e) => setSecret(e.target.value)}
+                      autoComplete="off"
                       className="pl-11 h-12 border-gray-300 focus:border-teal-600 focus:ring-2 focus:ring-teal-600/20 transition-all text-base"
                       required
                     />

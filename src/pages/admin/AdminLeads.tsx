@@ -1700,6 +1700,12 @@ const AdminLeads = () => {
                             <span className="text-gray-500">Date Added: </span>
                             <span className="text-gray-900">{selectedLead.date}</span>
                           </div>
+                          {selectedLead.nextFollowUp && (
+                            <div>
+                              <span className="text-gray-500">Current Follow-up: </span>
+                              <span className="text-gray-900">{new Date(selectedLead.nextFollowUp).toLocaleString()}</span>
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -1727,8 +1733,8 @@ const AdminLeads = () => {
                   </div>
 
                   <div className="border-t pt-6">
-                    <h3 className="font-semibold text-gray-900 mb-4">Notes & History</h3>
-                    <div className="space-y-4 mb-4 max-h-48 overflow-y-auto pr-2">
+                    <h3 className="font-semibold text-gray-900 mb-4">Notes & Follow-up History</h3>
+                    <div className="space-y-4 mb-4 max-h-64 overflow-y-auto pr-2">
                       {isLoadingNotes ? (
                         <div className="text-sm text-gray-500 text-center">Loading notes...</div>
                       ) : leadNotes.length === 0 ? (
@@ -1741,6 +1747,12 @@ const AdminLeads = () => {
                               <span className="text-xs text-gray-500">{new Date(note.createdAt).toLocaleString()}</span>
                             </div>
                             <p className="text-sm text-gray-700 whitespace-pre-wrap">{note.content}</p>
+                            {note.nextFollowUp && (
+                              <p className="text-xs text-gray-500 mt-2 flex items-center gap-1">
+                                <Calendar className="h-3 w-3" />
+                                Next follow-up: {new Date(note.nextFollowUp).toLocaleString()}
+                              </p>
+                            )}
                           </div>
                         ))
                       )}

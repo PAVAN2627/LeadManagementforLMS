@@ -97,16 +97,42 @@ const ManagerDashboard = () => {
       if (selectedStatus !== "all" && lead.status !== selectedStatus) return false;
       if (searchQuery && !lead.name.toLowerCase().includes(searchQuery.toLowerCase()) &&
         !lead.email.toLowerCase().includes(searchQuery.toLowerCase())) return false;
+      
       if (dateFilter !== "all") {
         const leadDate = new Date(lead.date);
-        const today = new Date();
-        if (dateFilter === "today") return leadDate.toDateString() === today.toDateString();
-        // Simple approximation for week/month logic
-        const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
-        const monthAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
+        const now = new Date();
+        let startDate: Date;
 
-        if (dateFilter === "week" && leadDate < weekAgo) return false;
-        if (dateFilter === "month" && leadDate < monthAgo) return false;
+        switch (dateFilter) {
+          case "today":
+            return leadDate.toDateString() === now.toDateString();
+          case "week":
+            // Start of this week (Sunday)
+            const dayOfWeek = now.getDay();
+            startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - dayOfWeek);
+            startDate.setHours(0, 0, 0, 0);
+            break;
+          case "month":
+            // Start of this month
+            startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+            startDate.setHours(0, 0, 0, 0);
+            break;
+          case "quarter":
+            // Start of this quarter
+            const currentQuarter = Math.floor(now.getMonth() / 3);
+            startDate = new Date(now.getFullYear(), currentQuarter * 3, 1);
+            startDate.setHours(0, 0, 0, 0);
+            break;
+          case "year":
+            // Start of this year
+            startDate = new Date(now.getFullYear(), 0, 1);
+            startDate.setHours(0, 0, 0, 0);
+            break;
+          default:
+            return true;
+        }
+
+        return leadDate >= startDate;
       }
       return true;
     });
@@ -141,6 +167,37 @@ const ManagerDashboard = () => {
     setSelectedLeads(prev =>
       prev.includes(leadId) ? prev.filter(id => id !== leadId) : [...prev, leadId]
     );
+  };
+
+  const handleExportCSV = () => {
+    const csvData = filteredLeads.map(lead => ({
+      'Lead Name': lead.name,
+      'Email': lead.email,
+      'Phone': lead.phone,
+      'Company': lead.company,
+      'Status': lead.status,
+      'Assigned To': lead.assignedTo?.name || 'Unassigned',
+      'Source': lead.source,
+      'Date': new Date(lead.date).toLocaleDateString(),
+    }));
+
+    const headers = Object.keys(csvData[0] || {});
+    const csvContent = [
+      headers.join(','),
+      ...csvData.map(row => headers.map(header => `"${row[header as keyof typeof row] || ''}"`).join(','))
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `lead-assignment-${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    toast({ title: "Export Successful", description: `Exported ${csvData.length} leads to CSV` });
   };
 
   // Derived agent performance
@@ -299,7 +356,12 @@ const ManagerDashboard = () => {
                         </DialogContent>
                       </Dialog>
                     )}
-                    <Button variant="outline" size="sm" className="hover:scale-105 transition-transform hover:border-primary icon-bounce">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="hover:scale-105 transition-transform hover:border-primary icon-bounce"
+                      onClick={handleExportCSV}
+                    >
                       <Download className="h-4 w-4 mr-2" />
                       Export
                     </Button>
@@ -355,6 +417,8 @@ const ManagerDashboard = () => {
                       <SelectItem value="today">Today</SelectItem>
                       <SelectItem value="week">This Week</SelectItem>
                       <SelectItem value="month">This Month</SelectItem>
+                      <SelectItem value="quarter">This Quarter</SelectItem>
+                      <SelectItem value="year">This Year</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -451,97 +515,39 @@ const ManagerDashboard = () => {
               </div>
 
               {/* Desktop View - Table */}
-              <div className="hidden md:block">
-                <Table>
-                  <TableHeader>
-                    <TableRow className="table-header-glow border-b-2 border-primary/20">
-                      <TableHead className="bg-muted/50 w-12">
-                        <motion.div
-                          whileHover={{ scale: 1.2, rotate: 5 }}
-                          whileTap={{ scale: 0.9 }}
-                        >
-                          <input
-                            type="checkbox"
-                            className="rounded border-gray-300 text-primary focus:ring-primary checkbox-animated cursor-pointer"
-                            checked={selectedLeads.length === filteredLeads.length && filteredLeads.length > 0}
-                            onChange={(e) => {
-                              if (e.target.checked) {
-                                setSelectedLeads(filteredLeads.map(l => l._id));
-                              } else {
-                                setSelectedLeads([]);
-                              }
-                            }}
-                          />
-                        </motion.div>
-                      </TableHead>
-                      <TableHead className="font-bold text-foreground bg-muted/50">Lead Name</TableHead>
-                      <TableHead className="font-bold text-foreground bg-muted/50">Status</TableHead>
-                      <TableHead className="font-bold text-foreground bg-muted/50">Assign Agent</TableHead>
-                      <TableHead className="font-bold text-foreground bg-muted/50">Priority</TableHead>
-                      <TableHead className="text-right font-bold text-foreground bg-muted/50">Action</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
+              <div className="hidden md:block overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="bg-muted/50 border-b">
+                      <th className="text-left p-4 font-bold text-foreground min-w-[150px]">Lead Name</th>
+                      <th className="text-left p-4 font-bold text-foreground min-w-[120px]">Status</th>
+                      <th className="text-left p-4 font-bold text-foreground min-w-[140px]">Assign Agent</th>
+                      <th className="text-left p-4 font-bold text-foreground min-w-[100px]">Priority</th>
+                      <th className="text-right p-4 font-bold text-foreground min-w-[100px]">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
                     {filteredLeads.length === 0 ? (
-                      <TableRow>
-                        <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                          <motion.div
-                            initial={{ opacity: 0, scale: 0.8 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            transition={{ duration: 0.3 }}
-                          >
-                            No leads found matching your filters
-                          </motion.div>
-                        </TableCell>
-                      </TableRow>
+                      <tr>
+                        <td colSpan={5} className="text-center py-8 text-muted-foreground">
+                          No leads found matching your filters
+                        </td>
+                      </tr>
                     ) : (
-                      filteredLeads.slice(0, 8).map((lead, index) => (
-                        <motion.tr
-                          key={lead._id}
-                          initial={{ opacity: 0, x: -10 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          transition={{ delay: index * 0.05, type: "spring", stiffness: 300 }}
-                          className="table-row-hover border-b border-border/50"
-                        >
-                          <TableCell>
-                            <motion.div
-                              whileHover={{ scale: 1.2 }}
-                              whileTap={{ scale: 0.9 }}
-                            >
-                              <input
-                                type="checkbox"
-                                className="rounded border-gray-300 text-primary focus:ring-primary checkbox-animated cursor-pointer"
-                                checked={selectedLeads.includes(lead._id)}
-                                onChange={() => toggleLeadSelection(lead._id)}
-                              />
-                            </motion.div>
-                          </TableCell>
-                          <TableCell className="font-medium">
-                            <motion.span
-                              initial={{ opacity: 0 }}
-                              animate={{ opacity: 1 }}
-                              transition={{ delay: index * 0.05 + 0.1 }}
-                            >
-                              {lead.name}
-                            </motion.span>
-                          </TableCell>
-                          <TableCell>
-                            <motion.div
-                              initial={{ scale: 0 }}
-                              animate={{ scale: 1 }}
-                              transition={{ delay: index * 0.05 + 0.15, type: "spring" }}
-                            >
-                              <Badge className={`${statusColors[lead.status]} badge-pulse`}>
-                                {lead.status.charAt(0).toUpperCase() + lead.status.slice(1)}
-                              </Badge>
-                            </motion.div>
-                          </TableCell>
-                          <TableCell>
+                      filteredLeads.slice(0, 8).map((lead) => (
+                        <tr key={lead._id} className="border-b hover:bg-muted/50">
+                          <td className="p-4 font-medium">{lead.name}</td>
+                          <td className="p-4">
+                            <Badge className={`${statusColors[lead.status]}`}>
+                              {lead.status.charAt(0).toUpperCase() + lead.status.slice(1)}
+                            </Badge>
+                          </td>
+                          <td className="p-4">
                             <Select
                               value={rowAgentMap[lead._id] || lead.assignedTo?._id || ""}
                               onValueChange={(val) => setRowAgentMap(prev => ({ ...prev, [lead._id]: val }))}
                             >
-                              <SelectTrigger className="w-32 h-8 select-animated">
+                              <SelectTrigger className="w-32 h-8">
                                 <SelectValue placeholder="Select agent" />
                               </SelectTrigger>
                               <SelectContent>
@@ -552,10 +558,10 @@ const ManagerDashboard = () => {
                                 ))}
                               </SelectContent>
                             </Select>
-                          </TableCell>
-                          <TableCell>
+                          </td>
+                          <td className="p-4">
                             <Select defaultValue="medium">
-                              <SelectTrigger className="w-24 h-8 select-animated">
+                              <SelectTrigger className="w-24 h-8">
                                 <SelectValue />
                               </SelectTrigger>
                               <SelectContent>
@@ -564,32 +570,27 @@ const ManagerDashboard = () => {
                                 <SelectItem value="low">Low</SelectItem>
                               </SelectContent>
                             </Select>
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <motion.div
-                              whileHover={{ scale: 1.05 }}
-                              whileTap={{ scale: 0.95 }}
+                          </td>
+                          <td className="p-4 text-right">
+                            <Button
+                              size="sm"
+                              className="gradient-bg-animated text-primary-foreground"
+                              onClick={() => {
+                                const agentId = rowAgentMap[lead._id] || lead.assignedTo?._id || "";
+                                if (!agentId) return;
+                                setUpdatingLeadId(lead._id);
+                                updateLeadMutation.mutate({ id: lead._id, data: { assignedTo: agentId } as any });
+                              }}
+                              disabled={(!rowAgentMap[lead._id] && !lead.assignedTo?._id) || updatingLeadId === lead._id}
                             >
-                              <Button
-                                size="sm"
-                                className="gradient-bg-animated text-primary-foreground button-ripple hover:scale-105 transition-all shadow-md"
-                                onClick={() => {
-                                  const agentId = rowAgentMap[lead._id] || lead.assignedTo?._id || "";
-                                  if (!agentId) return;
-                                  setUpdatingLeadId(lead._id);
-                                  updateLeadMutation.mutate({ id: lead._id, data: { assignedTo: agentId } as any });
-                                }}
-                                disabled={(!rowAgentMap[lead._id] && !lead.assignedTo?._id) || updatingLeadId === lead._id}
-                              >
-                                {updatingLeadId === lead._id ? "Assigning..." : "Assign"}
-                              </Button>
-                            </motion.div>
-                          </TableCell>
-                        </motion.tr>
+                              {updatingLeadId === lead._id ? "Assigning..." : "Assign"}
+                            </Button>
+                          </td>
+                        </tr>
                       ))
                     )}
-                  </TableBody>
-                </Table>
+                  </tbody>
+                </table>
               </div>
             </div>
           </div>
@@ -634,14 +635,6 @@ const ManagerDashboard = () => {
                   >
                     <div className="flex justify-between items-start mb-4">
                       <div className="flex items-center gap-3">
-                        <motion.div
-                          whileHover={{ scale: 1.1, rotate: 5 }}
-                          className="h-12 w-12 rounded-full gradient-bg-animated flex items-center justify-center ring-2 ring-primary/20 shadow-md shrink-0"
-                        >
-                          <span className="text-lg font-bold text-white">
-                            {agent.name.split(" ").map(n => n[0]).join("")}
-                          </span>
-                        </motion.div>
                         <div className="min-w-0">
                           <h3 className="font-bold text-gray-900 text-base truncate">{agent.name}</h3>
                           <p className="text-xs text-gray-500">Sales Agent</p>
@@ -703,21 +696,14 @@ const ManagerDashboard = () => {
 
             {/* Desktop View - Table */}
             <div className="hidden md:block w-full overflow-x-auto">
-              <table className="w-full text-sm" style={{ tableLayout: 'fixed', borderCollapse: 'collapse' }}>
-                <colgroup>
-                  <col style={{ width: '25%' }} />
-                  <col style={{ width: '18%' }} />
-                  <col style={{ width: '18%' }} />
-                  <col style={{ width: '18%' }} />
-                  <col style={{ width: '21%' }} />
-                </colgroup>
+              <table className="w-full text-sm" style={{ tableLayout: 'auto', borderCollapse: 'collapse', minWidth: '100%' }}>
                 <thead>
                   <tr className="border-b-2 border-primary/20 bg-muted/50">
-                    <th className="h-12 px-4 text-left font-bold text-foreground">Agent Name</th>
-                    <th className="h-12 px-4 text-center font-bold text-foreground">Leads Assigned</th>
-                    <th className="h-12 px-4 text-center font-bold text-foreground">Converted</th>
-                    <th className="h-12 px-4 text-center font-bold text-foreground">Pending</th>
-                    <th className="h-12 px-4 text-center font-bold text-foreground">Conversion Rate</th>
+                    <th className="h-12 px-4 text-left font-bold text-foreground whitespace-nowrap">Agent Name</th>
+                    <th className="h-12 px-4 text-center font-bold text-foreground whitespace-nowrap">Leads Assigned</th>
+                    <th className="h-12 px-4 text-center font-bold text-foreground whitespace-nowrap">Converted</th>
+                    <th className="h-12 px-4 text-center font-bold text-foreground whitespace-nowrap">Pending</th>
+                    <th className="h-12 px-4 text-center font-bold text-foreground whitespace-nowrap">Conversion Rate</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -728,24 +714,30 @@ const ManagerDashboard = () => {
                         key={agent.id}
                         className="border-b border-border/50 hover:bg-primary/5 transition-colors"
                       >
-                        <td className="h-16 px-4 font-medium text-left align-middle">
+                        <td className="h-16 px-4 font-medium text-left align-middle whitespace-nowrap">
                           {agent.name}
                         </td>
-                        <td className="h-16 px-4 text-center align-middle">
+                        <td className="h-16 px-4 text-center align-middle whitespace-nowrap">
                           {agent.leadsAssigned}
                         </td>
-                        <td className="h-16 px-4 text-center align-middle text-success font-medium">
+                        <td className="h-16 px-4 text-center align-middle text-success font-medium whitespace-nowrap">
                           {agent.converted}
                         </td>
-                        <td className="h-16 px-4 text-center align-middle text-warning font-medium">
+                        <td className="h-16 px-4 text-center align-middle text-warning font-medium whitespace-nowrap">
                           {agent.pending}
                         </td>
                         <td className="h-16 px-4 text-center align-middle">
-                          <div className="flex items-center justify-center gap-2">
-                            <div className="w-20 h-2 bg-muted rounded-full overflow-hidden">
-                              <div
-                                style={{ width: `${conversionRate}%` }}
-                                className="h-full bg-primary rounded-full transition-all duration-1000"
+                          <div className="flex items-center justify-center gap-3 min-w-[200px]">
+                            <div className="w-32 h-3 bg-gray-200 rounded-full overflow-hidden shadow-inner">
+                              <motion.div
+                                initial={{ width: 0 }}
+                                animate={{ width: `${conversionRate}%` }}
+                                transition={{ duration: 1, delay: index * 0.1 + 0.5, ease: "easeOut" }}
+                                className={`h-full rounded-full transition-all duration-500 ${
+                                  conversionRate >= 70 ? 'bg-gradient-to-r from-green-500 to-green-600' :
+                                  conversionRate >= 50 ? 'bg-gradient-to-r from-yellow-500 to-yellow-600' :
+                                  'bg-gradient-to-r from-red-500 to-red-600'
+                                }`}
                               />
                             </div>
                             <span className="text-sm font-medium min-w-[40px]">{conversionRate}%</span>
