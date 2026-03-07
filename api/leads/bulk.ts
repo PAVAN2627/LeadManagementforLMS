@@ -27,9 +27,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const { role, userId } = decoded;
 
-    // Only Admin and Manager can bulk add leads
-    if (role !== 'admin' && role !== 'manager') {
-        return res.status(403).json({ message: "Forbidden: Only admins and managers can bulk import leads" });
+    // Only Admin, Manager, and Agent can bulk add leads
+    if (role !== 'admin' && role !== 'manager' && role !== 'agent') {
+        return res.status(403).json({ message: "Forbidden: Only admins, managers, and agents can bulk import leads" });
     }
 
     try {
@@ -50,13 +50,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
             // Optional: Resolve assignedTo email to user _id
             let assignedToId = undefined;
-            if (lead.assignedToEmail) {
-                const agent = await User.findOne({ email: lead.assignedToEmail });
-                if (agent) {
-                    assignedToId = agent._id;
+
+            if (role === 'agent') {
+                // Agents can only assign to themselves
+                assignedToId = userId;
+            } else {
+                if (lead.assignedToEmail) {
+                    const agent = await User.findOne({ email: lead.assignedToEmail });
+                    if (agent) {
+                        assignedToId = agent._id;
+                    }
+                } else if (lead.assignedTo) {
+                    assignedToId = lead.assignedTo;
                 }
-            } else if (lead.assignedTo) {
-                assignedToId = lead.assignedTo;
             }
 
             leadsToInsert.push({

@@ -5,8 +5,10 @@ import {
   Plus,
   Search,
   Eye,
-  CheckCircle
+  CheckCircle,
+  Download,
 } from "lucide-react";
+import * as XLSX from 'xlsx';
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { SummaryCard } from "@/components/ui/summary-card";
 import { Button } from "@/components/ui/button";
@@ -86,6 +88,66 @@ const AgentDashboard = () => {
     }
   });
 
+
+  // Update status mutation
+  const updateStatusMutation = useMutation({
+    mutationFn: ({ id, status }: { id: string; status: ApiLead['status'] }) =>
+      api.updateLead(id, { status }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['leads'] });
+      toast({ title: "Updated", description: "Lead status updated" });
+      setIsDetailOpen(false);
+    }
+  });
+
+
+  const bulkCreateLeadsMutation = useMutation({
+    mutationFn: api.bulkCreateLeads,
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['leads'] });
+      toast({ title: "Success", description: data.message });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    }
+  });
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const data = new Uint8Array(event.target?.result as ArrayBuffer);
+      const workbook = XLSX.read(data, { type: 'array' });
+      const sheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[sheetName];
+      const json = XLSX.utils.sheet_to_json(worksheet) as any[];
+
+      if (json.length === 0) {
+        toast({ title: "Error", description: "Empty or invalid Excel file", variant: "destructive" });
+        return;
+      }
+
+      const parsedLeads = json.map(row => ({
+        name: row.Name || row.name || '',
+        email: row.Email || row.email || '',
+        phone: (row.Phone || row.phone || '').toString(),
+        company: row.Company || row.company || '',
+        source: row.Source || row.source || 'Website',
+        status: row.Status || row.status || 'new',
+        date: row.Date || row.date || new Date().toISOString(),
+      }));
+
+      bulkCreateLeadsMutation.mutate(parsedLeads);
+      if (e.target) {
+        e.target.value = '';
+      }
+    };
+    reader.readAsArrayBuffer(file);
+  };
+
+ main
   const filteredLeads = leads.filter((lead: ApiLead) => {
     const matchesSearch = lead.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       lead.company.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -119,84 +181,97 @@ const AgentDashboard = () => {
             <h1 className="text-2xl font-bold text-gray-900">Agent Dashboard</h1>
             <p className="text-gray-600">Manage your leads and grow your sales pipeline.</p>
           </div>
-          <Dialog open={isAddLeadOpen} onOpenChange={setIsAddLeadOpen}>
-            <DialogTrigger asChild>
-              <Button className="bg-teal-600 hover:bg-teal-700 text-white">
-                <Plus className="mr-2 h-4 w-4" />
-                Add Lead
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="w-[95vw] max-w-md">
-              <DialogHeader>
-                <DialogTitle className="text-gray-900">Add New Lead</DialogTitle>
-              </DialogHeader>
-              <form className="space-y-4 mt-4" onSubmit={(e) => {
-                e.preventDefault();
-                // We need to pass current user ID as assignedTo. 
-                // For now, let's try assuming backend will handle it or fail.
-                // Actually, I should probably decode token here to get ID if I can.
-                // Or just send it.
-                // Let's send a placeholder and fix backend to use req.user.userId if assignedTo is missing and role is agent.
-                createLeadMutation.mutate({ ...newLead, source: 'Manual' });
-              }}>
-                <div className="space-y-2">
-                  <Label htmlFor="leadName" className="text-gray-700">Full Name</Label>
-                  <Input
-                    id="leadName"
-                    placeholder="Enter lead name"
-                    className="border-gray-300"
-                    value={newLead.name}
-                    onChange={e => setNewLead({ ...newLead, name: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="leadEmail" className="text-gray-700">Email</Label>
-                  <Input
-                    id="leadEmail"
-                    type="email"
-                    placeholder="email@company.com"
-                    className="border-gray-300"
-                    value={newLead.email}
-                    onChange={e => setNewLead({ ...newLead, email: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="leadPhone" className="text-gray-700">Phone</Label>
-                  <Input
-                    id="leadPhone"
-                    type="tel"
-                    placeholder="+1 (555) 000-0000"
-                    className="border-gray-300"
-                    value={newLead.phone}
-                    onChange={e => setNewLead({ ...newLead, phone: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="leadCompany" className="text-gray-700">Company</Label>
-                  <Input
-                    id="leadCompany"
-                    placeholder="Company name"
-                    className="border-gray-300"
-                    value={newLead.company}
-                    onChange={e => setNewLead({ ...newLead, company: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="leadNotes" className="text-gray-700">Notes</Label>
-                  <Textarea
-                    id="leadNotes"
-                    placeholder="Initial notes about the lead..."
-                    className="border-gray-300"
-                    value={newLead.notes}
-                    onChange={e => setNewLead({ ...newLead, notes: e.target.value })}
-                  />
-                </div>
-                <Button type="submit" className="w-full bg-teal-600 hover:bg-teal-700 text-white">
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              className="border-teal-200 text-teal-700 hover:bg-teal-50"
+              onClick={() => document.getElementById('dashboard-excel-upload')?.click()}
+              disabled={bulkCreateLeadsMutation.isPending}
+            >
+              <Download className="mr-2 h-4 w-4" />
+              {bulkCreateLeadsMutation.isPending ? "Importing..." : "Bulk Import"}
+            </Button>
+            <input
+              type="file"
+              id="dashboard-excel-upload"
+              className="hidden"
+              accept=".xlsx, .xls, .csv"
+              onChange={handleFileUpload}
+            />
+            <Dialog open={isAddLeadOpen} onOpenChange={setIsAddLeadOpen}>
+              <DialogTrigger asChild>
+                <Button className="bg-teal-600 hover:bg-teal-700 text-white">
+                  <Plus className="mr-2 h-4 w-4" />
                   Add Lead
                 </Button>
-              </form>
-            </DialogContent>
-          </Dialog>
+              </DialogTrigger>
+              <DialogContent className="w-[95vw] max-w-md">
+                <DialogHeader>
+                  <DialogTitle className="text-gray-900">Add New Lead</DialogTitle>
+                </DialogHeader>
+                <form className="space-y-4 mt-4" onSubmit={(e) => {
+                  e.preventDefault();
+                  createLeadMutation.mutate({ ...newLead, source: 'Manual' });
+                }}>
+                  <div className="space-y-2">
+                    <Label htmlFor="leadName" className="text-gray-700">Full Name</Label>
+                    <Input
+                      id="leadName"
+                      placeholder="Enter lead name"
+                      className="border-gray-300"
+                      value={newLead.name}
+                      onChange={e => setNewLead({ ...newLead, name: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="leadEmail" className="text-gray-700">Email</Label>
+                    <Input
+                      id="leadEmail"
+                      type="email"
+                      placeholder="email@company.com"
+                      className="border-gray-300"
+                      value={newLead.email}
+                      onChange={e => setNewLead({ ...newLead, email: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="leadPhone" className="text-gray-700">Phone</Label>
+                    <Input
+                      id="leadPhone"
+                      type="tel"
+                      placeholder="+1 (555) 000-0000"
+                      className="border-gray-300"
+                      value={newLead.phone}
+                      onChange={e => setNewLead({ ...newLead, phone: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="leadCompany" className="text-gray-700">Company</Label>
+                    <Input
+                      id="leadCompany"
+                      placeholder="Company name"
+                      className="border-gray-300"
+                      value={newLead.company}
+                      onChange={e => setNewLead({ ...newLead, company: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="leadNotes" className="text-gray-700">Notes</Label>
+                    <Textarea
+                      id="leadNotes"
+                      placeholder="Initial notes about the lead..."
+                      className="border-gray-300"
+                      value={newLead.notes}
+                      onChange={e => setNewLead({ ...newLead, notes: e.target.value })}
+                    />
+                  </div>
+                  <Button type="submit" className="w-full bg-teal-600 hover:bg-teal-700 text-white">
+                    Add Lead
+                  </Button>
+                </form>
+              </DialogContent>
+            </Dialog>
+          </div>
         </div>
 
         {/* Summary Cards */}
