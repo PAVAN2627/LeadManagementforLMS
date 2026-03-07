@@ -42,9 +42,11 @@ import authMe from './api/auth/me';
 import adminSignup from './api/auth/admin-signup';
 import leadsIndex from './api/leads/index';
 import leadsId from './api/leads/[id]';
+import leadsBulk from './api/leads/bulk';
 import leadsNotes from './api/leads/[id]/notes';
 import usersIndex from './api/users/index';
 import usersId from './api/users/[id]';
+import usersBulk from './api/users/bulk';
 import analyticsIndex from './api/analytics/index';
 import notificationsIndex from './api/notifications/index';
 
@@ -55,11 +57,13 @@ app.all('/api/auth/me', wrapHandler(authMe));
 app.all('/api/auth/admin-signup', wrapHandler(adminSignup));
 
 // Leads
+app.all('/api/leads/bulk', wrapHandler(leadsBulk));
 app.all('/api/leads', wrapHandler(leadsIndex));
 app.all('/api/leads/:id', wrapHandler(leadsId));
 app.all('/api/leads/:id/notes', wrapHandler(leadsNotes));
 
 // Users
+app.all('/api/users/bulk', wrapHandler(usersBulk));
 app.all('/api/users', wrapHandler(usersIndex));
 app.all('/api/users/:id', wrapHandler(usersId));
 
