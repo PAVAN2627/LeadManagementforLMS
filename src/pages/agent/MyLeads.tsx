@@ -92,7 +92,6 @@ const MyLeads = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['leads'] });
       toast({ title: "Updated", description: "Lead updated successfully" });
-      setIsDetailModalOpen(false);
     }
   });
 
